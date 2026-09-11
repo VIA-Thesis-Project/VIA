@@ -1,0 +1,762 @@
+{
+  "communities": {
+    "0": [
+      "cropsuitelite_cropsuite",
+      "cropsuitelite_cropsuite_cropsuitelite_compute_climate_suitability",
+      "cropsuitelite_cropsuite_cropsuitelite_compute_crop_suitability",
+      "cropsuitelite_cropsuite_cropsuitelite_merge_geodata_outputs",
+      "cropsuitelite_cropsuite_cropsuitelite_resampling_env_data",
+      "cropsuitelite_cropsuite_cropsuitelite_run",
+      "cropsuitelite_cropsuite_rationale_122",
+      "cropsuitelite_cropsuite_rationale_143",
+      "cropsuitelite_cropsuite_rationale_192",
+      "cropsuitelite_cropsuite_rationale_227",
+      "cropsuitelite_cropsuite_rationale_252",
+      "cropsuitelite_cropsuite_rationale_71",
+      "cropsuitelite_src_crop_suitability_main",
+      "cropsuitelite_src_crop_suitability_main_aggregate_soil_raster_lst",
+      "cropsuitelite_src_crop_suitability_main_calcification_map",
+      "cropsuitelite_src_crop_suitability_main_calculate_slope",
+      "cropsuitelite_src_crop_suitability_main_cropsuitability",
+      "cropsuitelite_src_crop_suitability_main_get_soil_data",
+      "cropsuitelite_src_crop_suitability_main_get_suitability_val_dict",
+      "cropsuitelite_src_crop_suitability_main_get_texture_class",
+      "cropsuitelite_src_crop_suitability_main_get_valid_dtype",
+      "cropsuitelite_src_crop_suitability_main_gettable",
+      "cropsuitelite_src_crop_suitability_main_output_param_data",
+      "cropsuitelite_src_crop_suitability_main_py_ndarray",
+      "cropsuitelite_src_crop_suitability_main_rationale_136",
+      "cropsuitelite_src_crop_suitability_main_rationale_16",
+      "cropsuitelite_src_crop_suitability_main_rationale_189",
+      "cropsuitelite_src_crop_suitability_main_rationale_231",
+      "cropsuitelite_src_crop_suitability_main_rationale_258",
+      "cropsuitelite_src_crop_suitability_main_rationale_336",
+      "cropsuitelite_src_crop_suitability_main_rationale_424",
+      "cropsuitelite_src_crop_suitability_main_stack_parameters_array",
+      "cropsuitelite_src_data_tools",
+      "cropsuitelite_src_data_tools_create_cog_from_geotiff",
+      "cropsuitelite_src_data_tools_extract_domain_from_global_3draster",
+      "cropsuitelite_src_data_tools_extract_domain_from_global_raster",
+      "cropsuitelite_src_data_tools_fill_nan_nearest",
+      "cropsuitelite_src_data_tools_geotiff_to_smallest_datatype",
+      "cropsuitelite_src_data_tools_get_cpu_ram",
+      "cropsuitelite_src_data_tools_get_resolution_array",
+      "cropsuitelite_src_data_tools_get_shape_of_raster",
+      "cropsuitelite_src_data_tools_interpolate_nanmask",
+      "cropsuitelite_src_data_tools_load_specified_lines",
+      "cropsuitelite_src_data_tools_rationale_114",
+      "cropsuitelite_src_data_tools_rationale_19",
+      "cropsuitelite_src_data_tools_rationale_201",
+      "cropsuitelite_src_data_tools_rationale_272",
+      "cropsuitelite_src_data_tools_rationale_335",
+      "cropsuitelite_src_data_tools_rationale_406",
+      "cropsuitelite_src_data_tools_rationale_447",
+      "cropsuitelite_src_data_tools_rationale_67",
+      "cropsuitelite_src_data_tools_resize_array_interp",
+      "cropsuitelite_src_data_tools_throw_exit_error",
+      "cropsuitelite_src_downscaling",
+      "cropsuitelite_src_downscaling_create_interpolation_folders",
+      "cropsuitelite_src_downscaling_interpolate_precipitation",
+      "cropsuitelite_src_downscaling_interpolate_precipitation_method",
+      "cropsuitelite_src_downscaling_interpolate_temperature",
+      "cropsuitelite_src_downscaling_interpolate_temperature_method",
+      "cropsuitelite_src_downscaling_process_tempday_interp",
+      "cropsuitelite_src_downscaling_rationale_134",
+      "cropsuitelite_src_downscaling_read_timestep",
+      "cropsuitelite_src_downscaling_setup_initial_layers",
+      "cropsuitelite_src_merge_geotiff",
+      "cropsuitelite_src_merge_geotiff_merge_outputs_no_overlap",
+      "cropsuitelite_src_nc_tools",
+      "cropsuitelite_src_nc_tools_get_nodata_value",
+      "cropsuitelite_src_nc_tools_get_variable_name_from_nc",
+      "cropsuitelite_src_nc_tools_merge_netcdf_files",
+      "cropsuitelite_src_nc_tools_rationale_206",
+      "cropsuitelite_src_nc_tools_rationale_68",
+      "cropsuitelite_src_nc_tools_read_area_from_netcdf",
+      "cropsuitelite_src_nc_tools_read_area_from_netcdf_list",
+      "cropsuitelite_src_nc_tools_read_ind_date_file",
+      "cropsuitelite_src_nc_tools_sort_coordinatelist",
+      "cropsuitelite_src_nc_tools_write_to_netcdf",
+      "cropsuitelite_src_spatial_validity_covered_gradient",
+      "cropsuitelite_src_spatial_validity_rationale_35",
+      "cropsuitelite_src_spatial_validity_rationale_8",
+      "cropsuitelite_src_spatial_validity_resample_valid"
+    ],
+    "1": [
+      "cropsuitelite_src_climate_suitability_main",
+      "cropsuitelite_src_climate_suitability_main_calculate_average_sunshine",
+      "cropsuitelite_src_climate_suitability_main_calculate_day_length",
+      "cropsuitelite_src_climate_suitability_main_climate_suitability",
+      "cropsuitelite_src_climate_suitability_main_climsuit_new",
+      "cropsuitelite_src_climate_suitability_main_climsuit_new_process_index",
+      "cropsuitelite_src_climate_suitability_main_climsuit_new_xarray",
+      "cropsuitelite_src_climate_suitability_main_find_max_sum_new",
+      "cropsuitelite_src_climate_suitability_main_get_lethal_max_precipitation",
+      "cropsuitelite_src_climate_suitability_main_get_lethal_min_precipitation_duration",
+      "cropsuitelite_src_climate_suitability_main_get_photoperiod_params",
+      "cropsuitelite_src_climate_suitability_main_get_prec_requirements",
+      "cropsuitelite_src_climate_suitability_main_get_suitability_val_dict",
+      "cropsuitelite_src_climate_suitability_main_get_temp_for_sowing_duration",
+      "cropsuitelite_src_climate_suitability_main_lethal_params_threshold",
+      "cropsuitelite_src_climate_suitability_main_process_day_climsuit_memopt",
+      "cropsuitelite_src_climate_suitability_main_process_day_concfut",
+      "cropsuitelite_src_climate_suitability_main_py_jit",
+      "cropsuitelite_src_climate_suitability_main_rationale_107",
+      "cropsuitelite_src_climate_suitability_main_rationale_1108",
+      "cropsuitelite_src_climate_suitability_main_rationale_184",
+      "cropsuitelite_src_climate_suitability_main_rationale_19",
+      "cropsuitelite_src_climate_suitability_main_rationale_193",
+      "cropsuitelite_src_climate_suitability_main_rationale_222",
+      "cropsuitelite_src_climate_suitability_main_rationale_258",
+      "cropsuitelite_src_climate_suitability_main_rationale_609",
+      "cropsuitelite_src_climate_suitability_main_read_tif_data_to_opt_sow_date_arr",
+      "cropsuitelite_src_climate_suitability_main_read_tif_data_to_tempprecfail_arr",
+      "cropsuitelite_src_climate_suitability_main_vernalization_params_winter_crops",
+      "cropsuitelite_src_data_tools_interpolate_array",
+      "cropsuitelite_src_data_tools_rationale_252",
+      "cropsuitelite_src_read_plant_params",
+      "cropsuitelite_src_read_plant_params_get_formula",
+      "cropsuitelite_src_read_plant_params_get_id_list_start",
+      "cropsuitelite_src_read_plant_params_get_plant_param_interp_forms_dict",
+      "cropsuitelite_src_read_plant_params_print_crop_param_output",
+      "cropsuitelite_src_read_plant_params_print_sections",
+      "cropsuitelite_src_read_plant_params_rationale_107",
+      "cropsuitelite_src_read_plant_params_rationale_84",
+      "cropsuitelite_src_read_plant_params_rationale_9",
+      "cropsuitelite_src_read_plant_params_rationale_96",
+      "cropsuitelite_src_read_plant_params_read_crop_parameterizations_files",
+      "cropsuitelite_src_spatial_validity",
+      "cropsuitelite_src_spatial_validity_climate_coverage",
+      "cropsuitelite_src_spatial_validity_rationale_1",
+      "cropsuitelite_src_spatial_validity_rationale_26",
+      "cropsuitelite_tests_test_environmental_coverage",
+      "cropsuitelite_tests_test_environmental_coverage_environmentalcoveragetest",
+      "cropsuitelite_tests_test_environmental_coverage_environmentalcoveragetest_setup",
+      "cropsuitelite_tests_test_environmental_coverage_environmentalcoveragetest_test_coverage_distinguishes_dry_cold_missing_and_irrigated",
+      "cropsuitelite_tests_test_environmental_coverage_environmentalcoveragetest_test_daily_numpy_and_xarray_keep_nodata_out_of_membership",
+      "cropsuitelite_tests_test_environmental_coverage_environmentalcoveragetest_test_daily_numpy_and_xarray_keep_nodata_out_of_membership_dataset",
+      "cropsuitelite_tests_test_environmental_coverage_environmentalcoveragetest_test_isolated_dem_pixel_has_no_slope_estimate",
+      "cropsuitelite_tests_test_environmental_coverage_environmentalcoveragetest_test_slope_of_plane_survives_coast_and_internal_nodata",
+      "cropsuitelite_tests_test_environmental_coverage_environmentalcoveragetest_test_temperature_coast_resizes_without_dilution_or_extrapolated_coverage",
+      "cropsuitelite_tests_test_environmental_coverage_environmentalcoveragetest_test_temperature_preserves_negative_zero_and_missing_on_equal_grid",
+      "cropsuitelite_tests_test_environmental_coverage_environmentalcoveragetest_weather",
+      "cropsuitelite_tests_test_precipitation_units",
+      "cropsuitelite_tests_test_precipitation_units_precipitationunitstest_setupclass",
+      "cropsuitelite_tests_test_precipitation_units_rationale_1"
+    ],
+    "2": [
+      "cropsuitelite_cropsuite_cropsuitelite",
+      "cropsuitelite_cropsuite_cropsuitelite_init",
+      "cropsuitelite_cropsuite_cropsuitelite_plant_data",
+      "cropsuitelite_cropsuite_cropsuitelite_split_into_tiles",
+      "cropsuitelite_cropsuite_cropsuitelite_split_into_tiles_adjust_lower_bound",
+      "cropsuitelite_cropsuite_rationale_131",
+      "cropsuitelite_cropsuite_rationale_28",
+      "cropsuitelite_cropsuite_rationale_96",
+      "cropsuitelite_run_cropsuitelite",
+      "cropsuitelite_run_cropsuitelite_change_otherst_parameters",
+      "cropsuitelite_run_cropsuitelite_change_st1_parameter",
+      "cropsuitelite_run_cropsuitelite_create_crop_parameters",
+      "cropsuitelite_run_cropsuitelite_create_crop_suite_configuration_file",
+      "cropsuitelite_run_cropsuitelite_find_solution_type",
+      "cropsuitelite_run_cropsuitelite_main",
+      "cropsuitelite_run_cropsuitelite_modify_extent",
+      "cropsuitelite_run_cropsuitelite_modify_general_files",
+      "cropsuitelite_run_cropsuitelite_modify_initial_cropsuite_config",
+      "cropsuitelite_run_cropsuitelite_modify_soil_parameters",
+      "cropsuitelite_run_cropsuitelite_run_crop_suite",
+      "cropsuitelite_run_cropsuitelite_solution_dict_query",
+      "cropsuitelite_scripts_run_evaluation_engine",
+      "cropsuitelite_scripts_run_evaluation_engine_rationale_1",
+      "cropsuitelite_scripts_validate_huaura_environment",
+      "cropsuitelite_scripts_validate_huaura_environment_counts",
+      "cropsuitelite_scripts_validate_huaura_environment_main",
+      "cropsuitelite_scripts_validate_huaura_environment_rationale_1",
+      "cropsuitelite_solutions_membership_functions",
+      "cropsuitelite_solutions_membership_functions_change_otherst_parameters",
+      "cropsuitelite_solutions_membership_functions_change_st1_parameter",
+      "cropsuitelite_solutions_membership_functions_create_crop_parameters",
+      "cropsuitelite_solutions_membership_functions_cropsensitivity",
+      "cropsuitelite_solutions_membership_functions_cropsensitivity_create_new_max_parameter_values",
+      "cropsuitelite_solutions_membership_functions_cropsensitivity_create_new_min_parameter_values",
+      "cropsuitelite_solutions_membership_functions_cropsensitivity_create_new_min_parameter_valuesv2",
+      "cropsuitelite_solutions_membership_functions_cropsensitivity_export_crop_params",
+      "cropsuitelite_solutions_membership_functions_cropsensitivity_init",
+      "cropsuitelite_solutions_membership_functions_cropsensitivity_multiply_suit_vals",
+      "cropsuitelite_solutions_membership_functions_cropsensitivity_plot_solutions_profiles",
+      "cropsuitelite_solutions_membership_functions_cropsensitivity_read_crop_configuration",
+      "cropsuitelite_solutions_membership_functions_cropsensitivity_remove_crop_lethal_conditions",
+      "cropsuitelite_solutions_membership_functions_cropsensitivity_write_configuration",
+      "cropsuitelite_solutions_membership_functions_py_ndarray",
+      "cropsuitelite_solutions_membership_functions_rationale_11",
+      "cropsuitelite_solutions_membership_functions_rationale_15",
+      "cropsuitelite_solutions_membership_functions_rationale_27",
+      "cropsuitelite_solutions_membership_functions_rationale_70",
+      "cropsuitelite_solutions_membership_functions_rationale_89",
+      "cropsuitelite_solutions_membership_functions_solution_dict_query",
+      "cropsuitelite_solutions_utils",
+      "cropsuitelite_solutions_utils_find_solution_type",
+      "cropsuitelite_solutions_utils_modify_extent",
+      "cropsuitelite_solutions_utils_modify_general_files",
+      "cropsuitelite_solutions_utils_modify_soil_parameters",
+      "cropsuitelite_src_read_climate_ini_write_config",
+      "cropsuitelite_tests_test_huaura_entrypoint",
+      "cropsuitelite_tests_test_huaura_entrypoint_huauraentrypointtest",
+      "cropsuitelite_tests_test_huaura_entrypoint_huauraentrypointtest_test_reviewed_config_bypasses_parameter_generation",
+      "cropsuitelite_tests_test_huaura_entrypoint_rationale_1"
+    ],
+    "3": [
+      "cropsuitelite_datasets_create_spatial_datasets",
+      "cropsuitelite_datasets_create_spatial_datasets_create_climatology_from_nexgen",
+      "cropsuitelite_datasets_create_spatial_datasets_main",
+      "cropsuitelite_datasets_create_spatial_datasets_mask_single_layer",
+      "cropsuitelite_datasets_create_spatial_datasets_resample_soilgrids_data",
+      "cropsuitelite_datasets_utils",
+      "cropsuitelite_datasets_utils_baseprocessor",
+      "cropsuitelite_datasets_utils_baseprocessor_directories_list",
+      "cropsuitelite_datasets_utils_baseprocessor_init",
+      "cropsuitelite_datasets_utils_baseprocessor_mask_data",
+      "cropsuitelite_datasets_utils_compute_averaged_temp",
+      "cropsuitelite_datasets_utils_nexgen",
+      "cropsuitelite_datasets_utils_nexgen_directories_list",
+      "cropsuitelite_datasets_utils_nexgen_init",
+      "cropsuitelite_datasets_utils_nexgen_models",
+      "cropsuitelite_datasets_utils_nexgen_periods",
+      "cropsuitelite_datasets_utils_nexgen_scenarios",
+      "cropsuitelite_datasets_utils_nexgen_variable_names",
+      "cropsuitelite_datasets_utils_nexgenpreprocessing",
+      "cropsuitelite_datasets_utils_nexgenpreprocessing_calculate_climatological_precipitation_daily_mean",
+      "cropsuitelite_datasets_utils_nexgenpreprocessing_calculate_climatological_temperature_daily_mean",
+      "cropsuitelite_datasets_utils_nexgenpreprocessing_compute_mean_over_year_list",
+      "cropsuitelite_datasets_utils_nexgenpreprocessing_create_path",
+      "cropsuitelite_datasets_utils_nexgenpreprocessing_init",
+      "cropsuitelite_datasets_utils_nexgenpreprocessing_models",
+      "cropsuitelite_datasets_utils_nexgenpreprocessing_normalize_daily_calendar_365",
+      "cropsuitelite_datasets_utils_nexgenpreprocessing_scenarios",
+      "cropsuitelite_datasets_utils_nexgenpreprocessing_variable_names",
+      "cropsuitelite_datasets_utils_nexgenpreprocessing_variables",
+      "cropsuitelite_datasets_utils_rationale_100",
+      "cropsuitelite_datasets_utils_rationale_110",
+      "cropsuitelite_datasets_utils_rationale_125",
+      "cropsuitelite_datasets_utils_rationale_142",
+      "cropsuitelite_datasets_utils_rationale_17",
+      "cropsuitelite_datasets_utils_rationale_170",
+      "cropsuitelite_datasets_utils_rationale_232",
+      "cropsuitelite_datasets_utils_rationale_55",
+      "cropsuitelite_datasets_utils_rationale_560",
+      "cropsuitelite_datasets_utils_rationale_601",
+      "cropsuitelite_datasets_utils_resample_soilgridsdata",
+      "cropsuitelite_datasets_utils_resample_soilgridsdata_files_path_dict",
+      "cropsuitelite_datasets_utils_resample_soilgridsdata_init",
+      "cropsuitelite_datasets_utils_resample_soilgridsdata_read_soil_property",
+      "dataarray"
+    ],
+    "4": [
+      "cropsuitelite_src_check_files",
+      "cropsuitelite_src_check_files_calculate_area",
+      "cropsuitelite_src_check_files_check_all_inputs",
+      "cropsuitelite_src_check_files_check_climate_data",
+      "cropsuitelite_src_check_files_check_soil",
+      "cropsuitelite_src_check_files_check_within_one",
+      "cropsuitelite_src_check_files_get_geotiff_datatype",
+      "cropsuitelite_src_check_files_get_geotiff_extent",
+      "cropsuitelite_src_check_files_get_geotiff_resolution",
+      "cropsuitelite_src_check_files_get_geotiff_spatial_reference",
+      "cropsuitelite_src_check_files_get_id_list_start",
+      "cropsuitelite_src_check_files_get_minimum_extent",
+      "cropsuitelite_src_check_files_get_soil_name",
+      "cropsuitelite_src_check_files_get_tif_dimensions",
+      "cropsuitelite_src_check_files_is_geotiff_readable",
+      "cropsuitelite_src_check_files_print_extent",
+      "cropsuitelite_src_check_files_print_settings",
+      "cropsuitelite_src_check_files_rationale_123",
+      "cropsuitelite_src_check_files_rationale_13",
+      "cropsuitelite_src_check_files_rationale_146",
+      "cropsuitelite_src_check_files_rationale_198",
+      "cropsuitelite_src_check_files_rationale_228",
+      "cropsuitelite_src_check_files_rationale_258",
+      "cropsuitelite_src_check_files_rationale_280",
+      "cropsuitelite_src_check_files_rationale_298",
+      "cropsuitelite_src_check_files_rationale_30",
+      "cropsuitelite_src_check_files_rationale_329",
+      "cropsuitelite_src_check_files_rationale_352",
+      "cropsuitelite_src_check_files_rationale_375",
+      "cropsuitelite_src_check_files_rationale_467",
+      "cropsuitelite_src_check_files_rationale_50",
+      "cropsuitelite_src_check_files_rationale_504",
+      "cropsuitelite_src_check_files_rationale_523",
+      "cropsuitelite_src_check_files_rationale_73",
+      "cropsuitelite_src_check_files_rationale_98",
+      "cropsuitelite_src_check_files_reproject_geotiff",
+      "cropsuitelite_src_check_files_swappositions",
+      "cropsuitelite_src_check_files_throw_exit_error",
+      "cropsuitelite_src_nc_tools_get_netcdf_extent",
+      "cropsuitelite_src_nc_tools_get_rows_cols",
+      "cropsuitelite_src_nc_tools_rationale_35"
+    ],
+    "5": [
+      "cropsuitelite_evaluate",
+      "cropsuitelite_evaluate_main",
+      "cropsuitelite_evaluate_rationale_1",
+      "cropsuitelite_src_multicrop",
+      "cropsuitelite_src_multicrop_cell_areas",
+      "cropsuitelite_src_multicrop_compare_crops",
+      "cropsuitelite_src_multicrop_input_fingerprints",
+      "cropsuitelite_src_multicrop_list_crops",
+      "cropsuitelite_src_multicrop_load_geometry",
+      "cropsuitelite_src_multicrop_rationale_1",
+      "cropsuitelite_src_multicrop_rationale_112",
+      "cropsuitelite_src_multicrop_rationale_141",
+      "cropsuitelite_src_multicrop_rationale_236",
+      "cropsuitelite_src_multicrop_rationale_46",
+      "cropsuitelite_src_multicrop_read_config",
+      "cropsuitelite_src_multicrop_run_engine",
+      "cropsuitelite_src_multicrop_run_evaluation",
+      "cropsuitelite_src_multicrop_score_summary",
+      "cropsuitelite_src_multicrop_select_crops",
+      "cropsuitelite_src_multicrop_sha256",
+      "cropsuitelite_src_multicrop_summarize_outputs",
+      "cropsuitelite_src_multicrop_validate_parcel",
+      "cropsuitelite_src_multicrop_write_json",
+      "cropsuitelite_tests_test_multicrop",
+      "cropsuitelite_tests_test_multicrop_multicroptest",
+      "cropsuitelite_tests_test_multicrop_multicroptest_test_all_engine_failures_produce_report_without_ranking",
+      "cropsuitelite_tests_test_multicrop_multicroptest_test_complete_catalog_and_invalid_selections",
+      "cropsuitelite_tests_test_multicrop_multicroptest_test_failure_isolated_selection_snapshots_and_outputs",
+      "cropsuitelite_tests_test_multicrop_multicroptest_test_failure_isolated_selection_snapshots_and_outputs_engine",
+      "cropsuitelite_tests_test_multicrop_multicroptest_test_geojson_rejects_multiple_features_invalid_shapes_and_crs",
+      "cropsuitelite_tests_test_multicrop_multicroptest_test_invalid_scores_are_nodata_in_exported_parcel",
+      "cropsuitelite_tests_test_multicrop_multicroptest_test_subpixel_polygon_holes_and_outside_boundary",
+      "cropsuitelite_tests_test_multicrop_multicroptest_test_zero_is_valid_and_ranking_uses_common_support_with_ties",
+      "path"
+    ],
+    "6": [
+      "cropsuitelite_src_climate_suitability_main_xarray",
+      "cropsuitelite_src_climate_suitability_main_xarray_climate_suitability_xarray",
+      "cropsuitelite_src_climate_suitability_main_xarray_compute_suitability",
+      "cropsuitelite_src_climate_suitability_main_xarray_compute_suitability_process_index",
+      "cropsuitelite_src_climate_suitability_main_xarray_find_max_sum_new",
+      "cropsuitelite_src_climate_suitability_main_xarray_get_id_list_start",
+      "cropsuitelite_src_climate_suitability_main_xarray_get_lethal_max_precipitation",
+      "cropsuitelite_src_climate_suitability_main_xarray_get_lethal_min_precipitation_duration",
+      "cropsuitelite_src_climate_suitability_main_xarray_get_photoperiod_params",
+      "cropsuitelite_src_climate_suitability_main_xarray_get_prec_requirements",
+      "cropsuitelite_src_climate_suitability_main_xarray_get_suitability_val_dict_xarray",
+      "cropsuitelite_src_climate_suitability_main_xarray_get_suitable_values",
+      "cropsuitelite_src_climate_suitability_main_xarray_get_temp_for_sowing_duration",
+      "cropsuitelite_src_climate_suitability_main_xarray_interp_func",
+      "cropsuitelite_src_climate_suitability_main_xarray_interp_numba",
+      "cropsuitelite_src_climate_suitability_main_xarray_lethal_params_threshold",
+      "cropsuitelite_src_climate_suitability_main_xarray_mask_max_consec_dry_days",
+      "cropsuitelite_src_climate_suitability_main_xarray_mask_max_precipitation_days",
+      "cropsuitelite_src_climate_suitability_main_xarray_mask_max_temperature_duration",
+      "cropsuitelite_src_climate_suitability_main_xarray_mask_min_temperature_duration",
+      "cropsuitelite_src_climate_suitability_main_xarray_process_day_climsuit_xarray",
+      "cropsuitelite_src_climate_suitability_main_xarray_process_day_concfut_using_xarray",
+      "cropsuitelite_src_climate_suitability_main_xarray_py_jit",
+      "cropsuitelite_src_climate_suitability_main_xarray_py_njit",
+      "cropsuitelite_src_climate_suitability_main_xarray_rationale_170",
+      "cropsuitelite_src_climate_suitability_main_xarray_rationale_330",
+      "cropsuitelite_src_climate_suitability_main_xarray_read_tif_data_to_opt_sow_date_arr",
+      "cropsuitelite_src_climate_suitability_main_xarray_read_tif_data_to_tempprecfail_arr",
+      "cropsuitelite_src_climate_suitability_main_xarray_vernalization_params_winter_crops",
+      "cropsuitelite_src_climate_suitability_main_xarray_write_raster",
+      "delayed"
+    ],
+    "7": [
+      "cropsuitelite_datasets_download_data",
+      "cropsuitelite_datasets_download_data_downloadcmip6data",
+      "cropsuitelite_datasets_download_data_downloadcmip6data_download_data",
+      "cropsuitelite_datasets_download_data_downloadcmip6data_find_remote_file",
+      "cropsuitelite_datasets_download_data_downloadcmip6data_init",
+      "cropsuitelite_datasets_download_data_downloadcmip6data_products_to_download",
+      "cropsuitelite_datasets_download_data_downloadcmip6data_reset_vars",
+      "cropsuitelite_datasets_download_data_downloadcmip6data_set_query",
+      "cropsuitelite_datasets_download_data_get_individual_file",
+      "cropsuitelite_datasets_download_data_main",
+      "cropsuitelite_datasets_download_data_processtools",
+      "cropsuitelite_datasets_download_data_processtools_clip_spdata",
+      "cropsuitelite_datasets_download_data_processtools_preprocess_xrdata",
+      "cropsuitelite_datasets_download_data_processtools_save_asnc",
+      "cropsuitelite_datasets_download_data_rationale_104",
+      "cropsuitelite_datasets_download_data_rationale_121",
+      "cropsuitelite_datasets_download_data_rationale_125",
+      "cropsuitelite_datasets_download_data_rationale_129",
+      "cropsuitelite_datasets_download_data_rationale_155",
+      "cropsuitelite_datasets_download_data_rationale_189",
+      "cropsuitelite_datasets_download_data_rationale_19",
+      "cropsuitelite_datasets_download_data_rationale_23",
+      "cropsuitelite_datasets_download_data_rationale_234",
+      "cropsuitelite_datasets_download_data_rationale_269",
+      "cropsuitelite_datasets_download_data_rationale_65",
+      "cropsuitelite_datasets_download_data_set_encoding",
+      "dataset"
+    ],
+    "8": [
+      "cropsuitelite_src_crop_rotation",
+      "cropsuitelite_src_crop_rotation_calculate_suitabilities",
+      "cropsuitelite_src_crop_rotation_compute_combinations",
+      "cropsuitelite_src_crop_rotation_crop_rotation",
+      "cropsuitelite_src_crop_rotation_py_njit",
+      "cropsuitelite_src_data_tools_get_geotiff_extent",
+      "cropsuitelite_src_data_tools_py_ndarray",
+      "cropsuitelite_src_data_tools_rationale_348",
+      "cropsuitelite_src_data_tools_rationale_369",
+      "cropsuitelite_src_data_tools_rationale_386",
+      "cropsuitelite_src_data_tools_rationale_461",
+      "cropsuitelite_src_data_tools_read_raster_to_array",
+      "cropsuitelite_src_data_tools_read_tif_file_with_bands",
+      "cropsuitelite_src_data_tools_write_geotiff",
+      "cropsuitelite_src_read_climate_ini",
+      "cropsuitelite_src_read_climate_ini_rationale_28",
+      "cropsuitelite_src_read_climate_ini_rationale_4",
+      "cropsuitelite_src_read_climate_ini_read_ini_file",
+      "cropsuitelite_src_read_climate_ini_replace_yn_with_boolean"
+    ],
+    "9": [
+      "cropsuitelite_src_downscaling_process_precday_interp",
+      "cropsuitelite_src_downscaling_rationale_65",
+      "cropsuitelite_tests_test_precipitation_coast",
+      "cropsuitelite_tests_test_precipitation_coast_precipitationcoasttest",
+      "cropsuitelite_tests_test_precipitation_coast_precipitationcoasttest_resample",
+      "cropsuitelite_tests_test_precipitation_coast_precipitationcoasttest_test_all_missing_produces_only_nodata",
+      "cropsuitelite_tests_test_precipitation_coast_precipitationcoasttest_test_destination_ocean_is_restored_for_zero_and_nan_masks",
+      "cropsuitelite_tests_test_precipitation_coast_precipitationcoasttest_test_equal_grid_preserves_coast_and_legitimate_dry_days",
+      "cropsuitelite_tests_test_precipitation_coast_precipitationcoasttest_test_numeric_nodata_and_nonfinite_values_are_not_dry_days",
+      "cropsuitelite_tests_test_precipitation_coast_precipitationcoasttest_test_resizing_coast_never_dilutes_constant_land_rain",
+      "cropsuitelite_tests_test_precipitation_coast_rationale_1",
+      "cropsuitelite_tests_test_precipitation_units_precipitationunitstest",
+      "cropsuitelite_tests_test_precipitation_units_precipitationunitstest_setup",
+      "cropsuitelite_tests_test_precipitation_units_precipitationunitstest_test_downscaling_stores_tenths_for_both_methods",
+      "cropsuitelite_tests_test_precipitation_units_precipitationunitstest_test_numpy_membership_and_sowing_threshold_use_consistent_units",
+      "cropsuitelite_tests_test_precipitation_units_precipitationunitstest_test_xarray_membership_matches_numpy",
+      "cropsuitelite_tests_test_precipitation_units_precipitationunitstest_test_xarray_membership_matches_numpy_dataset",
+      "cropsuitelite_tests_test_precipitation_units_precipitationunitstest_weather"
+    ],
+    "10": [
+      "scripts_download_soilgrids_huaura",
+      "scripts_download_soilgrids_huaura_crop_reproject",
+      "scripts_download_soilgrids_huaura_get_vrt",
+      "scripts_download_soilgrids_huaura_main"
+    ],
+    "11": [
+      "scripts_assemble_soil_final",
+      "scripts_assemble_soil_final_copy_files",
+      "scripts_assemble_soil_final_copy_single"
+    ],
+    "12": [
+      "scripts_crop_bdticm_huaura",
+      "scripts_crop_bdticm_huaura_rationale_40",
+      "scripts_crop_bdticm_huaura_read_remote_chunk"
+    ],
+    "13": [
+      "scripts_fill_soil_nodata_raw",
+      "scripts_fill_soil_nodata_raw_is_invalid",
+      "scripts_fill_soil_nodata_raw_nearest_valid"
+    ],
+    "14": [
+      "scripts_compare_soildepth_sources",
+      "scripts_compare_soildepth_sources_show_case"
+    ],
+    "15": [
+      "scripts_prepare_soilgrids_cropsuite",
+      "scripts_prepare_soilgrids_cropsuite_main"
+    ],
+    "16": [
+      "cropsuitelite_docs_imgs_as_membershipfunction_png"
+    ],
+    "17": [
+      "cropsuitelite_docs_imgs_as_membershipfunction_sol_png"
+    ],
+    "18": [
+      "cropsuitelite_docs_javascripts_tables"
+    ],
+    "19": [
+      "scripts_check_coastal_landsea_cell"
+    ],
+    "20": [
+      "scripts_check_missing_0041667"
+    ],
+    "21": [
+      "scripts_check_missing_cells_geometry"
+    ],
+    "22": [
+      "scripts_check_nearest_valid_missing"
+    ],
+    "23": [
+      "scripts_check_netcdf_files"
+    ],
+    "24": [
+      "scripts_check_raw_missing_cells"
+    ],
+    "25": [
+      "scripts_check_wise_d1_weighting"
+    ],
+    "26": [
+      "scripts_create_huaura_mask"
+    ],
+    "27": [
+      "scripts_create_huaura_mask_from_dem"
+    ],
+    "28": [
+      "scripts_delete_bad_netcdf"
+    ],
+    "29": [
+      "scripts_diagnose_raw_nodata_components"
+    ],
+    "30": [
+      "scripts_download_dem_copernicus_huaura"
+    ],
+    "31": [
+      "scripts_download_dem_huaura"
+    ],
+    "32": [
+      "scripts_download_dem_huaura_py3dep"
+    ],
+    "33": [
+      "scripts_download_dem_srtm_huaura"
+    ],
+    "34": [
+      "scripts_download_pelletier_nasa"
+    ],
+    "35": [
+      "scripts_download_srtm_huaura"
+    ],
+    "36": [
+      "scripts_extract_huaura_boundary"
+    ],
+    "37": [
+      "scripts_inspect_wise_outliers"
+    ],
+    "38": [
+      "scripts_prepare_dem_0041667"
+    ],
+    "39": [
+      "scripts_prepare_landsea_0041667_majority"
+    ],
+    "40": [
+      "scripts_prepare_landsea_huaura"
+    ],
+    "41": [
+      "scripts_prepare_reference_grid_0041667"
+    ],
+    "42": [
+      "scripts_prepare_salinity_huaura"
+    ],
+    "43": [
+      "scripts_prepare_soil_0041667"
+    ],
+    "44": [
+      "scripts_prepare_soildepth_huaura"
+    ],
+    "45": [
+      "scripts_prepare_soilgrids_huaura"
+    ],
+    "46": [
+      "scripts_prepare_wise_huaura"
+    ],
+    "47": [
+      "scripts_test_soilgrids_download"
+    ],
+    "48": [
+      "scripts_validate_huaura_boundary"
+    ]
+  },
+  "cohesion": {
+    "0": 0.056962025316455694,
+    "1": 0.05819209039548023,
+    "2": 0.05376972530683811,
+    "3": 0.08139534883720931,
+    "4": 0.08780487804878048,
+    "5": 0.11586452762923351,
+    "6": 0.10967741935483871,
+    "7": 0.09686609686609686,
+    "8": 0.16374269005847952,
+    "9": 0.16339869281045752,
+    "10": 0.8333333333333334,
+    "11": 0.6666666666666666,
+    "12": 0.6666666666666666,
+    "13": 0.6666666666666666,
+    "14": 1.0,
+    "15": 1.0,
+    "16": 1.0,
+    "17": 1.0,
+    "18": 1.0,
+    "19": 1.0,
+    "20": 1.0,
+    "21": 1.0,
+    "22": 1.0,
+    "23": 1.0,
+    "24": 1.0,
+    "25": 1.0,
+    "26": 1.0,
+    "27": 1.0,
+    "28": 1.0,
+    "29": 1.0,
+    "30": 1.0,
+    "31": 1.0,
+    "32": 1.0,
+    "33": 1.0,
+    "34": 1.0,
+    "35": 1.0,
+    "36": 1.0,
+    "37": 1.0,
+    "38": 1.0,
+    "39": 1.0,
+    "40": 1.0,
+    "41": 1.0,
+    "42": 1.0,
+    "43": 1.0,
+    "44": 1.0,
+    "45": 1.0,
+    "46": 1.0,
+    "47": 1.0,
+    "48": 1.0
+  },
+  "gods": [
+    {
+      "id": "cropsuitelite_src_climate_suitability_main_climsuit_new",
+      "label": "climsuit_new()",
+      "degree": 20
+    },
+    {
+      "id": "cropsuitelite_solutions_membership_functions_cropsensitivity",
+      "label": "CropSensitivity",
+      "degree": 19
+    },
+    {
+      "id": "cropsuitelite_src_climate_suitability_main_xarray_process_day_climsuit_xarray",
+      "label": "process_day_climsuit_xarray()",
+      "degree": 19
+    },
+    {
+      "id": "cropsuitelite_cropsuite_cropsuitelite",
+      "label": "CropSuiteLite",
+      "degree": 16
+    },
+    {
+      "id": "cropsuitelite_datasets_utils_nexgenpreprocessing",
+      "label": "NexGenPreProcessing",
+      "degree": 15
+    },
+    {
+      "id": "cropsuitelite_src_data_tools_load_specified_lines",
+      "label": "load_specified_lines()",
+      "degree": 15
+    },
+    {
+      "id": "cropsuitelite_src_multicrop_run_evaluation",
+      "label": "run_evaluation()",
+      "degree": 15
+    },
+    {
+      "id": "cropsuitelite_src_crop_suitability_main_cropsuitability",
+      "label": "cropsuitability()",
+      "degree": 14
+    },
+    {
+      "id": "cropsuitelite_src_check_files_check_all_inputs",
+      "label": "check_all_inputs()",
+      "degree": 13
+    },
+    {
+      "id": "cropsuitelite_src_read_plant_params_read_crop_parameterizations_files",
+      "label": "read_crop_parameterizations_files()",
+      "degree": 12
+    }
+  ],
+  "surprises": [
+    {
+      "source": "Calculates climate suitability for multiple plants based on the CropSuite…",
+      "target": "climate_suitability_xarray()",
+      "source_files": [
+        "CropSuiteLite/src/climate_suitability_main.py",
+        "CropSuiteLite/src/climate_suitability_main_xarray.py"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "rationale_for",
+      "why": "bridges separate communities; peripheral node `Calculates climate suitability for multiple plants based on the CropSuite…` unexpectedly reaches hub `climate_suitability_xarray()`"
+    },
+    {
+      "source": "change_otherst_parameters()",
+      "target": "CropSensitivity",
+      "source_files": [
+        "CropSuiteLite/run_cropsuitelite.py",
+        "CropSuiteLite/solutions/membership_functions.py"
+      ],
+      "confidence": "INFERRED",
+      "relation": "uses",
+      "why": "inferred connection - not explicitly stated in source"
+    },
+    {
+      "source": "change_st1_parameter()",
+      "target": "CropSensitivity",
+      "source_files": [
+        "CropSuiteLite/run_cropsuitelite.py",
+        "CropSuiteLite/solutions/membership_functions.py"
+      ],
+      "confidence": "INFERRED",
+      "relation": "uses",
+      "why": "inferred connection - not explicitly stated in source"
+    },
+    {
+      "source": "climate_suitability_xarray()",
+      "target": "BaseProcessor",
+      "source_files": [
+        "CropSuiteLite/src/climate_suitability_main_xarray.py",
+        "CropSuiteLite/datasets/utils.py"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "bridges separate communities"
+    },
+    {
+      "source": "cropsuitability()",
+      "target": "get_id_list_start()",
+      "source_files": [
+        "CropSuiteLite/src/crop_suitability_main.py",
+        "CropSuiteLite/src/check_files.py"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "bridges separate communities"
+    }
+  ],
+  "questions": [
+    {
+      "type": "bridge_node",
+      "question": "Why does `main()` connect `CropSuitLite Model Controller` to `Crop Evaluation and Metrics`?",
+      "why": "High betweenness centrality (0.117) - this node is a cross-community bridge."
+    },
+    {
+      "type": "bridge_node",
+      "question": "Why does `CropSuiteLite` connect `CropSuitLite Model Controller` to `Crop Climate Suitability`?",
+      "why": "High betweenness centrality (0.108) - this node is a cross-community bridge."
+    },
+    {
+      "type": "bridge_node",
+      "question": "Why does `BaseProcessor` connect `NextGen Data Preprocessing` to `Xarray Climate Suitability`?",
+      "why": "High betweenness centrality (0.074) - this node is a cross-community bridge."
+    },
+    {
+      "type": "verify_inferred",
+      "question": "Are the 2 inferred relationships involving `CropSensitivity` (e.g. with `change_otherst_parameters()` and `change_st1_parameter()`) actually correct?",
+      "why": "`CropSensitivity` has 2 INFERRED edges - model-reasoned connections that need verification."
+    },
+    {
+      "type": "verify_inferred",
+      "question": "Are the 17 inferred relationships involving `Path` (e.g. with `main()` and `main()`) actually correct?",
+      "why": "`Path` has 17 INFERRED edges - model-reasoned connections that need verification."
+    },
+    {
+      "type": "isolated_nodes",
+      "question": "What connects `Membership Functions Diagram`, `Modified Membership Functions Diagram` to the rest of the system?",
+      "why": "2 weakly-connected nodes found - possible documentation gaps or missing edges."
+    },
+    {
+      "type": "low_cohesion",
+      "question": "Should `Crop Climate Suitability` be split into smaller, more focused modules?",
+      "why": "Cohesion score 0.056962025316455694 - nodes in this community are weakly interconnected."
+    }
+  ]
+}

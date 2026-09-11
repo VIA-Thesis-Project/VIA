@@ -1,0 +1,734 @@
+{
+  ".codex/hooks.json": {
+    "mtime": 1789107315.391215,
+    "seen": 1789107953.4680176,
+    "ast_hash": "5ebef3dd159986e465ab65e4014107ec",
+    "semantic_hash": "5ebef3dd159986e465ab65e4014107ec"
+  },
+  "CropSuiteLite/CropSuite.py": {
+    "mtime": 1788256418.717763,
+    "seen": 1789107953.4680247,
+    "ast_hash": "9a333fbb073bad7abe06c3a00bd7b263",
+    "semantic_hash": "9a333fbb073bad7abe06c3a00bd7b263"
+  },
+  "CropSuiteLite/datasets/create_spatial_datasets.py": {
+    "mtime": 1788883561.9286058,
+    "seen": 1789107953.4680266,
+    "ast_hash": "2a4d9a5137ebd27fa4a77021684b669c",
+    "semantic_hash": "2a4d9a5137ebd27fa4a77021684b669c"
+  },
+  "CropSuiteLite/datasets/download_data.py": {
+    "mtime": 1788218836.616223,
+    "seen": 1789107953.4680278,
+    "ast_hash": "30a25a204b5c3c322be175fa10881c16",
+    "semantic_hash": "30a25a204b5c3c322be175fa10881c16"
+  },
+  "CropSuiteLite/datasets/utils.py": {
+    "mtime": 1788884185.5417128,
+    "seen": 1789107953.4680293,
+    "ast_hash": "7fe110d8b40a2e4445ee5a6f4ea38b4a",
+    "semantic_hash": "7fe110d8b40a2e4445ee5a6f4ea38b4a"
+  },
+  "CropSuiteLite/docs/javascripts/tables.js": {
+    "mtime": 1788218836.6371384,
+    "seen": 1789107953.46803,
+    "ast_hash": "587acf9fa3c221febf5abab77c0d4b80",
+    "semantic_hash": "587acf9fa3c221febf5abab77c0d4b80"
+  },
+  "CropSuiteLite/evaluate.py": {
+    "mtime": 1789084407.6053097,
+    "seen": 1789107953.4680314,
+    "ast_hash": "e8762acfc3446b50976a3af1a0dd651d",
+    "semantic_hash": "e8762acfc3446b50976a3af1a0dd651d"
+  },
+  "CropSuiteLite/run_cropsuitelite.py": {
+    "mtime": 1789021266.9363654,
+    "seen": 1789107953.4680324,
+    "ast_hash": "181664e90263dadf2a362bf44f2c2562",
+    "semantic_hash": "181664e90263dadf2a362bf44f2c2562"
+  },
+  "CropSuiteLite/scripts/run_evaluation_engine.py": {
+    "mtime": 1789084407.6043057,
+    "seen": 1789107953.4680333,
+    "ast_hash": "0beee30d9d42e33b350bb4010e86fa13",
+    "semantic_hash": "0beee30d9d42e33b350bb4010e86fa13"
+  },
+  "CropSuiteLite/scripts/validate_huaura_environment.py": {
+    "mtime": 1788993096.8440242,
+    "seen": 1789107953.4680343,
+    "ast_hash": "6b1f12969320e9dcde5b5a66a596f906",
+    "semantic_hash": "6b1f12969320e9dcde5b5a66a596f906"
+  },
+  "CropSuiteLite/solutions/membership_functions.py": {
+    "mtime": 1788218836.7913604,
+    "seen": 1789107953.468035,
+    "ast_hash": "be8add226e53368b4c780cbfd4b12b88",
+    "semantic_hash": "be8add226e53368b4c780cbfd4b12b88"
+  },
+  "CropSuiteLite/solutions/utils.py": {
+    "mtime": 1788218836.7927437,
+    "seen": 1789107953.4680362,
+    "ast_hash": "1d3629f95a7a9ce9a98dbceb5a7ba421",
+    "semantic_hash": "1d3629f95a7a9ce9a98dbceb5a7ba421"
+  },
+  "CropSuiteLite/src/check_files.py": {
+    "mtime": 1788218836.793834,
+    "seen": 1789107953.468037,
+    "ast_hash": "f76fe7cd825973476bc46714483ee511",
+    "semantic_hash": "f76fe7cd825973476bc46714483ee511"
+  },
+  "CropSuiteLite/src/climate_suitability_main.py": {
+    "mtime": 1788992903.0442548,
+    "seen": 1789107953.4680376,
+    "ast_hash": "9200109c78666f07042e19601f15773a",
+    "semantic_hash": "9200109c78666f07042e19601f15773a"
+  },
+  "CropSuiteLite/src/climate_suitability_main_xarray.py": {
+    "mtime": 1788992931.1441436,
+    "seen": 1789107953.4680436,
+    "ast_hash": "23caadc1539ea607a4d551e81be358e1",
+    "semantic_hash": "23caadc1539ea607a4d551e81be358e1"
+  },
+  "CropSuiteLite/src/crop_rotation.py": {
+    "mtime": 1788218836.795844,
+    "seen": 1789107953.4680445,
+    "ast_hash": "6dafa0bf3efe38d5415b35d5470e6d1f",
+    "semantic_hash": "6dafa0bf3efe38d5415b35d5470e6d1f"
+  },
+  "CropSuiteLite/src/crop_suitability_main.py": {
+    "mtime": 1788992931.145112,
+    "seen": 1789107953.4680455,
+    "ast_hash": "32c0f93941abf463f7a5519dbbbfe810",
+    "semantic_hash": "32c0f93941abf463f7a5519dbbbfe810"
+  },
+  "CropSuiteLite/src/data_tools.py": {
+    "mtime": 1788218836.798292,
+    "seen": 1789107953.4680464,
+    "ast_hash": "fbc96a24b44f3c1ee1fc525dc4992d90",
+    "semantic_hash": "fbc96a24b44f3c1ee1fc525dc4992d90"
+  },
+  "CropSuiteLite/src/downscaling.py": {
+    "mtime": 1788992903.040231,
+    "seen": 1789107953.4680471,
+    "ast_hash": "f170c140d0d9a55540255947f09f296c",
+    "semantic_hash": "f170c140d0d9a55540255947f09f296c"
+  },
+  "CropSuiteLite/src/merge_geotiff.py": {
+    "mtime": 1788218836.7995086,
+    "seen": 1789107953.4680476,
+    "ast_hash": "40e78c23757ff38d0cb3f9403fa670c8",
+    "semantic_hash": "40e78c23757ff38d0cb3f9403fa670c8"
+  },
+  "CropSuiteLite/src/multicrop.py": {
+    "mtime": 1789084903.97203,
+    "seen": 1789107953.468048,
+    "ast_hash": "782f1be597bbe5060cace0bc29962c42",
+    "semantic_hash": "782f1be597bbe5060cace0bc29962c42"
+  },
+  "CropSuiteLite/src/nc_tools.py": {
+    "mtime": 1788218836.800641,
+    "seen": 1789107953.4680488,
+    "ast_hash": "fe69785016ac830f073530d82759da15",
+    "semantic_hash": "fe69785016ac830f073530d82759da15"
+  },
+  "CropSuiteLite/src/read_climate_ini.py": {
+    "mtime": 1788218836.800641,
+    "seen": 1789107953.46805,
+    "ast_hash": "81475adf39bff51f965807d3019f83f7",
+    "semantic_hash": "81475adf39bff51f965807d3019f83f7"
+  },
+  "CropSuiteLite/src/read_plant_params.py": {
+    "mtime": 1788218836.801651,
+    "seen": 1789107953.4680502,
+    "ast_hash": "6c670c62ca31e8254adb6240be4e2633",
+    "semantic_hash": "6c670c62ca31e8254adb6240be4e2633"
+  },
+  "CropSuiteLite/src/spatial_validity.py": {
+    "mtime": 1788992903.0382285,
+    "seen": 1789107953.4680507,
+    "ast_hash": "1c82d1a280a370b15f04b27c7bde6ef7",
+    "semantic_hash": "1c82d1a280a370b15f04b27c7bde6ef7"
+  },
+  "CropSuiteLite/tests/test_environmental_coverage.py": {
+    "mtime": 1788993052.1680355,
+    "seen": 1789107953.4680512,
+    "ast_hash": "7962f83572c2d908b0375fcc3beab127",
+    "semantic_hash": "7962f83572c2d908b0375fcc3beab127"
+  },
+  "CropSuiteLite/tests/test_huaura_entrypoint.py": {
+    "mtime": 1789021266.9394877,
+    "seen": 1789107953.468052,
+    "ast_hash": "02ac5194ac1c7f2d811d35a7a08b9e7f",
+    "semantic_hash": "02ac5194ac1c7f2d811d35a7a08b9e7f"
+  },
+  "CropSuiteLite/tests/test_multicrop.py": {
+    "mtime": 1789084931.6718776,
+    "seen": 1789107953.4680524,
+    "ast_hash": "0e7c8e7198e6f63791999567ffa41d7f",
+    "semantic_hash": "0e7c8e7198e6f63791999567ffa41d7f"
+  },
+  "CropSuiteLite/tests/test_precipitation_coast.py": {
+    "mtime": 1788992107.627461,
+    "seen": 1789107953.468053,
+    "ast_hash": "da9adfe383e61ac9a5ac433bffe799ac",
+    "semantic_hash": "da9adfe383e61ac9a5ac433bffe799ac"
+  },
+  "CropSuiteLite/tests/test_precipitation_units.py": {
+    "mtime": 1788936221.1305704,
+    "seen": 1789107953.4680538,
+    "ast_hash": "574494fbac379f19ad12a742c7c5a9de",
+    "semantic_hash": "574494fbac379f19ad12a742c7c5a9de"
+  },
+  "data/huaura/boundary/metadata.json": {
+    "mtime": 1788566071.3587677,
+    "seen": 1789107953.4680545,
+    "ast_hash": "afd6647801cf37de87ef5899e19a76d9",
+    "semantic_hash": "afd6647801cf37de87ef5899e19a76d9"
+  },
+  "scripts/assemble_soil_final.py": {
+    "mtime": 1788882635.329364,
+    "seen": 1789107953.468055,
+    "ast_hash": "8742f2f1ea9698b7e6a2906f5f6269c3",
+    "semantic_hash": "8742f2f1ea9698b7e6a2906f5f6269c3"
+  },
+  "scripts/check_coastal_landsea_cell.py": {
+    "mtime": 1788888485.2254238,
+    "seen": 1789107953.4680555,
+    "ast_hash": "3846020630880c7e681ec30871e22f7c",
+    "semantic_hash": "3846020630880c7e681ec30871e22f7c"
+  },
+  "scripts/check_missing_0041667.py": {
+    "mtime": 1788887666.648119,
+    "seen": 1789107953.468056,
+    "ast_hash": "4b7b092eaf469c6004261f8965c4bb1a",
+    "semantic_hash": "4b7b092eaf469c6004261f8965c4bb1a"
+  },
+  "scripts/check_missing_cells_geometry.py": {
+    "mtime": 1789021266.938365,
+    "seen": 1789107953.4680567,
+    "ast_hash": "d486bcb59fd8bf65c8dc48f8709180c3",
+    "semantic_hash": "d486bcb59fd8bf65c8dc48f8709180c3"
+  },
+  "scripts/check_nearest_valid_missing.py": {
+    "mtime": 1788884394.0108726,
+    "seen": 1789107953.4680574,
+    "ast_hash": "923c3c1f6282ec6347b01c809a84cc15",
+    "semantic_hash": "923c3c1f6282ec6347b01c809a84cc15"
+  },
+  "scripts/check_netcdf_files.py": {
+    "mtime": 1788646937.6313713,
+    "seen": 1789107953.4680579,
+    "ast_hash": "faf5c74955e517420ba18ed0b32f9f85",
+    "semantic_hash": "faf5c74955e517420ba18ed0b32f9f85"
+  },
+  "scripts/check_raw_missing_cells.py": {
+    "mtime": 1789021266.9394877,
+    "seen": 1789107953.4680586,
+    "ast_hash": "d05fee92eeaab9cd53663b2447aa3002",
+    "semantic_hash": "d05fee92eeaab9cd53663b2447aa3002"
+  },
+  "scripts/check_wise_d1_weighting.py": {
+    "mtime": 1788826159.939268,
+    "seen": 1789107953.468059,
+    "ast_hash": "874b4c0aa4f75a77d505295535821dff",
+    "semantic_hash": "874b4c0aa4f75a77d505295535821dff"
+  },
+  "scripts/compare_soildepth_sources.py": {
+    "mtime": 1788881739.189316,
+    "seen": 1789107953.4680595,
+    "ast_hash": "db9f568f7f3dedc049ba5d24d11f9cbc",
+    "semantic_hash": "db9f568f7f3dedc049ba5d24d11f9cbc"
+  },
+  "scripts/create_huaura_mask.py": {
+    "mtime": 1788646180.8415313,
+    "seen": 1789107953.4680603,
+    "ast_hash": "4b5d8ea1d396450bcfd58c96389cddb5",
+    "semantic_hash": "4b5d8ea1d396450bcfd58c96389cddb5"
+  },
+  "scripts/create_huaura_mask_from_dem.py": {
+    "mtime": 1788659391.4122164,
+    "seen": 1789107953.4680607,
+    "ast_hash": "0ee6173c0a093e411ca8a633c8b5b06b",
+    "semantic_hash": "0ee6173c0a093e411ca8a633c8b5b06b"
+  },
+  "scripts/crop_bdticm_huaura.py": {
+    "mtime": 1788880081.9365973,
+    "seen": 1789107953.4680614,
+    "ast_hash": "efec2e16e0b4f6aa182dfe7e7cba439e",
+    "semantic_hash": "efec2e16e0b4f6aa182dfe7e7cba439e"
+  },
+  "scripts/delete_bad_netcdf.py": {
+    "mtime": 1788649452.6027615,
+    "seen": 1789107953.4680624,
+    "ast_hash": "7868c65e5ad91fed366ca1897c50cdb3",
+    "semantic_hash": "7868c65e5ad91fed366ca1897c50cdb3"
+  },
+  "scripts/diagnose_raw_nodata_components.py": {
+    "mtime": 1788887804.090125,
+    "seen": 1789107953.4680629,
+    "ast_hash": "dc31728ea930f7efe8e59a5a6509f56e",
+    "semantic_hash": "dc31728ea930f7efe8e59a5a6509f56e"
+  },
+  "scripts/download_dem_copernicus_huaura.py": {
+    "mtime": 1788660158.2531097,
+    "seen": 1789107953.4680636,
+    "ast_hash": "6f72b558386dca03d938c0366d8c05a4",
+    "semantic_hash": "6f72b558386dca03d938c0366d8c05a4"
+  },
+  "scripts/download_dem_huaura.py": {
+    "mtime": 1788657660.9431167,
+    "seen": 1789107953.468064,
+    "ast_hash": "38fa074c50015aec96f37a6e94551d85",
+    "semantic_hash": "38fa074c50015aec96f37a6e94551d85"
+  },
+  "scripts/download_dem_huaura_py3dep.py": {
+    "mtime": 1788659184.6480174,
+    "seen": 1789107953.4680645,
+    "ast_hash": "e3f39e1b154c8b2b61f952939529451c",
+    "semantic_hash": "e3f39e1b154c8b2b61f952939529451c"
+  },
+  "scripts/download_dem_srtm_huaura.py": {
+    "mtime": 1788660237.3820777,
+    "seen": 1789107953.468065,
+    "ast_hash": "945020f6168144f7a2af5f4b8273b854",
+    "semantic_hash": "945020f6168144f7a2af5f4b8273b854"
+  },
+  "scripts/download_pelletier_nasa.py": {
+    "mtime": 1788835652.2057881,
+    "seen": 1789107953.4680655,
+    "ast_hash": "1139320613fdd1eb71dac173a7575f09",
+    "semantic_hash": "1139320613fdd1eb71dac173a7575f09"
+  },
+  "scripts/download_soilgrids_huaura.py": {
+    "mtime": 1788654530.7200553,
+    "seen": 1789107953.4680662,
+    "ast_hash": "e085f4017328c6ac96646883b5f9ec2b",
+    "semantic_hash": "e085f4017328c6ac96646883b5f9ec2b"
+  },
+  "scripts/download_srtm_huaura.py": {
+    "mtime": 1788822864.0593653,
+    "seen": 1789107953.468067,
+    "ast_hash": "2228ddc1db4bbb480be81f4c6aae6c06",
+    "semantic_hash": "2228ddc1db4bbb480be81f4c6aae6c06"
+  },
+  "scripts/extract_huaura_boundary.py": {
+    "mtime": 1788565925.2474513,
+    "seen": 1789107953.4680674,
+    "ast_hash": "f3d5953d91f87fb6473cb76c65f1e11e",
+    "semantic_hash": "f3d5953d91f87fb6473cb76c65f1e11e"
+  },
+  "scripts/fill_soil_nodata_raw.py": {
+    "mtime": 1788884508.5042243,
+    "seen": 1789107953.4680676,
+    "ast_hash": "aef1baeb5fb960020ec815ab5b49305a",
+    "semantic_hash": "aef1baeb5fb960020ec815ab5b49305a"
+  },
+  "scripts/inspect_wise_outliers.py": {
+    "mtime": 1788826028.2772534,
+    "seen": 1789107953.4680681,
+    "ast_hash": "22acc5733fbc94b5cd4ba219700c916d",
+    "semantic_hash": "22acc5733fbc94b5cd4ba219700c916d"
+  },
+  "scripts/prepare_dem_0041667.py": {
+    "mtime": 1788887457.1543727,
+    "seen": 1789107953.4680686,
+    "ast_hash": "c884384e75b94b4392470a4b22655833",
+    "semantic_hash": "c884384e75b94b4392470a4b22655833"
+  },
+  "scripts/prepare_landsea_0041667_majority.py": {
+    "mtime": 1788888564.8273394,
+    "seen": 1789107953.4680693,
+    "ast_hash": "1b14a9478040d0fc18cd2b089fd7785d",
+    "semantic_hash": "1b14a9478040d0fc18cd2b089fd7785d"
+  },
+  "scripts/prepare_landsea_huaura.py": {
+    "mtime": 1788888382.8161848,
+    "seen": 1789107953.4680698,
+    "ast_hash": "60952a2d3c5ea498e8e0daf43790ed04",
+    "semantic_hash": "60952a2d3c5ea498e8e0daf43790ed04"
+  },
+  "scripts/prepare_reference_grid_0041667.py": {
+    "mtime": 1788887320.218167,
+    "seen": 1789107953.4680705,
+    "ast_hash": "46e4fb538ef26389d6532b226a90f423",
+    "semantic_hash": "46e4fb538ef26389d6532b226a90f423"
+  },
+  "scripts/prepare_salinity_huaura.py": {
+    "mtime": 1788827211.3359866,
+    "seen": 1789107953.468071,
+    "ast_hash": "61efdce77d5a372fae0db8da5d35ab55",
+    "semantic_hash": "61efdce77d5a372fae0db8da5d35ab55"
+  },
+  "scripts/prepare_soil_0041667.py": {
+    "mtime": 1788888194.6843376,
+    "seen": 1789107953.4680717,
+    "ast_hash": "36f344d4cf6e2db4085b71bc640cd1e7",
+    "semantic_hash": "36f344d4cf6e2db4085b71bc640cd1e7"
+  },
+  "scripts/prepare_soildepth_huaura.py": {
+    "mtime": 1788882455.041353,
+    "seen": 1789107953.4680722,
+    "ast_hash": "430006c81c5795f22e1653c81a7a3ed1",
+    "semantic_hash": "430006c81c5795f22e1653c81a7a3ed1"
+  },
+  "scripts/prepare_soilgrids_cropsuite.py": {
+    "mtime": 1788656673.9376967,
+    "seen": 1789107953.4680727,
+    "ast_hash": "34e11a3dc5b0559ef04bb3e3c315b25b",
+    "semantic_hash": "34e11a3dc5b0559ef04bb3e3c315b25b"
+  },
+  "scripts/prepare_soilgrids_huaura.py": {
+    "mtime": 1788654293.026881,
+    "seen": 1789107953.4680731,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "scripts/prepare_wise_huaura.py": {
+    "mtime": 1788826301.10867,
+    "seen": 1789107953.4680738,
+    "ast_hash": "3e4cff06329b88e7ed6cb6562707398c",
+    "semantic_hash": "3e4cff06329b88e7ed6cb6562707398c"
+  },
+  "scripts/test_soilgrids_download.py": {
+    "mtime": 1788654222.5048974,
+    "seen": 1789107953.4680743,
+    "ast_hash": "ec7e0c265355ac56901060747b418fef",
+    "semantic_hash": "ec7e0c265355ac56901060747b418fef"
+  },
+  "scripts/validate_huaura_boundary.py": {
+    "mtime": 1788566004.0876846,
+    "seen": 1789107953.468075,
+    "ast_hash": "eb13c1319ce50c4a82ee47aaf5204f59",
+    "semantic_hash": "eb13c1319ce50c4a82ee47aaf5204f59"
+  },
+  "CropSuiteLite/docs/imgs/as_membershipfunction.png": {
+    "mtime": 1788218836.6330574,
+    "seen": 1789107953.4680755,
+    "ast_hash": "599648859fbbfc89f2512968880b88b5",
+    "semantic_hash": "599648859fbbfc89f2512968880b88b5"
+  },
+  "CropSuiteLite/docs/imgs/as_membershipfunction_sol.png": {
+    "mtime": 1788218836.6346464,
+    "seen": 1789107953.468076,
+    "ast_hash": "596aa29aa392a9e64b48d385bd4c8d1d",
+    "semantic_hash": "596aa29aa392a9e64b48d385bd4c8d1d"
+  },
+  ".codex/skills/graphify/SKILL.md": {
+    "mtime": 1789107315.380216,
+    "seen": 1789135460.8657625,
+    "ast_hash": "212b55d95333d84e14262f8ec83faa2b",
+    "semantic_hash": "212b55d95333d84e14262f8ec83faa2b"
+  },
+  "AGENTS.md": {
+    "mtime": 1789108773.7169173,
+    "seen": 1789135460.8657644,
+    "ast_hash": "043f7f563ec4ed7c9be0009c2c27dc41",
+    "semantic_hash": "043f7f563ec4ed7c9be0009c2c27dc41"
+  },
+  "CropSuiteLite/.github/workflows/ci.yml": {
+    "mtime": 1788218836.6097293,
+    "seen": 1789135460.8657653,
+    "ast_hash": "dc5f98641d8a7fdcba1858ecf5072e26",
+    "semantic_hash": "dc5f98641d8a7fdcba1858ecf5072e26"
+  },
+  "CropSuiteLite/docs/Getting_Started/download_cmp6.md": {
+    "mtime": 1788218836.6182475,
+    "seen": 1789135460.8657663,
+    "ast_hash": "ace493eb3f135fef03396f0a2813fd57",
+    "semantic_hash": "ace493eb3f135fef03396f0a2813fd57"
+  },
+  "CropSuiteLite/docs/Getting_Started/from_climatedata_tocrsdatatype.md": {
+    "mtime": 1788218836.6192431,
+    "seen": 1789135460.8657677,
+    "ast_hash": "c07c0426188c5f84f0850e8547445cb0",
+    "semantic_hash": "c07c0426188c5f84f0850e8547445cb0"
+  },
+  "CropSuiteLite/docs/Getting_Started/init.md": {
+    "mtime": 1788218836.6202266,
+    "seen": 1789135460.8657684,
+    "ast_hash": "2b91bb3544cca4af3fc443f3edfe928d",
+    "semantic_hash": "2b91bb3544cca4af3fc443f3edfe928d"
+  },
+  "CropSuiteLite/docs/Getting_Started/running_cropsuite.md": {
+    "mtime": 1788218836.6202266,
+    "seen": 1789135460.8657694,
+    "ast_hash": "3b3aee5b705f9eda8cf59e2c59809200",
+    "semantic_hash": "3b3aee5b705f9eda8cf59e2c59809200"
+  },
+  "CropSuiteLite/docs/api/datasets.md": {
+    "mtime": 1788218836.621223,
+    "seen": 1789135460.86577,
+    "ast_hash": "c9bddd95dab102d1a5e81648625222b0",
+    "semantic_hash": "c9bddd95dab102d1a5e81648625222b0"
+  },
+  "CropSuiteLite/docs/api/main.md": {
+    "mtime": 1788218836.622222,
+    "seen": 1789135460.8657706,
+    "ast_hash": "bacab622debce319dc2f7b4d74b22e71",
+    "semantic_hash": "bacab622debce319dc2f7b4d74b22e71"
+  },
+  "CropSuiteLite/docs/api/modules.md": {
+    "mtime": 1788218836.622222,
+    "seen": 1789135460.8657713,
+    "ast_hash": "9d66b34f64f3f7a0f0ec41a2191cf853",
+    "semantic_hash": "9d66b34f64f3f7a0f0ec41a2191cf853"
+  },
+  "CropSuiteLite/docs/api/solutions.md": {
+    "mtime": 1788218836.6237195,
+    "seen": 1789135460.865772,
+    "ast_hash": "78b99697429b44a2b8ceac052b01422a",
+    "semantic_hash": "78b99697429b44a2b8ceac052b01422a"
+  },
+  "CropSuiteLite/docs/atlas_solutions/atlas_solution_example.md": {
+    "mtime": 1788218836.6247134,
+    "seen": 1789135460.8657727,
+    "ast_hash": "988fac646ec733fbded717cada7475ee",
+    "semantic_hash": "988fac646ec733fbded717cada7475ee"
+  },
+  "CropSuiteLite/docs/atlas_solutions/data_visualization.md": {
+    "mtime": 1788218836.6257153,
+    "seen": 1789135460.8657737,
+    "ast_hash": "6dd17deefcf64a4c2d16f729382eab85",
+    "semantic_hash": "6dd17deefcf64a4c2d16f729382eab85"
+  },
+  "CropSuiteLite/docs/atlas_solutions/supporting_material.md": {
+    "mtime": 1788218836.6267135,
+    "seen": 1789135460.8657742,
+    "ast_hash": "435d4c3b4bd8fab535ddd32aa017b709",
+    "semantic_hash": "435d4c3b4bd8fab535ddd32aa017b709"
+  },
+  "CropSuiteLite/docs/huaura_environment_correction.md": {
+    "mtime": 1789021307.8801444,
+    "seen": 1789135460.8657749,
+    "ast_hash": "94231b7764362b6e28fb66a61d62e105",
+    "semantic_hash": "94231b7764362b6e28fb66a61d62e105"
+  },
+  "CropSuiteLite/docs/huaura_precipitation_downscaling.md": {
+    "mtime": 1789021307.8811407,
+    "seen": 1789135460.8657758,
+    "ast_hash": "9fee535e34fd28e33d713daab43343f0",
+    "semantic_hash": "9fee535e34fd28e33d713daab43343f0"
+  },
+  "CropSuiteLite/docs/huaura_precipitation_units.md": {
+    "mtime": 1789021307.883143,
+    "seen": 1789135460.8657763,
+    "ast_hash": "817cfe5c524232bb4319168541c64257",
+    "semantic_hash": "817cfe5c524232bb4319168541c64257"
+  },
+  "CropSuiteLite/docs/index.md": {
+    "mtime": 1788218836.6361303,
+    "seen": 1789135460.8657787,
+    "ast_hash": "e2fa9d34cc8c2011e94d613dd7345aba",
+    "semantic_hash": "e2fa9d34cc8c2011e94d613dd7345aba"
+  },
+  "CropSuiteLite/docs/installation.md": {
+    "mtime": 1788218836.6361303,
+    "seen": 1789135460.8657796,
+    "ast_hash": "70d62319af2436532412530083b005fc",
+    "semantic_hash": "70d62319af2436532412530083b005fc"
+  },
+  "CropSuiteLite/docs/multicrop_evaluation.md": {
+    "mtime": 1789087641.8576217,
+    "seen": 1789135460.86578,
+    "ast_hash": "a58bf4d25e6da3b6a274d8ec621f0af7",
+    "semantic_hash": "a58bf4d25e6da3b6a274d8ec621f0af7"
+  },
+  "CropSuiteLite/mkdocs.yml": {
+    "mtime": 1788218836.6421375,
+    "seen": 1789135460.8657808,
+    "ast_hash": "3899d892ef0f67c0eedec54c8746ac4f",
+    "semantic_hash": "3899d892ef0f67c0eedec54c8746ac4f"
+  },
+  "CropSuiteLite/plant_params/~template.txt": {
+    "mtime": 1788218836.7182465,
+    "seen": 1789135460.8657815,
+    "ast_hash": "3f40d2aeeca441e6c0bc7b2f50dfc1cd",
+    "semantic_hash": "3f40d2aeeca441e6c0bc7b2f50dfc1cd"
+  },
+  "CropSuiteLite/requirements.txt": {
+    "mtime": 1789087720.4710906,
+    "seen": 1789135460.865782,
+    "ast_hash": "7a1b04648313047d48a668b585f9a222",
+    "semantic_hash": "7a1b04648313047d48a668b585f9a222"
+  },
+  "CropSuiteLite/yaml_configurations/crop_suite_datasets.yaml": {
+    "mtime": 1788218836.803935,
+    "seen": 1789135460.8657827,
+    "ast_hash": "9a56d5616b14e45f754b18533a38d4b8",
+    "semantic_hash": "9a56d5616b14e45f754b18533a38d4b8"
+  },
+  "CropSuiteLite/yaml_configurations/crop_suite_datasets_huaura.yaml": {
+    "mtime": 1788884819.1710782,
+    "seen": 1789135460.8657832,
+    "ast_hash": "cc9b387ed5bc8d7e5b8d34540fa31045",
+    "semantic_hash": "cc9b387ed5bc8d7e5b8d34540fa31045"
+  },
+  "CropSuiteLite/yaml_configurations/crop_suite_datasets_huaura_0041667.yaml": {
+    "mtime": 1788888874.5558434,
+    "seen": 1789135460.8657842,
+    "ast_hash": "481c3242f7cb7b3042a90e8e7c5255f0",
+    "semantic_hash": "481c3242f7cb7b3042a90e8e7c5255f0"
+  },
+  "CropSuiteLite/yaml_configurations/download_cmip6.yaml": {
+    "mtime": 1788218836.8049433,
+    "seen": 1789135460.8657846,
+    "ast_hash": "8e5dae0a7c3f6d13e82f6ca63832d07c",
+    "semantic_hash": "8e5dae0a7c3f6d13e82f6ca63832d07c"
+  },
+  "CropSuiteLite/yaml_configurations/download_cmip6_huaura.yaml": {
+    "mtime": 1788570214.916165,
+    "seen": 1789135460.8657851,
+    "ast_hash": "1404254ff51d8c85d9487e67b6cd4691",
+    "semantic_hash": "1404254ff51d8c85d9487e67b6cd4691"
+  },
+  "CropSuiteLite/yaml_configurations/general_config_huaura.yaml": {
+    "mtime": 1789021266.9353638,
+    "seen": 1789135460.8657858,
+    "ast_hash": "10a194d129d01bc6d32908d8233da7b8",
+    "semantic_hash": "10a194d129d01bc6d32908d8233da7b8"
+  },
+  "CropSuiteLite/yaml_configurations/general_config_solutions.yaml": {
+    "mtime": 1788218836.8049433,
+    "seen": 1789135460.8657863,
+    "ast_hash": "489ca50f09f50949ff1dcb128d08a3d3",
+    "semantic_hash": "489ca50f09f50949ff1dcb128d08a3d3"
+  },
+  "CropSuiteLite/yaml_configurations/membership_options.yaml": {
+    "mtime": 1788218836.8059425,
+    "seen": 1789135460.8657868,
+    "ast_hash": "094e17b049f9d7b6c752b9cca9b518d6",
+    "semantic_hash": "094e17b049f9d7b6c752b9cca9b518d6"
+  },
+  "CropSuiteLite/yaml_configurations/response_functions.yaml": {
+    "mtime": 1788218836.806944,
+    "seen": 1789135460.8657875,
+    "ast_hash": "d4c2cc17355f244cfe8d77e792c6f813",
+    "semantic_hash": "d4c2cc17355f244cfe8d77e792c6f813"
+  },
+  "README.md": {
+    "mtime": 1789087720.4720914,
+    "seen": 1789135460.8657882,
+    "ast_hash": "2518eb07d0453162b36e51837e64aa68",
+    "semantic_hash": "2518eb07d0453162b36e51837e64aa68"
+  },
+  "data/huaura/README.md": {
+    "mtime": 1788565548.6088104,
+    "seen": 1789135460.865789,
+    "ast_hash": "9f08b74489e9939222e0b709c20bdc62",
+    "semantic_hash": "9f08b74489e9939222e0b709c20bdc62"
+  },
+  "data/huaura/huaura_config.yaml": {
+    "mtime": 1788565524.7079725,
+    "seen": 1789135460.8657894,
+    "ast_hash": "81a5ce229f1e4028c28f23f3c4a10b60",
+    "semantic_hash": "81a5ce229f1e4028c28f23f3c4a10b60"
+  },
+  "docs/adr/ADR-001-modular-monolith.md": {
+    "mtime": 1789108860.9814627,
+    "seen": 1789135460.86579,
+    "ast_hash": "c07412e420059a1a815e0a882401a857",
+    "semantic_hash": "c07412e420059a1a815e0a882401a857"
+  },
+  "docs/adr/ADR-002-layered-bounded-contexts.md": {
+    "mtime": 1789108860.9824636,
+    "seen": 1789135460.8657906,
+    "ast_hash": "c3248191fb6e70e5d3a1adb4f36f0895",
+    "semantic_hash": "c3248191fb6e70e5d3a1adb4f36f0895"
+  },
+  "docs/adr/ADR-003-commands-queries-in-application.md": {
+    "mtime": 1789108860.9854643,
+    "seen": 1789135460.8657916,
+    "ast_hash": "b7b51702adf25ee8db41cdcdf515c235",
+    "semantic_hash": "b7b51702adf25ee8db41cdcdf515c235"
+  },
+  "docs/adr/ADR-004-cropsuite-port-adapter.md": {
+    "mtime": 1789108860.988471,
+    "seen": 1789135460.865792,
+    "ast_hash": "d788b8b5844a8790631bfe40000c298c",
+    "semantic_hash": "d788b8b5844a8790631bfe40000c298c"
+  },
+  "docs/adr/ADR-005-background-worker.md": {
+    "mtime": 1789108860.9904704,
+    "seen": 1789135460.8657928,
+    "ast_hash": "0adcf8a4f3f9fb0ea6ad8c0348c2a32f",
+    "semantic_hash": "0adcf8a4f3f9fb0ea6ad8c0348c2a32f"
+  },
+  "docs/adr/ADR-006-scientific-traceability.md": {
+    "mtime": 1789108860.991468,
+    "seen": 1789135460.8657932,
+    "ast_hash": "3c3912697e3f2bed88b43311e1167fc2",
+    "semantic_hash": "3c3912697e3f2bed88b43311e1167fc2"
+  },
+  "docs/adr/ADR-007-initial-deployment.md": {
+    "mtime": 1789108860.99346,
+    "seen": 1789135460.865794,
+    "ast_hash": "8efe5dc9539f2b8257196c6585ea31e8",
+    "semantic_hash": "8efe5dc9539f2b8257196c6585ea31e8"
+  },
+  "docs/adr/ADR-008-sequential-crop-execution.md": {
+    "mtime": 1789108860.994462,
+    "seen": 1789135460.8657951,
+    "ast_hash": "ea05fe548304ac41ccac523d06c41af0",
+    "semantic_hash": "ea05fe548304ac41ccac523d06c41af0"
+  },
+  "docs/adr/ADR-009-multicrop-evaluation.md": {
+    "mtime": 1789108860.9954605,
+    "seen": 1789135460.8657956,
+    "ast_hash": "c0b542513cd05ba67885d1612c575e06",
+    "semantic_hash": "c0b542513cd05ba67885d1612c575e06"
+  },
+  "docs/architecture/backend-structure.md": {
+    "mtime": 1789108773.7199147,
+    "seen": 1789135460.8657963,
+    "ast_hash": "c0e5d6de0ce470293d90cb4803b6acf6",
+    "semantic_hash": "c0e5d6de0ce470293d90cb4803b6acf6"
+  },
+  "docs/architecture/bounded-contexts.md": {
+    "mtime": 1789108773.718914,
+    "seen": 1789135460.865797,
+    "ast_hash": "ed50e909b702c4fdbb9c85136ac4b1e7",
+    "semantic_hash": "ed50e909b702c4fdbb9c85136ac4b1e7"
+  },
+  "docs/architecture/cropsuite-integration.md": {
+    "mtime": 1789108773.7219157,
+    "seen": 1789135460.865798,
+    "ast_hash": "b5ec18c813f961fc9a9c04e9986d78c2",
+    "semantic_hash": "b5ec18c813f961fc9a9c04e9986d78c2"
+  },
+  "docs/architecture/evaluation-flow.md": {
+    "mtime": 1789108773.7199147,
+    "seen": 1789135460.865799,
+    "ast_hash": "5299c377b42cbaf8dfa668eb10811071",
+    "semantic_hash": "5299c377b42cbaf8dfa668eb10811071"
+  },
+  "docs/architecture/overview.md": {
+    "mtime": 1789108773.7179146,
+    "seen": 1789135460.8657997,
+    "ast_hash": "39364a94450cb5c856d253746f59d9a9",
+    "semantic_hash": "39364a94450cb5c856d253746f59d9a9"
+  },
+  "docs/implementation/poc-preservation.md": {
+    "mtime": 1789108982.5201848,
+    "seen": 1789135460.8658004,
+    "ast_hash": "f9dda8459e16b35c59ba9379d8d31ee4",
+    "semantic_hash": "f9dda8459e16b35c59ba9379d8d31ee4"
+  },
+  "docs/implementation/roadmap.md": {
+    "mtime": 1789108982.5191884,
+    "seen": 1789135460.8658009,
+    "ast_hash": "da6fc795b180f91bcf4e998d02262df5",
+    "semantic_hash": "da6fc795b180f91bcf4e998d02262df5"
+  },
+  "graphify-out/converted/Arquitectura_y_backend_CropSuiteLite_Huaura_v2_0e904345.md": {
+    "mtime": 1789107353.114754,
+    "seen": 1789135460.8658018,
+    "ast_hash": "c34fd8ffe258fc04522e1884aaf7a809",
+    "semantic_hash": "c34fd8ffe258fc04522e1884aaf7a809"
+  },
+  "CropSuiteLite/docs/imgs/atlas-a.svg": {
+    "mtime": 1788218836.6346464,
+    "seen": 1789135460.8658025,
+    "ast_hash": "f417bdcb4f71006284ab89e8ea3a5327",
+    "semantic_hash": "f417bdcb4f71006284ab89e8ea3a5327"
+  }
+}
