@@ -1,0 +1,37 @@
+GENERAL_INFO:
+  process_climate: True
+  process_soil: False
+  process_land_sea: False
+  process_dem: False
+
+  clip_extent: [-77.7035, -11.4819, -76.53683333333333, -10.6069]
+
+  nworkers: 4
+
+  reference_mask_layer_path: '../data/huaura/masks/huaura_mask_0041667.tif'
+
+
+CLIMATE:
+  input_path: '../data/huaura/raw/nex-gddp-cmip6/'
+  output_path: '../data/huaura/processed_0041667/climate/'
+
+  periods:
+    - [2021, 2040]
+
+  ssps:
+    - ssp126
+
+
+SOIL:
+  input_path: '../data/huaura/raw/soil_final/'
+  output_path: '../data/huaura/processed_0041667/soil/'
+
+
+DEM:
+  input_path: '../data/huaura/raw/dem.tif'
+  output_path: '../data/huaura/processed_0041667/dem.tif'
+
+
+LANDSEA:
+  input_path: '../data/huaura/raw/landsea.tif'
+  output_path: '../data/huaura/processed_0041667/landsea.tif'

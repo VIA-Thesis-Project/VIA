@@ -1,0 +1,44 @@
+GENERAL:
+  # Use the reviewed INI directly; preserve its crop parameters and output cache.
+  run_config: 'config_access_esm1_5_ssp126_2021_2040.ini'
+  climate_scenarios:
+    - ../data/huaura/processed_0041667/climate/access-esm1-5_ssp126_2021_2040
+
+  soil_grids_data: '../data/huaura/processed_0041667/soil_cropsuite'
+
+  srtm_path: '../data/huaura/processed_0041667/dem.tif'
+
+  landsea_path: '../data/huaura/processed_0041667/landsea.tif'
+
+  output_path: 'results/huaura_environment_validation/run_mw_8gsjo/simulation'
+
+  config_path: 'ini_configurations/config_win_test.ini'
+
+  plant_param_dir: 'plant_params/available'
+
+  plant_params_output: 'plant_params/huaura_maize'
+
+  extent:
+    - -77.7035
+    - -10.6069
+    - -76.53683333333333
+    - -11.4819
+
+  final_resolution: 4
+
+  max_workers: 4
+
+  no_tiles: 1
+
+  day_interval: 10
+
+  consider_crop_rotation: n
+
+
+SOLUTIONS:
+  solutions_path: 'yaml_configurations/response_functions.yaml'
+
+  solution_codes: []
+
+  crop_codes:
+    - c1

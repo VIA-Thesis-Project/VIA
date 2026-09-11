@@ -1,0 +1,34 @@
+GENERAL_INFO:
+  output_dir: '../data/huaura/raw/nex-gddp-cmip6/'
+  
+  variables:
+    - pr
+    - tasmin
+    - tasmax
+    - rsds
+
+  years:
+    - 2021
+    - 2041
+
+  # Bounding box Huaura con margen
+  # min_lon, min_lat, max_lon, max_lat
+  clip_extent:
+    - -77.9
+    - -11.6
+    - -76.3
+    - -10.4
+
+  nworkers: 1
+
+
+CLIMATE:
+
+  gcms:
+    - ACCESS-ESM1-5
+
+  ssps:
+    - ssp126
+
+  url_root:
+    'https://nex-gddp-cmip6.s3-us-west-2.amazonaws.com/NEX-GDDP-CMIP6'

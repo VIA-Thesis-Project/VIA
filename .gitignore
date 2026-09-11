@@ -1,0 +1,45 @@
+# Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# IDE
+.idea/
+.vscode/
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Logs / temp
+*.log
+tmp/
+temp/
+
+# Scientific raw/downloaded data
+data/**/raw/
+downloads/
+
+# Large scientific files
+*.nc
+*.tif
+*.tiff
+*.zip
+*.mdb
+
+# Generated evaluation outputs
+results/evaluations/
+
+# Frontend
+node_modules/
+dist/
+coverage/
+
+# OS
+Thumbs.db
+.DS_Store

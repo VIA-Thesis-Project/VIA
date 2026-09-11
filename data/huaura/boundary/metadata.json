@@ -1,0 +1,9 @@
+{
+  "name": "Provincia de Huaura",
+  "country": "Peru",
+  "region": "Lima",
+  "crs": "EPSG:4326",
+  "area_km2": 4944.18,
+  "source": "GADM 4.1",
+  "geometry_type": "MultiPolygon"
+}

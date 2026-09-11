@@ -1,0 +1,29 @@
+study_area:
+  name: Huaura
+  country: Peru
+  region: Lima
+
+boundary:
+  file: boundary/huaura_province.geojson
+
+extent:
+  west: -77.7015
+  east: -76.5650
+  south: -11.4472
+  north: -10.6064
+
+coordinate_system:
+  crs: EPSG:4326
+
+datasets:
+  climate:
+    path: climate
+
+  soil:
+    path: soil
+
+  terrain:
+    path: terrain
+
+  masks:
+    path: masks

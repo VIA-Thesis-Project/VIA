@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+.venv/
+site/
+results/
+temp/
+hnd_crops/
+tmp_configurations/
+data/
+test.ipynb
+create_spatial_cropsuite_datasets.py
+run.log
