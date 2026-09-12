@@ -9,7 +9,7 @@ The first Farm Management increment implements a transport-to-domain path for pr
 - accepting GeoJSON `Polygon` and `MultiPolygon` parcel geometry; and
 - appending immutable parcel geometry versions while retaining earlier versions.
 
-The HTTP resources delegate to Application commands and queries. Application coordinates the `Project` and `Parcel` domain model through repository abstractions, and Infrastructure supplies process-local in-memory adapters. The FastAPI composition root wires these implementations together.
+The HTTP resources delegate to Application commands and queries. Application coordinates the `Project` and `Parcel` domain model through repository abstractions. Infrastructure supplies both process-local in-memory adapters and the durable PostgreSQL/PostGIS adapters described in [`farm-management-persistence.md`](farm-management-persistence.md). The FastAPI composition root selects and wires an implementation from environment settings.
 
 ## HTTP resources
 
@@ -35,9 +35,9 @@ These checks are structural. This increment does not claim full GIS topology val
 
 ## Explicit exclusions and provisional choices
 
-This slice does not implement authentication or authorization, durable database persistence, delete/rename operations, environmental coverage, evaluation requests, background workers, `ICropSuitabilityEngine`, or `CropSuiteAdapter`. It neither imports nor invokes CropSuiteLite.
+This slice does not implement authentication or authorization, delete/rename operations, environmental coverage, evaluation requests, background workers, `ICropSuitabilityEngine`, or `CropSuiteAdapter`. It neither imports nor invokes CropSuiteLite.
 
-The in-memory repositories are a replaceable Infrastructure adapter for development and tests. They lose data when the process restarts and do not resolve the open database-schema, concurrency, or final aggregate-boundary questions in [`backend-structure.md`](backend-structure.md). Authorization must be added through the Identity and Access public collaboration before these resources are exposed as a protected production API.
+The in-memory repositories remain replaceable Infrastructure adapters for development and tests and lose data when the process restarts. The durable adapter resolves Farm Management's persistence technology, schema, and optimistic-concurrency mechanism in [`ADR-011`](../adr/ADR-011-postgresql-postgis-farm-persistence.md); it does not settle aggregate or persistence choices for other contexts. Authorization must be added through the Identity and Access public collaboration before these resources are exposed as a protected production API.
 
 ## Architectural alignment
 

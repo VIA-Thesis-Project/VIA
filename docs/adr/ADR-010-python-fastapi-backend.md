@@ -18,7 +18,7 @@ The initial API, composition root, bounded-context packages, and tests can share
 
 ## Current implementation status
 
-[`backend/`](../../backend) contains the Python package, FastAPI startup, technical health endpoint, bounded-context layers, and architecture tests. Farm Management now has a [minimum project/parcel vertical slice](../architecture/farm-management-slice.md) backed by process-local in-memory repositories. Durable persistence, authentication, worker execution, environmental evaluation, `ICropSuitabilityEngine`, and `CropSuiteAdapter` are not implemented.
+[`backend/`](../../backend) contains the Python package, FastAPI startup, technical health endpoint, bounded-context layers, and architecture tests. Farm Management has a [minimum project/parcel vertical slice](../architecture/farm-management-slice.md) with in-memory adapters and the PostgreSQL/PostGIS persistence selected by [`ADR-011`](ADR-011-postgresql-postgis-farm-persistence.md). Authentication, worker execution, environmental evaluation, `ICropSuitabilityEngine`, and `CropSuiteAdapter` are not implemented.
 
 ## Source
 

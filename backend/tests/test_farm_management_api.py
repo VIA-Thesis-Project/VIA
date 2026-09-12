@@ -6,7 +6,12 @@ from uuid import uuid4
 
 from httpx import ASGITransport, AsyncClient, Response
 
+from via_backend.config import Settings
 from via_backend.main import create_app
+
+
+def _test_app():
+    return create_app(Settings(farm_management_repository="memory"))
 
 
 def _polygon(longitude_offset: float = 0) -> dict[str, Any]:
@@ -24,14 +29,14 @@ def _polygon(longitude_offset: float = 0) -> dict[str, Any]:
 
 
 async def _request(method: str, path: str, **kwargs: Any) -> Response:
-    transport = ASGITransport(app=create_app())
+    transport = ASGITransport(app=_test_app())
     async with AsyncClient(transport=transport, base_url="http://test") as client:
         return await client.request(method, path, **kwargs)
 
 
 def test_project_and_versioned_parcel_lifecycle() -> None:
     async def scenario() -> None:
-        transport = ASGITransport(app=create_app())
+        transport = ASGITransport(app=_test_app())
         async with AsyncClient(transport=transport, base_url="http://test") as client:
             project_response = await client.post("/projects", json={"name": "Huaura trial"})
             assert project_response.status_code == 201
@@ -84,7 +89,7 @@ def test_parcel_requires_an_existing_project() -> None:
 
 def test_invalid_parcel_geometry_returns_validation_error() -> None:
     async def scenario() -> Response:
-        transport = ASGITransport(app=create_app())
+        transport = ASGITransport(app=_test_app())
         async with AsyncClient(transport=transport, base_url="http://test") as client:
             project = (await client.post("/projects", json={"name": "Trial"})).json()
             return await client.post(
@@ -109,4 +114,3 @@ def test_invalid_parcel_geometry_returns_validation_error() -> None:
 
     assert response.status_code == 422
     assert response.json()["detail"] == "A linear ring must be closed."
-

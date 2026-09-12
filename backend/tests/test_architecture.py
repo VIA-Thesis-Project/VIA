@@ -17,6 +17,13 @@ EXPECTED_CONTEXTS = {
 EXPECTED_LAYERS = {"domain", "application", "infrastructure", "interfaces"}
 FORBIDDEN_DOMAIN_LAYERS = {"application", "infrastructure", "interfaces"}
 FORBIDDEN_APPLICATION_LAYERS = {"infrastructure", "interfaces"}
+FORBIDDEN_DOMAIN_DEPENDENCIES = {
+    "alembic",
+    "fastapi",
+    "geoalchemy2",
+    "psycopg",
+    "sqlalchemy",
+}
 
 
 def _imported_modules(path: Path) -> set[str]:
@@ -59,7 +66,8 @@ def test_domain_packages_do_not_import_outward_layers() -> None:
 
     for domain_file in CONTEXTS_ROOT.glob("*/domain/**/*.py"):
         for module in _imported_modules(domain_file):
-            if set(module.casefold().split(".")) & FORBIDDEN_DOMAIN_LAYERS:
+            parts = set(module.casefold().split("."))
+            if parts & (FORBIDDEN_DOMAIN_LAYERS | FORBIDDEN_DOMAIN_DEPENDENCIES):
                 violations.append(f"{domain_file.relative_to(SOURCE_ROOT)} imports {module}")
 
     assert not violations, "\n".join(violations)
@@ -70,7 +78,8 @@ def test_application_packages_do_not_import_outward_layers() -> None:
 
     for application_file in CONTEXTS_ROOT.glob("*/application/**/*.py"):
         for module in _imported_modules(application_file):
-            if set(module.casefold().split(".")) & FORBIDDEN_APPLICATION_LAYERS:
+            parts = set(module.casefold().split("."))
+            if parts & (FORBIDDEN_APPLICATION_LAYERS | FORBIDDEN_DOMAIN_DEPENDENCIES):
                 violations.append(
                     f"{application_file.relative_to(SOURCE_ROOT)} imports {module}"
                 )
@@ -99,3 +108,46 @@ def test_backend_source_does_not_reference_scientific_engine() -> None:
     ]
 
     assert not references, "\n".join(references)
+
+
+def test_farm_management_does_not_import_other_contexts() -> None:
+    farm_management = CONTEXTS_ROOT / "farm_management"
+    violations: list[str] = []
+
+    for source_file in farm_management.rglob("*.py"):
+        for module in _imported_modules(source_file):
+            parts = module.casefold().split(".")
+            if "contexts" not in parts:
+                continue
+            context_index = parts.index("contexts") + 1
+            if context_index < len(parts) and parts[context_index] != "farm_management":
+                violations.append(
+                    f"{source_file.relative_to(SOURCE_ROOT)} imports {module}"
+                )
+
+    assert not violations, "\n".join(violations)
+
+
+def test_postgresql_adapters_satisfy_repository_method_contracts() -> None:
+    from via_backend.contexts.farm_management.domain.repositories import (
+        ParcelRepository,
+        ProjectRepository,
+    )
+    from via_backend.contexts.farm_management.infrastructure import (
+        PostgreSQLParcelRepository,
+        PostgreSQLProjectRepository,
+    )
+
+    project_methods = {
+        name
+        for name, value in vars(ProjectRepository).items()
+        if callable(value) and not name.startswith("_")
+    }
+    parcel_methods = {
+        name
+        for name, value in vars(ParcelRepository).items()
+        if callable(value) and not name.startswith("_")
+    }
+
+    assert project_methods <= set(dir(PostgreSQLProjectRepository))
+    assert parcel_methods <= set(dir(PostgreSQLParcelRepository))

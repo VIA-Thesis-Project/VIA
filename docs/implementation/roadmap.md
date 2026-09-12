@@ -1,6 +1,6 @@
 # VIA architecture implementation roadmap
 
-This roadmap translates the architecture source into seven increments. It is planning documentation only; none of the backend stages is implemented by this change. Each increment must preserve CropSuiteLite behavior and the decision status in the ADRs.
+This roadmap translates the architecture source into seven increments. It is planning documentation; the modular foundation and the Farm Management project/parcel persistence slice are now partially implemented, while later context and scientific-execution stages remain future work. Each increment must preserve CropSuiteLite behavior and the decision status in the ADRs.
 
 ## 1 Modeling
 
