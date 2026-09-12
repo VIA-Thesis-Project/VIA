@@ -1,6 +1,6 @@
 """Contract-focused tests for Farm Management repository adapters."""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import uuid4
 
 import pytest
@@ -31,7 +31,7 @@ def _geometry(longitude: float) -> ParcelGeometry:
 
 
 def test_stale_save_cannot_overwrite_persisted_geometry_history() -> None:
-    now = datetime(2026, 9, 12, tzinfo=timezone.utc)
+    now = datetime(2026, 9, 12, tzinfo=UTC)
     original = Parcel(
         id=uuid4(),
         project_id=uuid4(),

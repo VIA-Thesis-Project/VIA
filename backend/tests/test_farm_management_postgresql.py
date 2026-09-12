@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 import os
+from collections.abc import Iterator
 from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from threading import Barrier
 from uuid import UUID, uuid4
@@ -47,7 +48,7 @@ def _database_url() -> str:
 
 
 @pytest.fixture(scope="session")
-def database() -> tuple[Engine, SessionFactory]:
+def database() -> Iterator[tuple[Engine, SessionFactory]]:
     database_url = _database_url()
     previous = os.environ.get("VIA_DATABASE_URL")
     os.environ["VIA_DATABASE_URL"] = database_url
@@ -119,7 +120,7 @@ def test_project_survives_a_new_repository_instance(
     database: tuple[Engine, SessionFactory],
 ) -> None:
     _, sessions = database
-    now = datetime(2026, 9, 12, tzinfo=timezone.utc)
+    now = datetime(2026, 9, 12, tzinfo=UTC)
     project = _project(now)
 
     PostgreSQLProjectRepository(sessions).add(project)
@@ -132,7 +133,7 @@ def test_parcel_geometry_round_trips_through_postgis(
     database: tuple[Engine, SessionFactory], geometry: ParcelGeometry
 ) -> None:
     engine, sessions = database
-    now = datetime(2026, 9, 12, tzinfo=timezone.utc)
+    now = datetime(2026, 9, 12, tzinfo=UTC)
     project = _project(now)
     parcel = _parcel(project.id, geometry, now)
     PostgreSQLProjectRepository(sessions).add(project)
@@ -156,7 +157,7 @@ def test_revision_is_immutable_and_stale_save_conflicts(
     database: tuple[Engine, SessionFactory],
 ) -> None:
     _, sessions = database
-    now = datetime(2026, 9, 12, tzinfo=timezone.utc)
+    now = datetime(2026, 9, 12, tzinfo=UTC)
     project = _project(now)
     parcel = _parcel(project.id, _polygon(), now)
     projects = PostgreSQLProjectRepository(sessions)
@@ -179,6 +180,8 @@ def test_revision_is_immutable_and_stale_save_conflicts(
         parcels.save(stale_revision, expected_version=1)
 
     loaded = PostgreSQLParcelRepository(sessions).get(parcel.id)
+
+    assert loaded is not None
     assert loaded == first_revision
     assert loaded.versions[0] == parcel.versions[0]
 
@@ -187,7 +190,7 @@ def test_concurrent_revisions_allow_exactly_one_writer(
     database: tuple[Engine, SessionFactory],
 ) -> None:
     _, sessions = database
-    now = datetime(2026, 9, 12, tzinfo=timezone.utc)
+    now = datetime(2026, 9, 12, tzinfo=UTC)
     project = _project(now)
     parcel = _parcel(project.id, _polygon(), now)
     PostgreSQLProjectRepository(sessions).add(project)
@@ -223,7 +226,7 @@ def test_duplicate_parcel_version_number_is_rejected(
     database: tuple[Engine, SessionFactory],
 ) -> None:
     _, sessions = database
-    now = datetime(2026, 9, 12, tzinfo=timezone.utc)
+    now = datetime(2026, 9, 12, tzinfo=UTC)
     project = _project(now)
     parcel = _parcel(project.id, _polygon(), now)
     PostgreSQLProjectRepository(sessions).add(project)

@@ -8,16 +8,22 @@ from logging.config import fileConfig
 from alembic import context
 from sqlalchemy import engine_from_config, pool
 
-from via_backend.contexts.farm_management.infrastructure.database import (
-    FARM_MANAGEMENT_SCHEMA,
-    Base as FarmManagementBase,
+from via_backend.contexts.environmental_information.infrastructure import (
+    orm as environmental_orm,  # noqa: F401, E501
 )
-from via_backend.contexts.farm_management.infrastructure import orm  # noqa: F401
 from via_backend.contexts.environmental_information.infrastructure.database import (
     ENVIRONMENTAL_INFORMATION_SCHEMA,
+)
+from via_backend.contexts.environmental_information.infrastructure.database import (
     Base as EnvironmentalInformationBase,
 )
-from via_backend.contexts.environmental_information.infrastructure import orm as environmental_orm  # noqa: F401, E501
+from via_backend.contexts.farm_management.infrastructure import orm  # noqa: F401
+from via_backend.contexts.farm_management.infrastructure.database import (
+    FARM_MANAGEMENT_SCHEMA,
+)
+from via_backend.contexts.farm_management.infrastructure.database import (
+    Base as FarmManagementBase,
+)
 
 config = context.config
 

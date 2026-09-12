@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 import os
-from datetime import date, datetime, timezone
+from collections.abc import Iterator
+from datetime import UTC, date, datetime
 from pathlib import Path
 from uuid import uuid4
 
@@ -44,7 +45,7 @@ def _database_url() -> str:
 
 
 @pytest.fixture(scope="session")
-def database() -> tuple[Engine, SessionFactory]:
+def database() -> Iterator[tuple[Engine, SessionFactory]]:
     database_url = _database_url()
     previous = os.environ.get("VIA_DATABASE_URL")
     os.environ["VIA_DATABASE_URL"] = database_url
@@ -81,7 +82,7 @@ def _dataset() -> Dataset:
         source="Climate Hazards Center",
         variable="precipitation",
         unit="mm/day",
-        created_at=datetime(2026, 9, 12, tzinfo=timezone.utc),
+        created_at=datetime(2026, 9, 12, tzinfo=UTC),
     )
 
 
@@ -98,7 +99,7 @@ def _version(dataset_id, identifier: str = "2026-09") -> DatasetVersion:
         scenario=None,
         checksum="sha256:abc123",
         storage_reference="environmental/chirps/2026-09",
-        registered_at=datetime(2026, 9, 12, tzinfo=timezone.utc),
+        registered_at=datetime(2026, 9, 12, tzinfo=UTC),
     )
 
 

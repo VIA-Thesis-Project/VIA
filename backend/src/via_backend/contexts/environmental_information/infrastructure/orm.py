@@ -19,7 +19,7 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import UUID as PostgreSQLUUID
 from sqlalchemy.orm import Mapped, mapped_column
 
-from .database import Base, ENVIRONMENTAL_INFORMATION_SCHEMA
+from .database import ENVIRONMENTAL_INFORMATION_SCHEMA, Base
 
 
 class DatasetRecord(Base):

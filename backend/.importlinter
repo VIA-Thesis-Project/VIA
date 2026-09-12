@@ -1,0 +1,50 @@
+[importlinter]
+root_package = via_backend
+
+[importlinter:contract:domain-no-infrastructure]
+name = Domain must not depend on Infrastructure
+type = forbidden
+source_modules =
+    via_backend.contexts.identity_access.domain
+    via_backend.contexts.farm_management.domain
+    via_backend.contexts.environmental_information.domain
+    via_backend.contexts.agroclimatic_evaluation.domain
+    via_backend.contexts.decision_support.domain
+forbidden_modules =
+    via_backend.contexts.identity_access.infrastructure
+    via_backend.contexts.farm_management.infrastructure
+    via_backend.contexts.environmental_information.infrastructure
+    via_backend.contexts.agroclimatic_evaluation.infrastructure
+    via_backend.contexts.decision_support.infrastructure
+
+[importlinter:contract:domain-no-interfaces]
+name = Domain must not depend on Interfaces
+type = forbidden
+source_modules =
+    via_backend.contexts.identity_access.domain
+    via_backend.contexts.farm_management.domain
+    via_backend.contexts.environmental_information.domain
+    via_backend.contexts.agroclimatic_evaluation.domain
+    via_backend.contexts.decision_support.domain
+forbidden_modules =
+    via_backend.contexts.identity_access.interfaces
+    via_backend.contexts.farm_management.interfaces
+    via_backend.contexts.environmental_information.interfaces
+    via_backend.contexts.agroclimatic_evaluation.interfaces
+    via_backend.contexts.decision_support.interfaces
+
+[importlinter:contract:application-no-infrastructure]
+name = Application must not depend on concrete Infrastructure
+type = forbidden
+source_modules =
+    via_backend.contexts.identity_access.application
+    via_backend.contexts.farm_management.application
+    via_backend.contexts.environmental_information.application
+    via_backend.contexts.agroclimatic_evaluation.application
+    via_backend.contexts.decision_support.application
+forbidden_modules =
+    via_backend.contexts.identity_access.infrastructure
+    via_backend.contexts.farm_management.infrastructure
+    via_backend.contexts.environmental_information.infrastructure
+    via_backend.contexts.agroclimatic_evaluation.infrastructure
+    via_backend.contexts.decision_support.infrastructure

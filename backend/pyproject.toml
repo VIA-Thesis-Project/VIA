@@ -20,6 +20,9 @@ dependencies = [
 test = [
   "httpx>=0.27,<1",
   "pytest>=8,<9",
+  "ruff",
+  "pyright",
+  "import-linter",
 ]
 
 [project.scripts]
@@ -35,3 +38,25 @@ markers = [
 ]
 pythonpath = ["src"]
 testpaths = ["tests"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = [
+  "E",
+  "F",
+  "I",
+  "UP",
+  "B",
+]
+
+[tool.pyright]
+include = ["src", "tests"]
+extraPaths = ["src"]
+pythonVersion = "3.11"
+typeCheckingMode = "basic"
+reportMissingImports = true
+reportMissingTypeStubs = false

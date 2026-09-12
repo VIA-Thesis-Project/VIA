@@ -1,6 +1,6 @@
 """Contract-focused Environmental Information repository tests."""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import uuid4
 
 import pytest
@@ -29,7 +29,7 @@ def _version(identifier: str = "v1") -> DatasetVersion:
         scenario=None,
         checksum="sha256:abc123",
         storage_reference="environmental/chirps/v1",
-        registered_at=datetime(2026, 9, 12, tzinfo=timezone.utc),
+        registered_at=datetime(2026, 9, 12, tzinfo=UTC),
     )
 
 

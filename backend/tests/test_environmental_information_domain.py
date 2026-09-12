@@ -1,7 +1,7 @@
 """Unit tests for Environmental Information invariants."""
 
 from dataclasses import FrozenInstanceError
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 from uuid import uuid4
 
 import pytest
@@ -27,7 +27,7 @@ def _version(**overrides: object) -> DatasetVersion:
         "scenario": None,
         "checksum": "sha256:abc123",
         "storage_reference": "environmental/chirps/2026-09",
-        "registered_at": datetime(2026, 9, 12, tzinfo=timezone.utc),
+        "registered_at": datetime(2026, 9, 12, tzinfo=UTC),
     }
     values.update(overrides)
     return DatasetVersion(**values)  # type: ignore[arg-type]
@@ -44,7 +44,13 @@ def test_dataset_version_is_immutable() -> None:
     "overrides, message",
     [
         ({"crs": "WGS84"}, "EPSG"),
-        ({"resolution": SpatialResolution(0.05, 0.05, "degree"), "extent": SpatialExtent(-181, -11, -77, -10)}, "longitude/latitude"),
+        (
+            {
+                "resolution": SpatialResolution(0.05, 0.05, "degree"),
+                "extent": SpatialExtent(-181, -11, -77, -10)
+            },
+            "longitude/latitude"
+        ),
         ({"valid_from": date(2026, 9, 1), "valid_to": date(2026, 1, 1)}, "must not be after"),
     ],
 )

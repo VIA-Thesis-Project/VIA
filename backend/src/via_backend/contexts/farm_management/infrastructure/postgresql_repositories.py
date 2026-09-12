@@ -3,8 +3,7 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime
-from typing import Any
+from typing import Any, cast
 from uuid import UUID
 
 from geoalchemy2.elements import WKTElement
@@ -80,7 +79,7 @@ class PostgreSQLParcelRepository:
 
         try:
             with self._sessions.begin() as session:
-                updated = session.execute(
+                updated_id = session.execute(
                     update(ParcelRecord)
                     .where(
                         ParcelRecord.id == parcel.id,
@@ -90,8 +89,10 @@ class PostgreSQLParcelRepository:
                         ParcelRecord.current_version == expected_version,
                     )
                     .values(current_version=expected_version + 1)
-                )
-                if updated.rowcount != 1:
+                    .returning(ParcelRecord.id)
+                ).scalar_one_or_none()
+
+                if updated_id is None:
                     if session.get(ParcelRecord, parcel.id) is None:
                         raise ValueError(f"Parcel {parcel.id} does not exist.")
                     raise _conflict(parcel.id)
@@ -181,9 +182,31 @@ def _version_record(parcel_id: UUID, version: ParcelVersion) -> ParcelVersionRec
 
 def _as_multi_polygon_wkt(geometry: ParcelGeometry) -> str:
     if geometry.type == "Polygon":
-        polygons = (geometry.coordinates,)
+        polygon = cast(
+            tuple[
+                tuple[
+                    tuple[float, float],
+                    ...,
+                ],
+                ...,
+            ],
+            geometry.coordinates,
+        )
+        polygons = (polygon,)
     else:
-        polygons = geometry.coordinates
+        polygons = cast(
+            tuple[
+                tuple[
+                    tuple[
+                        tuple[float, float],
+                        ...,
+                    ],
+                    ...,
+                ],
+                ...,
+            ],
+            geometry.coordinates,
+        )
 
     polygon_text = []
     for polygon in polygons:
@@ -195,6 +218,7 @@ def _as_multi_polygon_wkt(geometry: ParcelGeometry) -> str:
             )
             rings.append(f"({positions})")
         polygon_text.append(f"({', '.join(rings)})")
+
     return f"MULTIPOLYGON ({', '.join(polygon_text)})"
 
 

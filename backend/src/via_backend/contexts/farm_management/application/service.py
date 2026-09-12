@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
 from ..domain.errors import DomainValidationError, ParcelVersionConflictError
@@ -41,7 +41,7 @@ class FarmManagementService:
         self._projects = projects
         self._parcels = parcels
         self._new_id = new_id
-        self._clock = clock or (lambda: datetime.now(timezone.utc))
+        self._clock = clock or (lambda: datetime.now(UTC))
 
     def create_project(self, command: CreateProject) -> ProjectResult:
         try:

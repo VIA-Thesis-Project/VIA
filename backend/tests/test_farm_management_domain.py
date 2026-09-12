@@ -1,6 +1,6 @@
 """Unit tests for Farm Management invariants."""
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from uuid import uuid4
 
 import pytest
@@ -28,7 +28,7 @@ def _polygon(longitude_offset: float = 0) -> dict[str, object]:
 
 
 def test_revising_geometry_appends_an_immutable_version() -> None:
-    created_at = datetime(2026, 9, 12, tzinfo=timezone.utc)
+    created_at = datetime(2026, 9, 12, tzinfo=UTC)
     parcel = Parcel(
         id=uuid4(),
         project_id=uuid4(),
