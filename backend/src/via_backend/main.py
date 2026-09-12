@@ -1,7 +1,7 @@
 """FastAPI application composition root."""
 
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from typing import AsyncIterator
 
 from fastapi import FastAPI
 from sqlalchemy import Engine
@@ -13,6 +13,7 @@ from via_backend.contexts.environmental_information.application import (
 from via_backend.contexts.environmental_information.infrastructure import (
     InMemoryDatasetRepository,
     InMemoryDatasetVersionRepository,
+    PostGISCoverageCalculator,
     PostgreSQLDatasetRepository,
     PostgreSQLDatasetVersionRepository,
 )
@@ -29,7 +30,7 @@ from via_backend.contexts.farm_management.infrastructure import (
 from via_backend.contexts.farm_management.interfaces import (
     create_router as create_farm_management_router,
 )
-from via_backend.infrastructure import create_database
+from via_backend.infrastructure import SessionFactory, create_database
 from via_backend.interfaces.http.health import router as health_router
 
 
@@ -37,6 +38,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     """Build the VIA API and register its technical interfaces."""
     settings = settings or Settings.from_env()
     engine: Engine | None = None
+    sessions: SessionFactory | None = None
 
     if (
         settings.farm_management_repository == "postgresql"
@@ -47,6 +49,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     if settings.farm_management_repository == "postgresql":
         assert engine is not None
+        assert sessions is not None
         projects = PostgreSQLProjectRepository(sessions)
         parcels = PostgreSQLParcelRepository(sessions)
     else:
@@ -55,11 +58,14 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     if settings.environmental_information_repository == "postgresql":
         assert engine is not None
+        assert sessions is not None
         datasets = PostgreSQLDatasetRepository(sessions)
         dataset_versions = PostgreSQLDatasetVersionRepository(sessions)
+        coverage = PostGISCoverageCalculator(sessions)
     else:
         datasets = InMemoryDatasetRepository()
         dataset_versions = InMemoryDatasetVersionRepository()
+        coverage = None
 
     @asynccontextmanager
     async def lifespan(_: FastAPI) -> AsyncIterator[None]:
@@ -79,6 +85,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     environmental_information = EnvironmentalInformationService(
         datasets=datasets,
         versions=dataset_versions,
+        coverage=coverage,
     )
     application.state.settings = settings
     application.include_router(health_router)

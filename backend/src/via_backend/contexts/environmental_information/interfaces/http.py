@@ -3,15 +3,18 @@
 from __future__ import annotations
 
 from datetime import date, datetime
-from typing import Any
+from typing import Any, Literal
 from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel, ConfigDict, Field
 
 from ..application import (
+    CheckDatasetVersionCoverage,
+    CoverageUnavailableError,
     CreateDataset,
     CreateDatasetVersion,
+    DatasetVersionCoverageResult,
     DatasetVersionResult,
     EnvironmentalInformationService,
     GetDataset,
@@ -22,6 +25,7 @@ from ..application import (
     ResourceConflictError,
     ResourceNotFoundError,
 )
+from ..domain import CoverageClassification
 
 
 class _RequestModel(BaseModel):
@@ -64,6 +68,16 @@ class CreateDatasetVersionBody(_RequestModel):
     storage_reference: str = Field(min_length=1, max_length=1024)
 
 
+class CoverageGeometryBody(_RequestModel):
+    type: Literal["Polygon", "MultiPolygon"]
+    coordinates: list[Any]
+
+
+class CheckCoverageBody(_RequestModel):
+    geometry: CoverageGeometryBody
+    crs: str = Field(min_length=1, max_length=32)
+
+
 class DatasetResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -90,6 +104,25 @@ class DatasetVersionResponse(BaseModel):
     checksum: str
     storage_reference: str
     registered_at: datetime
+
+
+class DatasetVersionCoverageResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    dataset_id: UUID
+    dataset_version_id: UUID
+    compatible: bool
+    coverage: CoverageClassification
+    parcel_area_m2: float | None
+    covered_area_m2: float | None
+    coverage_percentage: float | None
+    dataset_crs: str
+    parcel_crs: str
+    comparison_crs: str | None
+    area_method: str | None
+    transformations: list[str]
+    warnings: list[str]
+    reasons: list[str]
 
 
 def create_router(service: EnvironmentalInformationService) -> APIRouter:
@@ -177,6 +210,26 @@ def create_router(service: EnvironmentalInformationService) -> APIRouter:
         )
         return DatasetVersionResponse.model_validate(result)
 
+    @router.post(
+        "/{dataset_id}/versions/{version_id}/coverage",
+        response_model=DatasetVersionCoverageResponse,
+    )
+    def check_dataset_version_coverage(
+        dataset_id: UUID,
+        version_id: UUID,
+        body: CheckCoverageBody,
+    ) -> DatasetVersionCoverageResponse:
+        result: DatasetVersionCoverageResult = _execute(
+            service.check_dataset_version_coverage,
+            CheckDatasetVersionCoverage(
+                dataset_id=dataset_id,
+                version_id=version_id,
+                geometry=body.geometry.model_dump(),
+                geometry_crs=body.crs,
+            ),
+        )
+        return DatasetVersionCoverageResponse.model_validate(result)
+
     return router
 
 
@@ -194,4 +247,8 @@ def _execute(operation: Any, message: Any) -> Any:
     except ResourceConflictError as error:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT, detail=str(error)
+        ) from error
+    except CoverageUnavailableError as error:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(error)
         ) from error

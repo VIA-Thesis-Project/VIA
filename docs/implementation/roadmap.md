@@ -1,6 +1,6 @@
 # VIA architecture implementation roadmap
 
-This roadmap translates the architecture source into seven increments. It is planning documentation; the modular foundation, Farm Management project/parcel persistence, and the first Environmental Information dataset-metadata slice are implemented, while coverage and later scientific-execution stages remain future work. Each increment must preserve CropSuiteLite behavior and the decision status in the ADRs.
+This roadmap translates the architecture source into seven increments. It is planning documentation; the modular foundation, Farm Management project/parcel persistence, the Environmental Information dataset-metadata slice, and extent-based coverage are implemented, while later scientific-execution stages remain future work. Each increment must preserve CropSuiteLite behavior and the decision status in the ADRs.
 
 ## 1 Modeling
 
@@ -38,10 +38,11 @@ This roadmap translates the architecture source into seven increments. It is pla
 
 **Out of scope.** Running CropSuiteLite, suitability ranking, inventing missing environmental values, changing masks/interpolation, and implying sub-grid precision.
 
-**Current implementation status.** Project/parcel persistence and the
-Dataset/DatasetVersion metadata catalog are implemented. Authorization,
-validity-mask modeling, compatibility selection, and parcel/environmental
-coverage queries remain future work.
+**Current implementation status.** Project/parcel persistence, the
+Dataset/DatasetVersion metadata catalog, and extent-based parcel coverage with
+structural CRS compatibility checks are implemented. Authorization,
+validity-mask modeling, pixel-level availability, and multi-version compatible
+input selection remain future work.
 
 ## 4 Result querying
 

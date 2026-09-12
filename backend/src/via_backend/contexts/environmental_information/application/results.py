@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from datetime import date, datetime
 from uuid import UUID
 
+from ..domain.coverage import CoverageClassification
 from ..domain.models import Dataset, DatasetVersion
 
 
@@ -85,3 +86,23 @@ class DatasetVersionResult:
             storage_reference=version.storage_reference,
             registered_at=version.registered_at,
         )
+
+
+@dataclass(frozen=True, slots=True)
+class DatasetVersionCoverageResult:
+    """Extent-based coverage and structural compatibility result."""
+
+    dataset_id: UUID
+    dataset_version_id: UUID
+    compatible: bool
+    coverage: CoverageClassification
+    parcel_area_m2: float | None
+    covered_area_m2: float | None
+    coverage_percentage: float | None
+    dataset_crs: str
+    parcel_crs: str
+    comparison_crs: str | None
+    area_method: str | None
+    transformations: tuple[str, ...]
+    warnings: tuple[str, ...]
+    reasons: tuple[str, ...]

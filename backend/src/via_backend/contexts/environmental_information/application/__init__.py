@@ -1,7 +1,13 @@
 """Environmental Information application layer."""
 
 from .commands import CreateDataset, CreateDatasetVersion
+from .ports import (
+    InvalidSpatialInputError,
+    SpatialCoveragePort,
+    SpatialCoverageUnavailableError,
+)
 from .queries import (
+    CheckDatasetVersionCoverage,
     GetDataset,
     GetDatasetVersion,
     ListDatasets,
@@ -9,11 +15,13 @@ from .queries import (
 )
 from .results import (
     DatasetResult,
+    DatasetVersionCoverageResult,
     DatasetVersionResult,
     SpatialExtentResult,
     SpatialResolutionResult,
 )
 from .service import (
+    CoverageUnavailableError,
     EnvironmentalInformationService,
     InvalidCommandError,
     ResourceConflictError,
@@ -21,18 +29,24 @@ from .service import (
 )
 
 __all__ = [
+    "CheckDatasetVersionCoverage",
+    "CoverageUnavailableError",
     "CreateDataset",
     "CreateDatasetVersion",
     "DatasetResult",
+    "DatasetVersionCoverageResult",
     "DatasetVersionResult",
     "EnvironmentalInformationService",
     "GetDataset",
     "GetDatasetVersion",
     "InvalidCommandError",
-    "ListDatasets",
+    "InvalidSpatialInputError",
     "ListDatasetVersions",
+    "ListDatasets",
     "ResourceConflictError",
     "ResourceNotFoundError",
+    "SpatialCoveragePort",
+    "SpatialCoverageUnavailableError",
     "SpatialExtentResult",
     "SpatialResolutionResult",
 ]
