@@ -4,7 +4,7 @@
 
 VIA is intended to let an authorized user register a parcel in Huaura, inspect geoenvironmental coverage, request an evaluation for one or more crops, and retrieve suitability results with reproducible evidence. CropSuiteLite performs the scientific calculation; the future backend will manage identity, parcels, requests, execution, persistence, and presentation.
 
-This document separates the current proof of concept from the target architecture. It does not claim that the backend, web API, authentication, durable queue, or public deployment exists.
+This document separates the current scientific proof of concept from the target architecture and the initial backend foundation. The foundation provides application startup and a technical health endpoint; it does not claim that business APIs, authentication, a durable queue, or public deployment exist.
 
 ## Current PoC
 
@@ -15,11 +15,13 @@ The repository already contains a working CropSuiteLite-based flow:
 - [`CropSuiteLite/tests/test_multicrop.py`](../../CropSuiteLite/tests/test_multicrop.py) verifies crop selection, spatial weighting, nodata semantics, independent failures, and common-support ranking.
 - [`CropSuiteLite/docs/multicrop_evaluation.md`](../../CropSuiteLite/docs/multicrop_evaluation.md) documents the validated operating behavior and its limits.
 
-The PoC has no REST API, identity store, application database, recoverable job queue, cancellation, retry orchestration, quotas, or public frontend. Its local `evaluation.json` is evidence of an execution, not a substitute for those future capabilities.
+The scientific PoC has no REST API, identity store, application database, recoverable job queue, cancellation, retry orchestration, quotas, or public frontend. The separate backend foundation currently exposes only a health endpoint. The PoC's local `evaluation.json` is evidence of an execution, not a substitute for those future capabilities.
 
 ## Target logical architecture
 
 The accepted direction is a modular monolith organized by bounded contexts. Each context owns its model and exposes explicit collaboration contracts. Inside each context, dependencies follow the layers Domain, Application, Infrastructure, and Interfaces.
+
+The initial backend implementation uses Python and FastAPI according to [`ADR-010`](../adr/ADR-010-python-fastapi-backend.md). This technology choice does not move CropSuiteLite into the HTTP layer or change the port-and-adapter and background-execution boundaries.
 
 The proposed contexts are:
 
@@ -45,6 +47,7 @@ Components should be extracted into services only for observed needs such as ind
 
 - Modular monolith organized by bounded contexts.
 - Domain, Application, Infrastructure, and Interfaces inside each context.
+- Python as the initial backend language and FastAPI as the HTTP/API framework.
 - CropSuiteLite isolated behind a port and infrastructure adapter.
 - Long-running calculations outside the HTTP request process.
 - Snapshots, versions, checksums, and evidence sufficient to interpret historical evaluations.
@@ -64,7 +67,6 @@ Components should be extracted into services only for observed needs such as ind
 
 ### Open decisions
 
-- Backend language and framework.
 - Final bounded-context boundaries and whether later concepts such as Experiments require their own context.
 - Definitive REST contracts, aggregate boundaries, persistence schema, event contracts, and state mapping.
 - Minimum coverage required for recommendations; public scenarios and management options; validation scope for the remaining crop parameters.

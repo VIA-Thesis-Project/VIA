@@ -1,6 +1,6 @@
 # Intended backend structure
 
-The accepted internal direction is to give every bounded context its own Domain, Application, Infrastructure, and Interfaces layers. The directory names illustrate responsibility; enforceability comes from dependency direction and public contracts.
+The accepted internal direction is to give every bounded context its own Domain, Application, Infrastructure, and Interfaces layers. The directory names illustrate responsibility; enforceability comes from dependency direction and public contracts. [`ADR-010`](../adr/ADR-010-python-fastapi-backend.md) selects Python and FastAPI for the initial backend implementation.
 
 ## Layers
 
@@ -36,7 +36,7 @@ Domain is the innermost policy layer. Application depends on Domain. Interfaces 
 
 ## Illustrative directory structure
 
-This tree is illustrative documentation only; it does not create backend code or settle the implementation language.
+This tree remains illustrative documentation for possible internal types and groupings. The concrete Python package foundation is under [`backend/src/via_backend`](../../backend/src/via_backend), and its empty layers do not finalize the model candidates shown here.
 
 ```text
 backend/
@@ -87,7 +87,7 @@ Names such as `Evaluation`, `ScientificRun`, or `SuitabilityEvidence` are model 
 
 ## Open decisions
 
-The backend language and framework, exact aggregate boundaries, repository shapes, database schema, public contract packaging, and definitive command/query names remain open. FastAPI is a proposal based on Python affinity, not an accepted choice.
+Exact aggregate boundaries, repository shapes, database schema, public contract packaging, and definitive command/query names remain open. The initial language and HTTP framework are decided in [`ADR-010`](../adr/ADR-010-python-fastapi-backend.md).
 
 ## Source
 

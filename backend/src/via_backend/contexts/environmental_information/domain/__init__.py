@@ -1,0 +1,1 @@
+"""Environmental Information domain layer."""

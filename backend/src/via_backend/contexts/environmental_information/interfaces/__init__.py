@@ -1,0 +1,1 @@
+"""Environmental Information interface layer."""
