@@ -8,6 +8,15 @@ from logging.config import fileConfig
 from alembic import context
 from sqlalchemy import engine_from_config, pool
 
+from via_backend.contexts.agroclimatic_evaluation.infrastructure import (
+    orm as evaluation_orm,  # noqa: F401
+)
+from via_backend.contexts.agroclimatic_evaluation.infrastructure.database import (
+    AGROCLIMATIC_EVALUATION_SCHEMA,
+)
+from via_backend.contexts.agroclimatic_evaluation.infrastructure.database import (
+    Base as AgroclimaticEvaluationBase,
+)
 from via_backend.contexts.environmental_information.infrastructure import (
     orm as environmental_orm,  # noqa: F401, E501
 )
@@ -37,6 +46,7 @@ if database_url:
 target_metadata = [
     FarmManagementBase.metadata,
     EnvironmentalInformationBase.metadata,
+    AgroclimaticEvaluationBase.metadata,
 ]
 
 
@@ -48,6 +58,7 @@ def include_name(
     return type_ != "schema" or name in {
         FARM_MANAGEMENT_SCHEMA,
         ENVIRONMENTAL_INFORMATION_SCHEMA,
+        AGROCLIMATIC_EVALUATION_SCHEMA,
     }
 
 

@@ -149,7 +149,34 @@ def test_environmental_information_does_not_import_other_contexts() -> None:
     assert not violations, "\n".join(violations)
 
 
+def test_agroclimatic_evaluation_does_not_import_other_contexts() -> None:
+    evaluation_context = CONTEXTS_ROOT / "agroclimatic_evaluation"
+    violations: list[str] = []
+
+    for source_file in evaluation_context.rglob("*.py"):
+        for module in _imported_modules(source_file):
+            parts = module.casefold().split(".")
+            if "contexts" not in parts:
+                continue
+            context_index = parts.index("contexts") + 1
+            if (
+                context_index < len(parts)
+                and parts[context_index] != "agroclimatic_evaluation"
+            ):
+                violations.append(
+                    f"{source_file.relative_to(SOURCE_ROOT)} imports {module}"
+                )
+
+    assert not violations, "\n".join(violations)
+
+
 def test_postgresql_adapters_satisfy_repository_method_contracts() -> None:
+    from via_backend.contexts.agroclimatic_evaluation.domain.repositories import (
+        EvaluationRepository,
+    )
+    from via_backend.contexts.agroclimatic_evaluation.infrastructure import (
+        PostgreSQLEvaluationRepository,
+    )
     from via_backend.contexts.environmental_information.domain.repositories import (
         DatasetRepository,
         DatasetVersionRepository,
@@ -166,6 +193,12 @@ def test_postgresql_adapters_satisfy_repository_method_contracts() -> None:
         PostgreSQLParcelRepository,
         PostgreSQLProjectRepository,
     )
+
+    evaluation_methods = {
+        name
+        for name, value in vars(EvaluationRepository).items()
+        if callable(value) and not name.startswith("_")
+    }
 
     project_methods = {
         name
@@ -193,3 +226,4 @@ def test_postgresql_adapters_satisfy_repository_method_contracts() -> None:
 
     assert dataset_methods <= set(dir(PostgreSQLDatasetRepository))
     assert version_methods <= set(dir(PostgreSQLDatasetVersionRepository))
+    assert evaluation_methods <= set(dir(PostgreSQLEvaluationRepository))

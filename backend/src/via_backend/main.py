@@ -7,6 +7,16 @@ from fastapi import FastAPI
 from sqlalchemy import Engine
 
 from via_backend.config import Settings
+from via_backend.contexts.agroclimatic_evaluation.application import (
+    AgroclimaticEvaluationService,
+)
+from via_backend.contexts.agroclimatic_evaluation.infrastructure import (
+    InMemoryEvaluationRepository,
+    PostgreSQLEvaluationRepository,
+)
+from via_backend.contexts.agroclimatic_evaluation.interfaces import (
+    create_router as create_agroclimatic_evaluation_router,
+)
 from via_backend.contexts.environmental_information.application import (
     EnvironmentalInformationService,
 )
@@ -43,6 +53,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     if (
         settings.farm_management_repository == "postgresql"
         or settings.environmental_information_repository == "postgresql"
+        or settings.agroclimatic_evaluation_repository == "postgresql"
     ):
         assert settings.database_url is not None
         engine, sessions = create_database(settings.database_url)
@@ -67,6 +78,13 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         dataset_versions = InMemoryDatasetVersionRepository()
         coverage = None
 
+    if settings.agroclimatic_evaluation_repository == "postgresql":
+        assert engine is not None
+        assert sessions is not None
+        evaluations = PostgreSQLEvaluationRepository(sessions)
+    else:
+        evaluations = InMemoryEvaluationRepository()
+
     @asynccontextmanager
     async def lifespan(_: FastAPI) -> AsyncIterator[None]:
         try:
@@ -87,11 +105,17 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         versions=dataset_versions,
         coverage=coverage,
     )
+    agroclimatic_evaluation = AgroclimaticEvaluationService(
+        evaluations=evaluations
+    )
     application.state.settings = settings
     application.include_router(health_router)
     application.include_router(create_farm_management_router(farm_management))
     application.include_router(
         create_environmental_information_router(environmental_information)
+    )
+    application.include_router(
+        create_agroclimatic_evaluation_router(agroclimatic_evaluation)
     )
     return application
 
