@@ -128,7 +128,36 @@ def test_farm_management_does_not_import_other_contexts() -> None:
     assert not violations, "\n".join(violations)
 
 
+def test_environmental_information_does_not_import_other_contexts() -> None:
+    environmental_information = CONTEXTS_ROOT / "environmental_information"
+    violations: list[str] = []
+
+    for source_file in environmental_information.rglob("*.py"):
+        for module in _imported_modules(source_file):
+            parts = module.casefold().split(".")
+            if "contexts" not in parts:
+                continue
+            context_index = parts.index("contexts") + 1
+            if (
+                context_index < len(parts)
+                and parts[context_index] != "environmental_information"
+            ):
+                violations.append(
+                    f"{source_file.relative_to(SOURCE_ROOT)} imports {module}"
+                )
+
+    assert not violations, "\n".join(violations)
+
+
 def test_postgresql_adapters_satisfy_repository_method_contracts() -> None:
+    from via_backend.contexts.environmental_information.domain.repositories import (
+        DatasetRepository,
+        DatasetVersionRepository,
+    )
+    from via_backend.contexts.environmental_information.infrastructure import (
+        PostgreSQLDatasetRepository,
+        PostgreSQLDatasetVersionRepository,
+    )
     from via_backend.contexts.farm_management.domain.repositories import (
         ParcelRepository,
         ProjectRepository,
@@ -151,3 +180,16 @@ def test_postgresql_adapters_satisfy_repository_method_contracts() -> None:
 
     assert project_methods <= set(dir(PostgreSQLProjectRepository))
     assert parcel_methods <= set(dir(PostgreSQLParcelRepository))
+    dataset_methods = {
+        name
+        for name, value in vars(DatasetRepository).items()
+        if callable(value) and not name.startswith("_")
+    }
+    version_methods = {
+        name
+        for name, value in vars(DatasetVersionRepository).items()
+        if callable(value) and not name.startswith("_")
+    }
+
+    assert dataset_methods <= set(dir(PostgreSQLDatasetRepository))
+    assert version_methods <= set(dir(PostgreSQLDatasetVersionRepository))

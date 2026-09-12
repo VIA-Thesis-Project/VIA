@@ -12,8 +12,14 @@ def test_database_url_selects_postgresql_by_default(monkeypatch: pytest.MonkeyPa
     settings = Settings.from_env()
 
     assert settings.farm_management_repository == "postgresql"
+    assert settings.environmental_information_repository == "postgresql"
 
 
 def test_postgresql_selection_requires_database_url() -> None:
     with pytest.raises(ValueError, match="VIA_DATABASE_URL"):
         Settings(farm_management_repository="postgresql")
+
+
+def test_environmental_postgresql_selection_requires_database_url() -> None:
+    with pytest.raises(ValueError, match="VIA_DATABASE_URL"):
+        Settings(environmental_information_repository="postgresql")

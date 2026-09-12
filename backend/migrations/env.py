@@ -10,9 +10,14 @@ from sqlalchemy import engine_from_config, pool
 
 from via_backend.contexts.farm_management.infrastructure.database import (
     FARM_MANAGEMENT_SCHEMA,
-    Base,
+    Base as FarmManagementBase,
 )
 from via_backend.contexts.farm_management.infrastructure import orm  # noqa: F401
+from via_backend.contexts.environmental_information.infrastructure.database import (
+    ENVIRONMENTAL_INFORMATION_SCHEMA,
+    Base as EnvironmentalInformationBase,
+)
+from via_backend.contexts.environmental_information.infrastructure import orm as environmental_orm  # noqa: F401, E501
 
 config = context.config
 
@@ -23,15 +28,21 @@ database_url = os.getenv("VIA_DATABASE_URL") or config.get_main_option("sqlalche
 if database_url:
     config.set_main_option("sqlalchemy.url", database_url.replace("%", "%%"))
 
-target_metadata = Base.metadata
+target_metadata = [
+    FarmManagementBase.metadata,
+    EnvironmentalInformationBase.metadata,
+]
 
 
 def include_name(
     name: str | None, type_: str, parent_names: dict[str, str | None]
 ) -> bool:
-    """Limit autogeneration to tables owned by Farm Management."""
+    """Limit autogeneration to bounded-context-owned schemas."""
     del parent_names
-    return type_ != "schema" or name == FARM_MANAGEMENT_SCHEMA
+    return type_ != "schema" or name in {
+        FARM_MANAGEMENT_SCHEMA,
+        ENVIRONMENTAL_INFORMATION_SCHEMA,
+    }
 
 
 def run_migrations_offline() -> None:

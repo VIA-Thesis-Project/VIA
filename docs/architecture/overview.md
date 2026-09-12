@@ -21,7 +21,7 @@ The scientific PoC has no REST API, identity store, application database, recove
 
 The accepted direction is a modular monolith organized by bounded contexts. Each context owns its model and exposes explicit collaboration contracts. Inside each context, dependencies follow the layers Domain, Application, Infrastructure, and Interfaces.
 
-The initial backend implementation uses Python and FastAPI according to [`ADR-010`](../adr/ADR-010-python-fastapi-backend.md). This technology choice does not move CropSuiteLite into the HTTP layer or change the port-and-adapter and background-execution boundaries.
+The initial backend implementation uses Python and FastAPI according to [`ADR-010`](../adr/ADR-010-python-fastapi-backend.md). Farm Management has durable project/parcel persistence, and Environmental Information has its first dataset-metadata slice under [`ADR-012`](../adr/ADR-012-postgresql-postgis-environmental-information-persistence.md). These technology choices do not move CropSuiteLite into the HTTP layer or change the port-and-adapter and background-execution boundaries.
 
 The proposed contexts are:
 
