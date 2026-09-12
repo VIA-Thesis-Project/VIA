@@ -420,10 +420,10 @@
     "semantic_hash": "212b55d95333d84e14262f8ec83faa2b"
   },
   "AGENTS.md": {
-    "mtime": 1789141185.5239978,
-    "seen": 1789155845.5949922,
-    "ast_hash": "32ba3219c096e07dd5027b8d38317920",
-    "semantic_hash": "32ba3219c096e07dd5027b8d38317920"
+    "mtime": 1789245384.6697445,
+    "seen": 1789245876.3742774,
+    "ast_hash": "26c39a243825b9d8508ba3f5524a3789",
+    "semantic_hash": ""
   },
   "CropSuiteLite/.github/workflows/ci.yml": {
     "mtime": 1788218836.6097293,
@@ -714,9 +714,9 @@
     "semantic_hash": "f9dda8459e16b35c59ba9379d8d31ee4"
   },
   "docs/implementation/roadmap.md": {
-    "mtime": 1789222293.3954642,
-    "seen": 1789222623.782833,
-    "ast_hash": "1a9f17a6ff0323152b6fe466fe44073e",
+    "mtime": 1789226481.4521568,
+    "seen": 1789226700.090846,
+    "ast_hash": "2459ad594e75ef47af1f506083e3fedd",
     "semantic_hash": ""
   },
   "graphify-out/converted/Arquitectura_y_backend_CropSuiteLite_Huaura_v2_0e904345.md": {
@@ -732,10 +732,10 @@
     "semantic_hash": "f417bdcb4f71006284ab89e8ea3a5327"
   },
   "backend/pyproject.toml": {
-    "mtime": 1789193299.39283,
-    "seen": 1789197987.2848012,
-    "ast_hash": "ae22100f43d3302ce0be416e26a89b47",
-    "semantic_hash": "ae22100f43d3302ce0be416e26a89b47"
+    "mtime": 1789245384.6677334,
+    "seen": 1789245876.37417,
+    "ast_hash": "6087a9b268d207f68d79ebd0594c5667",
+    "semantic_hash": ""
   },
   "backend/src/via_backend/__init__.py": {
     "mtime": 1789141497.4745884,
@@ -822,21 +822,21 @@
     "semantic_hash": "32f97609ba70e7a2d2fee4b85882d2db"
   },
   "backend/src/via_backend/contexts/environmental_information/application/__init__.py": {
-    "mtime": 1789221958.9020202,
-    "seen": 1789222623.782715,
-    "ast_hash": "4dc793622342c42e66846904508e57fe",
+    "mtime": 1789243309.9978952,
+    "seen": 1789244086.4231925,
+    "ast_hash": "84c2e7853399de8aa41011a8bf40ca55",
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/environmental_information/domain/__init__.py": {
-    "mtime": 1789221911.3656914,
-    "seen": 1789222623.7827184,
-    "ast_hash": "4b88a5b089e9b38152b97dc1a916dd01",
+    "mtime": 1789224443.9467697,
+    "seen": 1789226700.0907018,
+    "ast_hash": "44a142e2c2e2518cb963fa71f187a4a8",
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/environmental_information/infrastructure/__init__.py": {
-    "mtime": 1789222044.5827844,
-    "seen": 1789222623.7827218,
-    "ast_hash": "c659e52b3b5b2b0e9ca8700022fd120b",
+    "mtime": 1789243309.9978952,
+    "seen": 1789244086.4239874,
+    "ast_hash": "c3ad565baae6d7413d3edeffe50dfa68",
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/environmental_information/interfaces/__init__.py": {
@@ -924,9 +924,9 @@
     "semantic_hash": "45fa1e1fde90e7b5c42d7b06d1ac67a3"
   },
   "backend/src/via_backend/main.py": {
-    "mtime": 1789222097.1119926,
-    "seen": 1789222623.78275,
-    "ast_hash": "cab2ae59ad9edff64baec4f664d0e04f",
+    "mtime": 1789243601.9504628,
+    "seen": 1789244086.4270856,
+    "ast_hash": "98ccb4e4b3080954701b7c80ad69f526",
     "semantic_hash": ""
   },
   "backend/tests/test_architecture.py": {
@@ -960,10 +960,10 @@
     "semantic_hash": "aaba77ae42d1bb57cff8606376b72a6a"
   },
   "backend/src/via_backend/contexts/farm_management/application/commands.py": {
-    "mtime": 1789190606.9510744,
-    "seen": 1789197987.28655,
-    "ast_hash": "2d0ebea6ff0f16e86387d77ec4223092",
-    "semantic_hash": "2d0ebea6ff0f16e86387d77ec4223092"
+    "mtime": 1789246563.2735195,
+    "seen": 1789248030.6595569,
+    "ast_hash": "45bb4a58c3c26171eee34486c96772df",
+    "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/farm_management/application/queries.py": {
     "mtime": 1789190606.9530835,
@@ -978,10 +978,10 @@
     "semantic_hash": "d73f229f784dc2b6d84c82d26197ad52"
   },
   "backend/src/via_backend/contexts/farm_management/application/service.py": {
-    "mtime": 1789192002.5054045,
-    "seen": 1789197987.2865531,
-    "ast_hash": "dad5011828aa4e91ded07712ce3a9a97",
-    "semantic_hash": "dad5011828aa4e91ded07712ce3a9a97"
+    "mtime": 1789246563.2735195,
+    "seen": 1789248030.659561,
+    "ast_hash": "2bcf1e514898d949987844063f384fa4",
+    "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/farm_management/domain/errors.py": {
     "mtime": 1789192002.4994025,
@@ -990,10 +990,10 @@
     "semantic_hash": "4861896bd07e1da63fdf7cdb10edf1d8"
   },
   "backend/src/via_backend/contexts/farm_management/domain/geometry.py": {
-    "mtime": 1789191580.054757,
-    "seen": 1789197987.286556,
-    "ast_hash": "4ddd6ea8be1ef554f608505face02bdb",
-    "semantic_hash": "4ddd6ea8be1ef554f608505face02bdb"
+    "mtime": 1789246563.2705185,
+    "seen": 1789248030.6595643,
+    "ast_hash": "444b1b1a7b816738108581a1dab0a833",
+    "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/farm_management/domain/models.py": {
     "mtime": 1789190411.7654207,
@@ -1026,10 +1026,10 @@
     "semantic_hash": "ed937126ef7cd9746f6e63428c748dea"
   },
   "backend/tests/test_farm_management_domain.py": {
-    "mtime": 1789191221.7920847,
-    "seen": 1789197987.2876892,
-    "ast_hash": "5fb09e15b39226fa0518568f600f09ad",
-    "semantic_hash": "5fb09e15b39226fa0518568f600f09ad"
+    "mtime": 1789246563.276517,
+    "seen": 1789248030.659603,
+    "ast_hash": "984642ac3ace28f27f92c8de08eaddaf",
+    "semantic_hash": ""
   },
   "docs/architecture/farm-management-slice.md": {
     "mtime": 1789193516.1229827,
@@ -1038,15 +1038,15 @@
     "semantic_hash": "21b8393a9c4ec3b98835776f6fb2300c"
   },
   "backend/tests/test_farm_management_repositories.py": {
-    "mtime": 1789192002.5093977,
-    "seen": 1789197987.2876916,
-    "ast_hash": "e933e0fe6b25b9f5c8b490378421edf3",
-    "semantic_hash": "e933e0fe6b25b9f5c8b490378421edf3"
+    "mtime": 1789246563.277515,
+    "seen": 1789248030.6596053,
+    "ast_hash": "630a05a3262d2f7d56b6901dea7cba05",
+    "semantic_hash": ""
   },
   "backend/migrations/env.py": {
-    "mtime": 1789222097.114084,
-    "seen": 1789222623.7826967,
-    "ast_hash": "400556b3c042c65be5ac4c4fcc777167",
+    "mtime": 1789246563.2745166,
+    "seen": 1789248030.6594985,
+    "ast_hash": "8078beee0a82e6aa65aec1b8a7a467c1",
     "semantic_hash": ""
   },
   "backend/migrations/versions/20260912_0001_farm_management_persistence.py": {
@@ -1074,10 +1074,10 @@
     "semantic_hash": "9468c7a064e1e9a6a497a1fae42e6fdc"
   },
   "backend/src/via_backend/contexts/farm_management/infrastructure/postgresql_repositories.py": {
-    "mtime": 1789193737.5604224,
-    "seen": 1789197987.286562,
-    "ast_hash": "718d3f7565f82576270dfde3a8661b97",
-    "semantic_hash": "718d3f7565f82576270dfde3a8661b97"
+    "mtime": 1789247742.7041612,
+    "seen": 1789248030.6595721,
+    "ast_hash": "612c919512dbdccc68d6927fdcdd157d",
+    "semantic_hash": ""
   },
   "backend/tests/test_config.py": {
     "mtime": 1789222542.2875686,
@@ -1086,10 +1086,10 @@
     "semantic_hash": ""
   },
   "backend/tests/test_farm_management_postgresql.py": {
-    "mtime": 1789196426.934724,
-    "seen": 1789197987.2876902,
-    "ast_hash": "19021ded3727f1d97bd756247b7f6f4a",
-    "semantic_hash": "19021ded3727f1d97bd756247b7f6f4a"
+    "mtime": 1789247968.0271032,
+    "seen": 1789248030.6596043,
+    "ast_hash": "f071bbb80dc8b8aa62a6abdccdd55388",
+    "semantic_hash": ""
   },
   "backend/compose.yaml": {
     "mtime": 1789193333.0762446,
@@ -1158,21 +1158,21 @@
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/environmental_information/application/queries.py": {
-    "mtime": 1789221958.8970242,
-    "seen": 1789222623.7827168,
-    "ast_hash": "3563debdb4aa0cc57d7226a4e605e4b0",
+    "mtime": 1789243309.9978952,
+    "seen": 1789244086.4233792,
+    "ast_hash": "80bdc89f8e18ea47e5602063f755c081",
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/environmental_information/application/results.py": {
-    "mtime": 1789221958.8990228,
-    "seen": 1789222623.7827172,
-    "ast_hash": "1184b45295f9c3fe96d147d1f032880d",
+    "mtime": 1789224443.948769,
+    "seen": 1789226700.0906997,
+    "ast_hash": "9e86d5346eeccdac0cb4875ea36421b0",
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/environmental_information/application/service.py": {
-    "mtime": 1789221958.9010234,
-    "seen": 1789222623.7827177,
-    "ast_hash": "d7c2a9b8e1b9174e69cabae6ed71773b",
+    "mtime": 1789246563.2735195,
+    "seen": 1789248030.659535,
+    "ast_hash": "57e5ad10ed82533ebfaa8a9af0ceff85",
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/environmental_information/domain/errors.py": {
@@ -1206,9 +1206,9 @@
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/environmental_information/infrastructure/orm.py": {
-    "mtime": 1789222542.2825596,
-    "seen": 1789222623.7827232,
-    "ast_hash": "75ca12de3352090c5148fbf7ea99d2f8",
+    "mtime": 1789246563.2745166,
+    "seen": 1789248030.6595464,
+    "ast_hash": "991741afd35eca317379f6e29ebc9068",
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/environmental_information/infrastructure/postgresql_repositories.py": {
@@ -1224,9 +1224,9 @@
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/environmental_information/interfaces/http.py": {
-    "mtime": 1789222202.110311,
-    "seen": 1789222623.7827258,
-    "ast_hash": "0e0632179812860190187d66f9006f70",
+    "mtime": 1789224891.326414,
+    "seen": 1789226700.0907176,
+    "ast_hash": "44ff0e0f89f6993b765d481a1bf6b689",
     "semantic_hash": ""
   },
   "backend/src/via_backend/infrastructure/__init__.py": {
@@ -1248,21 +1248,21 @@
     "semantic_hash": ""
   },
   "backend/tests/test_environmental_information_domain.py": {
-    "mtime": 1789222183.3017116,
-    "seen": 1789222623.7827528,
-    "ast_hash": "bd1c0c17e1adee9b4aad090999ce55f8",
+    "mtime": 1789246727.9432182,
+    "seen": 1789248030.659598,
+    "ast_hash": "c9fa11cfa990c2eee4ffd7a25b3178a6",
     "semantic_hash": ""
   },
   "backend/tests/test_environmental_information_postgresql.py": {
-    "mtime": 1789222183.305719,
-    "seen": 1789222623.7827532,
-    "ast_hash": "9c520504aeb7c1bcaf71d806533d1245",
+    "mtime": 1789247574.9302783,
+    "seen": 1789248030.6595993,
+    "ast_hash": "0d7a9e73893892c9c43383dd7ad01f53",
     "semantic_hash": ""
   },
   "backend/tests/test_environmental_information_repositories.py": {
-    "mtime": 1789222183.3027098,
-    "seen": 1789222623.7827537,
-    "ast_hash": "40aeba864b363b5ec489bed5465a795d",
+    "mtime": 1789246563.277515,
+    "seen": 1789248030.6596007,
+    "ast_hash": "e8858c3a166f2995df0b8f5aeab4d84c",
     "semantic_hash": ""
   },
   "docs/adr/ADR-012-postgresql-postgis-environmental-information-persistence.md": {
@@ -1293,6 +1293,102 @@
     "mtime": 1789198144.5951056,
     "seen": 1789222623.7828417,
     "ast_hash": "7854c51a9e0cf8b954aed9cbd8cc11b3",
+    "semantic_hash": ""
+  },
+  "backend/src/via_backend/contexts/environmental_information/application/ports.py": {
+    "mtime": 1789223696.6152563,
+    "seen": 1789226700.0906978,
+    "ast_hash": "f69c4ced43cac90ddb90972b032da7b5",
+    "semantic_hash": ""
+  },
+  "backend/src/via_backend/contexts/environmental_information/domain/coverage.py": {
+    "mtime": 1789243309.9978952,
+    "seen": 1789244086.4236403,
+    "ast_hash": "7ccde87a5e82b9ffc6700af032f1c167",
+    "semantic_hash": ""
+  },
+  "backend/src/via_backend/contexts/environmental_information/infrastructure/postgis_coverage.py": {
+    "mtime": 1789224821.1581805,
+    "seen": 1789226700.09071,
+    "ast_hash": "c8f3ef8ba2240f39ef08857cfd4ba5e8",
+    "semantic_hash": ""
+  },
+  "backend/tests/test_environmental_information_coverage.py": {
+    "mtime": 1789246563.2815146,
+    "seen": 1789248030.6595957,
+    "ast_hash": "1bf20aad320caab4ee839ab3f0702b3e",
+    "semantic_hash": ""
+  },
+  "backend/tests/test_environmental_information_coverage_postgresql.py": {
+    "mtime": 1789246563.2835183,
+    "seen": 1789248030.6595972,
+    "ast_hash": "09032c3aa554df9aefabbe473515e9a6",
+    "semantic_hash": ""
+  },
+  "docs/adr/ADR-013-extent-coverage-and-crs-comparison.md": {
+    "mtime": 1789225332.5149238,
+    "seen": 1789226700.0908363,
+    "ast_hash": "2d0b96d5b9df9e478c58e91bd0f49f7e",
+    "semantic_hash": ""
+  },
+  "docs/architecture/environmental-information-coverage.md": {
+    "mtime": 1789225332.5159242,
+    "seen": 1789226700.0908399,
+    "ast_hash": "7cf91727dc72024d9f99e586394b9f62",
+    "semantic_hash": ""
+  },
+  "graphify-out/memory/query_20260912_141800_edf56641_cross_context_dependency_violations.md": {
+    "mtime": 1789222680.586002,
+    "seen": 1789226700.0908568,
+    "ast_hash": "787d53ca69e0a33b736956a9efe5bc3b",
+    "semantic_hash": ""
+  },
+  "graphify-out/memory/query_20260912_141809_fb3cdc14_environmental_information_persistence.md": {
+    "mtime": 1789222689.1562157,
+    "seen": 1789226700.0908575,
+    "ast_hash": "f5898717770b9811d9bc40e3617e2052",
+    "semantic_hash": ""
+  },
+  "graphify-out/memory/query_20260912_141811_3a180559_dataset_and_datasetversion.md": {
+    "mtime": 1789222691.7752051,
+    "seen": 1789226700.0908582,
+    "ast_hash": "f3bb014845b3fb81542ede962c9a8ce2",
+    "semantic_hash": ""
+  },
+  "backend/scripts/verify.ps1": {
+    "mtime": 1789245384.6687436,
+    "seen": 1789245876.3741722,
+    "ast_hash": "46a890432b1937bfef0b80fe5c5b0fcb",
+    "semantic_hash": ""
+  },
+  "graphify-out/memory/query_20260912_201749_7ae7cc97_dataset_version_coverage_parcel_geometry_contract.md": {
+    "mtime": 1789244269.9659655,
+    "seen": 1789244297.7953105,
+    "ast_hash": "f97b977874c3f4ff86e17731d37ca0cf",
+    "semantic_hash": ""
+  },
+  "graphify-out/memory/query_20260912_201749_bdeed3cd_coverage_classification_dataset_version_geometry_c.md": {
+    "mtime": 1789244269.5428164,
+    "seen": 1789244297.795313,
+    "ast_hash": "d5d293158fcbbdebcf74e5287ce532fe",
+    "semantic_hash": ""
+  },
+  "graphify-out/memory/query_20260912_201750_6c8c17cd_postgis_transform_crs_geography_coverage.md": {
+    "mtime": 1789244270.370819,
+    "seen": 1789244297.795314,
+    "ast_hash": "1510c4b63f00c253c41139b8e8e540cd",
+    "semantic_hash": ""
+  },
+  "graphify-out/memory/query_20260912_201750_c42e1bc7_environmental_information_farm_management_imports.md": {
+    "mtime": 1789244270.7762275,
+    "seen": 1789244297.7953157,
+    "ast_hash": "1300b0c555e49c49c780a8646d0ea33f",
+    "semantic_hash": ""
+  },
+  "graphify-out/memory/query_20260912_203946_d6109bfc_confirm_backend_package_and_layer_structure__domai.md": {
+    "mtime": 1789245586.2903068,
+    "seen": 1789245876.3743417,
+    "ast_hash": "6c59dffa3825db572c02eb1024e119cd",
     "semantic_hash": ""
   }
 }
