@@ -15,7 +15,8 @@ EXPECTED_CONTEXTS = {
     "decision_support",
 }
 EXPECTED_LAYERS = {"domain", "application", "infrastructure", "interfaces"}
-FORBIDDEN_DOMAIN_LAYERS = {"infrastructure", "interfaces"}
+FORBIDDEN_DOMAIN_LAYERS = {"application", "infrastructure", "interfaces"}
+FORBIDDEN_APPLICATION_LAYERS = {"infrastructure", "interfaces"}
 
 
 def _imported_modules(path: Path) -> set[str]:
@@ -60,6 +61,32 @@ def test_domain_packages_do_not_import_outward_layers() -> None:
         for module in _imported_modules(domain_file):
             if set(module.casefold().split(".")) & FORBIDDEN_DOMAIN_LAYERS:
                 violations.append(f"{domain_file.relative_to(SOURCE_ROOT)} imports {module}")
+
+    assert not violations, "\n".join(violations)
+
+
+def test_application_packages_do_not_import_outward_layers() -> None:
+    violations: list[str] = []
+
+    for application_file in CONTEXTS_ROOT.glob("*/application/**/*.py"):
+        for module in _imported_modules(application_file):
+            if set(module.casefold().split(".")) & FORBIDDEN_APPLICATION_LAYERS:
+                violations.append(
+                    f"{application_file.relative_to(SOURCE_ROOT)} imports {module}"
+                )
+
+    assert not violations, "\n".join(violations)
+
+
+def test_context_interfaces_do_not_import_infrastructure() -> None:
+    violations: list[str] = []
+
+    for interface_file in CONTEXTS_ROOT.glob("*/interfaces/**/*.py"):
+        for module in _imported_modules(interface_file):
+            if "infrastructure" in module.casefold().split("."):
+                violations.append(
+                    f"{interface_file.relative_to(SOURCE_ROOT)} imports {module}"
+                )
 
     assert not violations, "\n".join(violations)
 
