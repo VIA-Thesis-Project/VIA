@@ -25,3 +25,10 @@ class ParcelSnapshotInput:
 class RequestEvaluation:
     parcel_snapshot: ParcelSnapshotInput
     requested_crops: tuple[str, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class ExecuteEvaluation:
+    """Request synchronous execution of one already-persisted evaluation."""
+
+    evaluation_id: UUID

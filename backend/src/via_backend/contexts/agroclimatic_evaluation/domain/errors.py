@@ -7,3 +7,7 @@ class DomainValidationError(ValueError):
 
 class EvaluationConflictError(RuntimeError):
     """Raised when an evaluation identity already exists."""
+
+
+class InvalidEvaluationTransitionError(RuntimeError):
+    """Raised when an Evaluation lifecycle transition is not allowed."""

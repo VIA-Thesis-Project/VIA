@@ -1,6 +1,7 @@
 """Agroclimatic Evaluation application layer."""
 
-from .commands import ParcelSnapshotInput, RequestEvaluation
+from .commands import ExecuteEvaluation, ParcelSnapshotInput, RequestEvaluation
+from .execution import AgroclimaticEvaluationExecutionService
 from .ports import (
     CropExecutionStatus,
     CropSuitabilityEngineError,
@@ -14,7 +15,7 @@ from .ports import (
     SuitabilityScoreSummary,
 )
 from .queries import GetEvaluation, ListEvaluations
-from .results import EvaluationResult, ParcelSnapshotResult
+from .results import CropOutcomeResult, EvaluationResult, ParcelSnapshotResult
 from .service import (
     AgroclimaticEvaluationService,
     InvalidCommandError,
@@ -23,13 +24,16 @@ from .service import (
 )
 
 __all__ = [
+    "AgroclimaticEvaluationExecutionService",
     "AgroclimaticEvaluationService",
     "CropExecutionStatus",
+    "CropOutcomeResult",
     "CropSuitabilityEngineError",
     "CropSuitabilityExecutionError",
     "CropSuitabilityRequest",
     "CropSuitabilityResult",
     "EvaluationResult",
+    "ExecuteEvaluation",
     "GetEvaluation",
     "ICropSuitabilityEngine",
     "InvalidCommandError",

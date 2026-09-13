@@ -16,10 +16,15 @@ from sqlalchemy.engine import make_url
 from sqlalchemy.exc import IntegrityError
 
 from via_backend.contexts.agroclimatic_evaluation.domain import (
+    CropOutcome,
+    CropOutcomeStatus,
     Evaluation,
+    EvaluationConflictError,
     EvaluationStatus,
     ParcelSnapshot,
+    ScientificTrace,
     SnapshotGeometry,
+    SuitabilitySummary,
 )
 from via_backend.contexts.agroclimatic_evaluation.infrastructure.orm import (
     EvaluationCropRecord,
@@ -176,3 +181,73 @@ def test_evaluation_schema_has_no_cross_context_foreign_keys(
         )
 
     assert referenced_schemas <= {"agroclimatic_evaluation"}
+
+
+def _succeeded_outcome(crop_id: str = "rice") -> CropOutcome:
+    return CropOutcome(
+        crop_id=crop_id,
+        status=CropOutcomeStatus.SUCCEEDED,
+        suitability=SuitabilitySummary(
+            mean=0.0,
+            minimum=0.0,
+            maximum=0.0,
+            valid_cells=3,
+            valid_area_m2=75.0,
+            coverage_fraction=0.75,
+            zero_suitability_area_m2=75.0,
+        ),
+        failure_message=None,
+        trace=ScientificTrace(
+            engine_identifier="CropSuiteLite",
+            execution_reference="opaque-engine-reference",
+            started_at=NOW,
+            finished_at=NOW,
+            elapsed_seconds=2.5,
+            execution_mode="sequential_isolated_processes",
+            parcel_sha256="parcel-sha256",
+            parameter_sha256="parameter-sha256",
+            configuration_sha256="configuration-sha256",
+            source_files_unchanged=True,
+        ),
+    )
+
+
+def test_crop_outcome_and_trace_fields_round_trip(
+    database: tuple[Engine, SessionFactory],
+) -> None:
+    _, sessions = database
+    evaluation = _evaluation()
+    repository = PostgreSQLEvaluationRepository(sessions)
+    repository.add(evaluation)
+    preparing = evaluation.prepare()
+    repository.save(preparing, expected_status=EvaluationStatus.QUEUED)
+    running = preparing.start_running()
+    repository.save(running, expected_status=EvaluationStatus.PREPARING)
+    outcome = _succeeded_outcome()
+    repository.add_outcome(evaluation.id, outcome)
+
+    restored = repository.get(evaluation.id)
+
+    assert restored is not None
+    assert restored.status is EvaluationStatus.RUNNING
+    assert restored.outcomes == (outcome,)
+    assert restored.outcomes[0].suitability is not None
+    assert restored.outcomes[0].suitability.mean == 0.0
+
+
+def test_duplicate_crop_outcome_is_rejected_by_database(
+    database: tuple[Engine, SessionFactory],
+) -> None:
+    _, sessions = database
+    evaluation = _evaluation()
+    repository = PostgreSQLEvaluationRepository(sessions)
+    repository.add(evaluation)
+    preparing = evaluation.prepare()
+    repository.save(preparing, expected_status=EvaluationStatus.QUEUED)
+    running = preparing.start_running()
+    repository.save(running, expected_status=EvaluationStatus.PREPARING)
+    outcome = _succeeded_outcome()
+    repository.add_outcome(evaluation.id, outcome)
+
+    with pytest.raises(EvaluationConflictError):
+        repository.add_outcome(evaluation.id, outcome)

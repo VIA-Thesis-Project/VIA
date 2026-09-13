@@ -1,6 +1,10 @@
 # Target evaluation flow
 
-The target flow accepts a short HTTP request, records enough immutable context to reproduce the evaluation, and delegates the long calculation to a recoverable worker. The endpoints and DTO names are proposed contracts, not implemented backend behavior.
+The target flow accepts a short HTTP request, records enough immutable context to
+reproduce the evaluation, and delegates the long calculation to a recoverable
+worker. The current execution increment implements the worker-callable
+Application orchestration synchronously, but does not connect it to HTTP or a
+queue.
 
 ## Request to result
 
@@ -37,6 +41,29 @@ Authorization must precede calculation. A registered evaluation and its queue pu
 
 Cancellation is proposed. It must not be reported as complete while an unmanaged scientific process continues.
 
+## Implemented synchronous orchestration
+
+`AgroclimaticEvaluationExecutionService` loads an already-persisted queued
+evaluation and claims it with an optimistic `queued -> preparing` transition. It
+then persists `preparing -> running`, evaluates requested crops sequentially
+through `ICropSuitabilityEngine`, and commits one same-context durable
+`crop_outcomes` row after each returned result. Once every requested crop has an
+outcome it persists `running -> summarizing -> succeeded`.
+
+Each repository call opens a short transaction; the blocking scientific call is
+never enclosed in a database transaction. A future worker can call this same
+Application use case without changing its semantics.
+
+Returned per-crop `failed` and `no_coverage` values are completed scientific
+outcomes and do not abort later crops. A valid score of zero remains `succeeded`.
+Overall `succeeded` means every requested crop was attempted and durably reported,
+not that every per-crop status succeeded. Boundary or other orchestration
+exceptions stop remaining crops and persist overall `failed` with a minimal
+reason; they do not fabricate a crop outcome.
+
+Request creation remains request creation only. There is no HTTP run-now
+endpoint, broker, worker, retry, or cancellation mechanism in this increment.
+
 ## Current PoC states and required mapping
 
 The current local manifest uses request states `running`, `completed`, `partial`, and `failed`. Per-crop states are `running`, `succeeded`, `no_coverage`, and `failed`. A failed crop does not stop the others. Invalid requests fail before a job directory is created.
@@ -48,7 +75,9 @@ The future API requires an explicit mapping rather than renaming these values im
 - `Cancelled`, `Queued`, `Preparing`, and `Summarizing` do not exist in the current PoC.
 - `completed` does not guarantee that every crop has usable coverage; clients must inspect per-crop results.
 
-The definitive state machine, retry transitions, cancellation semantics, and partial-result policy remain open decisions.
+Retry transitions, crash recovery, cancellation semantics, and the final
+evidence/result model remain open decisions. The current no-retry executor
+rejects every non-queued state.
 
 ## Proposed query endpoints
 

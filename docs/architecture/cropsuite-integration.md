@@ -6,16 +6,18 @@ CropSuiteLite is the existing scientific engine. The backend must preserve it be
 
 `ICropSuitabilityEngine` is the Application port for requesting a verified suitability calculation. `CropSuiteAdapter` is the Infrastructure implementation that translates an approved application request into CropSuiteLite configuration and files, invokes the existing engine, and returns verified result and artifact references.
 
-The names are now concrete backend contracts in Agroclimatic Evaluation. The
-flow below remains conceptual because worker orchestration and persistence are
-not implemented:
+The names are concrete backend contracts in Agroclimatic Evaluation. Synchronous
+Application orchestration and minimal per-crop persistence are now implemented;
+worker dispatch remains future work:
 
 ```text
-Application use case
-  -> ICropSuitabilityEngine.evaluate(verified input references)
+ExecuteEvaluation application use case
+  -> load and claim a persisted queued Evaluation
+  -> ICropSuitabilityEngine.evaluate(one requested crop)
   -> CropSuiteAdapter
   -> existing CropSuiteLite multicrop capability
-  -> verified result and evidence references
+  -> checked per-crop result
+  -> persist one durable outcome and complete Evaluation lifecycle
 ```
 
 ## Mandatory dependency rules
@@ -75,9 +77,19 @@ source-files-unchanged result. A durable engine commit/version, dependency
 versions, dataset manifest, full evidence/artifact model, and retention policy
 are not reliably available at this boundary and are explicitly deferred.
 
-## Worker responsibilities
+## Application orchestration and future worker responsibilities
 
-The future worker should load a persisted evaluation, verify its transition, create isolated work storage, resolve exact dataset/parameter/engine versions, call the port, verify expected artifacts and grid compatibility, summarize the parcel, persist per-crop outcomes and evidence, and publish a final state. It must treat shared inputs as immutable and avoid a global output directory.
+`AgroclimaticEvaluationExecutionService` now loads and claims a queued
+evaluation, persists active lifecycle transitions, invokes the port once per
+requested crop in deterministic order, persists each checked outcome, and
+finishes the aggregate. An explicit per-crop failure remains an outcome and does
+not make the orchestration fail; a boundary exception stops the sequence and
+persists overall failure.
+
+The future worker should call this use case, then add recoverable claiming,
+retry/recovery policy, cancellation, exact environmental input resolution,
+artifact/evidence retention, and publication. It must treat shared inputs as
+immutable and avoid a global output directory.
 
 ## Scientific preservation constraints
 
@@ -85,8 +97,9 @@ The adapter must not change crop parameter files, interpolation, precipitation u
 
 ## Future work not yet implemented
 
-The repository does not yet provide scientific-result/evidence persistence, a
-durable queue, retries, recovery, cancellation, quotas, API authorization,
+The repository provides only the reliable current per-crop summary, failure, and
+trace fields. It does not yet provide the final result/evidence model, a durable
+queue, retries, recovery, cancellation, quotas, API authorization,
 shared climate-preparation cache, compatible-run reuse, or retention policy.
 HTTP request creation remains separate from scientific execution. Reuse requires
 a manifest key covering engine, parameters, inputs, scenario, management,

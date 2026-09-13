@@ -1,4 +1,4 @@
-# ADR-013: PostgreSQL/PostGIS persistence for Agroclimatic Evaluation
+# ADR-014: PostgreSQL/PostGIS persistence for Agroclimatic Evaluation
 
 ## Status
 
@@ -17,7 +17,7 @@ keys.
 
 Use the existing PostgreSQL/PostGIS, SQLAlchemy, GeoAlchemy2, psycopg, and Alembic
 stack. Agroclimatic Evaluation owns schema `agroclimatic_evaluation` and tables
-`evaluations` and `evaluation_crops`.
+`evaluations`, `evaluation_crops`, and `crop_outcomes`.
 
 Store the owned `ParcelSnapshot` directly with the evaluation: historical
 `project_id` and `parcel_id`, positive parcel version, geometry, CRS, and capture
@@ -30,9 +30,22 @@ constraints preserve deterministic order and reject duplicates at the database
 boundary. The internal foreign key to `evaluations` is within the same bounded
 context.
 
-The domain recognizes the proposed lifecycle vocabulary, but this increment can
-only create `queued` evaluations. It adds no transition methods, worker dispatch,
-scientific run, result, evidence, or cancellation behavior.
+The domain implements explicit synchronous-execution transitions
+`queued -> preparing -> running -> summarizing -> succeeded` and fatal active
+transitions to `failed`. Repository saves use the expected prior status so only
+one caller can claim a queued evaluation. A minimal failure reason is stored only
+for overall orchestration failure.
+
+Store one normalized outcome for each completed requested crop, keyed by
+`(evaluation_id, crop_id)` and linked only to the same-context requested-crop
+row. Preserve the current reliable suitability summary, scientific failure
+message, and execution trace fields. Do not store engine workspaces, commands,
+Python paths, internal CropSuiteLite paths, or invented versions.
+
+Each lifecycle transition and per-crop outcome is committed in a short
+transaction. Never keep the blocking scientific call inside a database
+transaction. Worker dispatch, retry/recovery, cancellation, and the final
+evidence/artifact model remain deferred.
 
 ## Consequences
 
@@ -43,9 +56,10 @@ snapshot input from a Farm Management public contract, but the Evaluation
 application and HTTP controller will not access Farm repositories directly.
 
 Database constraints protect snapshot version, geometry kind and CRS, lifecycle
-vocabulary, crop position, and crop uniqueness. Future lifecycle transitions and
-scientific traceability records require separate increments and must preserve the
-immutable request fields decided here.
+vocabulary, crop position, requested-crop uniqueness, one outcome per crop, and
+basic outcome payload consistency. The current optimistic status check prevents
+two callers from both claiming `queued`; recovery of an already-active
+evaluation remains the responsibility of the future worker increment.
 
 ## Source
 

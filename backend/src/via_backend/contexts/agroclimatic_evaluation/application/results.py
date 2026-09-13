@@ -9,6 +9,7 @@ from typing import Any
 from uuid import UUID
 
 from ..domain.models import Evaluation, EvaluationStatus
+from ..domain.outcomes import CropOutcomeStatus
 
 
 @dataclass(frozen=True, slots=True)
@@ -22,12 +23,23 @@ class ParcelSnapshotResult:
 
 
 @dataclass(frozen=True, slots=True)
+class CropOutcomeResult:
+    crop_id: str
+    status: CropOutcomeStatus
+    mean: float | None
+    failure_message: str | None
+    execution_reference: str
+
+
+@dataclass(frozen=True, slots=True)
 class EvaluationResult:
     id: UUID
     parcel_snapshot: ParcelSnapshotResult
     requested_crops: tuple[str, ...]
     status: EvaluationStatus
     created_at: datetime
+    outcomes: tuple[CropOutcomeResult, ...]
+    failure_reason: str | None
 
     @classmethod
     def from_domain(cls, evaluation: Evaluation) -> EvaluationResult:
@@ -45,4 +57,19 @@ class EvaluationResult:
             requested_crops=evaluation.requested_crops,
             status=evaluation.status,
             created_at=evaluation.created_at,
+            outcomes=tuple(
+                CropOutcomeResult(
+                    crop_id=outcome.crop_id,
+                    status=outcome.status,
+                    mean=(
+                        outcome.suitability.mean
+                        if outcome.suitability is not None
+                        else None
+                    ),
+                    failure_message=outcome.failure_message,
+                    execution_reference=outcome.trace.execution_reference,
+                )
+                for outcome in evaluation.outcomes
+            ),
+            failure_reason=evaluation.failure_reason,
         )

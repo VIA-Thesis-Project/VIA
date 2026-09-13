@@ -2,21 +2,18 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime
 from enum import StrEnum
 from uuid import UUID
 
-from .errors import DomainValidationError
+from .errors import DomainValidationError, InvalidEvaluationTransitionError
+from .outcomes import CropOutcome
 from .snapshot import ParcelSnapshot
 
 
 class EvaluationStatus(StrEnum):
-    """Architecture-approved lifecycle vocabulary.
-
-    This increment creates only queued evaluations; execution transitions remain
-    deliberately deferred until worker semantics are designed.
-    """
+    """Architecture-approved lifecycle vocabulary."""
 
     QUEUED = "queued"
     PREPARING = "preparing"
@@ -29,13 +26,15 @@ class EvaluationStatus(StrEnum):
 
 @dataclass(frozen=True, slots=True)
 class Evaluation:
-    """An immutable multicrop evaluation request and its parcel snapshot."""
+    """An immutable multicrop evaluation and its scientific outcomes."""
 
     id: UUID
     parcel_snapshot: ParcelSnapshot
     requested_crops: tuple[str, ...]
     status: EvaluationStatus
     created_at: datetime
+    outcomes: tuple[CropOutcome, ...] = ()
+    failure_reason: str | None = None
 
     def __post_init__(self) -> None:
         if isinstance(self.requested_crops, (str, bytes)):
@@ -56,4 +55,77 @@ class Evaluation:
             raise DomainValidationError("Requested crop identifiers must be unique.")
         if self.created_at.tzinfo is None or self.created_at.utcoffset() is None:
             raise DomainValidationError("Evaluation creation time must be timezone-aware.")
+        outcomes = tuple(self.outcomes)
+        outcome_crops = tuple(outcome.crop_id for outcome in outcomes)
+        if outcome_crops != crops[: len(outcome_crops)]:
+            raise DomainValidationError(
+                "Crop outcomes must be a unique ordered prefix of requested crops."
+            )
+        if self.status in {EvaluationStatus.QUEUED, EvaluationStatus.PREPARING} and outcomes:
+            raise DomainValidationError("An evaluation cannot have outcomes before running.")
+        if self.status in {EvaluationStatus.SUMMARIZING, EvaluationStatus.SUCCEEDED} and (
+            outcome_crops != crops
+        ):
+            raise DomainValidationError(
+                "Summarizing and succeeded evaluations require one outcome per requested crop."
+            )
+        if self.status is EvaluationStatus.FAILED:
+            if not self.failure_reason:
+                raise DomainValidationError("A failed evaluation requires a failure reason.")
+        elif self.failure_reason is not None:
+            raise DomainValidationError(
+                "Only a failed evaluation may retain an orchestration failure reason."
+            )
         object.__setattr__(self, "requested_crops", crops)
+        object.__setattr__(self, "outcomes", outcomes)
+
+    def prepare(self) -> Evaluation:
+        return self._transition(EvaluationStatus.QUEUED, EvaluationStatus.PREPARING)
+
+    def start_running(self) -> Evaluation:
+        return self._transition(EvaluationStatus.PREPARING, EvaluationStatus.RUNNING)
+
+    def record_outcome(self, outcome: CropOutcome) -> Evaluation:
+        if self.status is not EvaluationStatus.RUNNING:
+            raise InvalidEvaluationTransitionError(
+                "Crop outcomes can only be recorded while an evaluation is running."
+            )
+        expected_index = len(self.outcomes)
+        if expected_index >= len(self.requested_crops):
+            raise InvalidEvaluationTransitionError(
+                "Every requested crop already has an outcome."
+            )
+        if outcome.crop_id != self.requested_crops[expected_index]:
+            raise InvalidEvaluationTransitionError(
+                "Crop outcomes must follow the deterministic requested-crop order."
+            )
+        return replace(self, outcomes=(*self.outcomes, outcome))
+
+    def start_summarizing(self) -> Evaluation:
+        return self._transition(EvaluationStatus.RUNNING, EvaluationStatus.SUMMARIZING)
+
+    def succeed(self) -> Evaluation:
+        return self._transition(EvaluationStatus.SUMMARIZING, EvaluationStatus.SUCCEEDED)
+
+    def fail(self, reason: str) -> Evaluation:
+        if self.status not in {
+            EvaluationStatus.PREPARING,
+            EvaluationStatus.RUNNING,
+            EvaluationStatus.SUMMARIZING,
+        }:
+            raise InvalidEvaluationTransitionError(
+                f"Evaluation cannot fail from {self.status.value}."
+            )
+        reason = reason.strip()
+        if not reason:
+            raise DomainValidationError("An orchestration failure reason must be non-empty.")
+        return replace(self, status=EvaluationStatus.FAILED, failure_reason=reason)
+
+    def _transition(
+        self, expected: EvaluationStatus, target: EvaluationStatus
+    ) -> Evaluation:
+        if self.status is not expected:
+            raise InvalidEvaluationTransitionError(
+                f"Evaluation cannot transition from {self.status.value} to {target.value}."
+            )
+        return replace(self, status=target)
