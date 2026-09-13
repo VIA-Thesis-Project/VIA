@@ -47,9 +47,11 @@ conflict maps to `409`.
 
 This slice does not implement Farm or Environmental Information adapters,
 authorization, coverage selection, `EnvironmentalInputManifest`, dataset-version
-selection, outbox or broker publication, worker execution, CropSuiteLite,
-`ICropSuitabilityEngine`, scientific runs, suitability scores, nodata handling,
-results, evidence, artifacts, retries, cancellation, recommendations, or LLM/RAG.
+selection, outbox or broker publication, worker execution, HTTP-triggered
+CropSuiteLite execution, scientific-run persistence, result/evidence persistence,
+retries, cancellation, recommendations, or LLM/RAG. The separate scientific
+engine boundary is documented in
+[`cropsuite-integration.md`](cropsuite-integration.md).
 
 Persistence follows
-[ADR-013](../adr/ADR-013-postgresql-postgis-agroclimatic-evaluation-persistence.md).
+[ADR-014](../adr/ADR-014-postgresql-postgis-agroclimatic-evaluation-persistence.md).

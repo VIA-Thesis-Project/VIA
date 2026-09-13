@@ -35,6 +35,7 @@ where = ["src"]
 addopts = "-q"
 markers = [
   "integration: requires a PostgreSQL/PostGIS database",
+  "scientific: requires the real CropSuiteLite engine and scientific datasets",
 ]
 pythonpath = ["src"]
 testpaths = ["tests"]

@@ -6,7 +6,9 @@ CropSuiteLite is the existing scientific engine. The backend must preserve it be
 
 `ICropSuitabilityEngine` is the Application port for requesting a verified suitability calculation. `CropSuiteAdapter` is the Infrastructure implementation that translates an approved application request into CropSuiteLite configuration and files, invokes the existing engine, and returns verified result and artifact references.
 
-The names express the intended architecture; no concrete backend interface exists yet. Any signature below is illustrative pseudocode, not a current Python API:
+The names are now concrete backend contracts in Agroclimatic Evaluation. The
+flow below remains conceptual because worker orchestration and persistence are
+not implemented:
 
 ```text
 Application use case
@@ -35,6 +37,44 @@ Application use case
 
 The current implementation evaluates crops sequentially, creates an isolated directory and copied parameter file per crop, limits internal engine processes, persists progress after each crop, and lets later crops continue after one fails. Migration must preserve that behavior before considering reuse or parallelism.
 
+## Implemented backend boundary
+
+`application/ports.py` owns immutable `CropSuitabilityRequest`,
+`CropSuitabilityResult`, status, summary, failure, and trace contracts together
+with `ICropSuitabilityEngine`. A request contains only evaluation identity, one
+server-approved crop identifier, and the immutable `ParcelSnapshot`; it contains
+no engine paths, ORM types, HTTP types, process handles, or final
+`EnvironmentalInputManifest`.
+
+`infrastructure/cropsuite_adapter.py` implements the port. Infrastructure receives
+the CropSuiteLite source root, a dedicated execution-workspace root, an explicit
+scientific Python executable, optional server-side configuration/catalog paths,
+and the internal process limit. The workspace is rejected if it is inside the
+scientific source tree.
+
+The adapter serializes Polygon or MultiPolygon snapshot geometry into that
+workspace and launches the configured scientific Python interpreter in a separate
+process. That process imports and calls the existing
+`src.multicrop.run_evaluation(...)` capability with a singleton crop list.
+CropSuiteLite therefore executes with its own scientific dependency environment,
+while its existing per-crop isolation through
+`scripts/run_evaluation_engine.py` remains unchanged. The adapter adds no crop
+parallelism or queue semantics.
+
+The adapter validates the selected crop, per-crop outcome, expected suitability
+summary, timestamps, and reproducibility guard before returning. Per-crop
+`failed`, `no_coverage`, and `succeeded` are separate. A valid suitability score
+of zero remains `succeeded`; `no_coverage` retains a summary with no valid cells
+and no mean. Missing or malformed engine output raises an explicit boundary
+error rather than becoming a scientific score.
+
+Current trace output includes the CropSuiteLite identifier, opaque PoC execution
+reference, timestamps, elapsed time, preserved execution mode, parcel checksum,
+available crop-parameter and effective-configuration checksums, and the
+source-files-unchanged result. A durable engine commit/version, dependency
+versions, dataset manifest, full evidence/artifact model, and retention policy
+are not reliably available at this boundary and are explicitly deferred.
+
 ## Worker responsibilities
 
 The future worker should load a persisted evaluation, verify its transition, create isolated work storage, resolve exact dataset/parameter/engine versions, call the port, verify expected artifacts and grid compatibility, summarize the parcel, persist per-crop outcomes and evidence, and publish a final state. It must treat shared inputs as immutable and avoid a global output directory.
@@ -45,7 +85,14 @@ The adapter must not change crop parameter files, interpolation, precipitation u
 
 ## Future work not yet implemented
 
-The repository does not yet provide a durable queue, retries, recovery, cancellation, quotas, API authorization, database persistence, shared climate-preparation cache, compatible-run reuse, or retention policy. Reuse requires a manifest key covering engine, parameters, inputs, scenario, management, scientific options, spatial scope, and aggregation method. The distinction between a reusable `ScientificRun` and a parcel-specific `ParcelAssessment` is a proposed model, not current code.
+The repository does not yet provide scientific-result/evidence persistence, a
+durable queue, retries, recovery, cancellation, quotas, API authorization,
+shared climate-preparation cache, compatible-run reuse, or retention policy.
+HTTP request creation remains separate from scientific execution. Reuse requires
+a manifest key covering engine, parameters, inputs, scenario, management,
+scientific options, spatial scope, and aggregation method. The distinction between
+a reusable `ScientificRun` and a parcel-specific `ParcelAssessment` is a proposed
+model, not current code.
 
 ## Source
 

@@ -80,9 +80,7 @@ def test_application_packages_do_not_import_outward_layers() -> None:
         for module in _imported_modules(application_file):
             parts = set(module.casefold().split("."))
             if parts & (FORBIDDEN_APPLICATION_LAYERS | FORBIDDEN_DOMAIN_DEPENDENCIES):
-                violations.append(
-                    f"{application_file.relative_to(SOURCE_ROOT)} imports {module}"
-                )
+                violations.append(f"{application_file.relative_to(SOURCE_ROOT)} imports {module}")
 
     assert not violations, "\n".join(violations)
 
@@ -93,21 +91,27 @@ def test_context_interfaces_do_not_import_infrastructure() -> None:
     for interface_file in CONTEXTS_ROOT.glob("*/interfaces/**/*.py"):
         for module in _imported_modules(interface_file):
             if "infrastructure" in module.casefold().split("."):
-                violations.append(
-                    f"{interface_file.relative_to(SOURCE_ROOT)} imports {module}"
-                )
+                violations.append(f"{interface_file.relative_to(SOURCE_ROOT)} imports {module}")
 
     assert not violations, "\n".join(violations)
 
 
-def test_backend_source_does_not_reference_scientific_engine() -> None:
-    references = [
+def test_only_cropsuite_infrastructure_adapter_references_scientific_engine() -> None:
+    adapter = (
+        SOURCE_ROOT
+        / "contexts"
+        / "agroclimatic_evaluation"
+        / "infrastructure"
+        / "cropsuite_adapter.py"
+    )
+    violations = [
         str(path.relative_to(SOURCE_ROOT))
         for path in SOURCE_ROOT.rglob("*.py")
-        if "cropsuitelite" in path.read_text(encoding="utf-8").casefold()
+        if path != adapter and "cropsuitelite" in path.read_text(encoding="utf-8").casefold()
     ]
 
-    assert not references, "\n".join(references)
+    assert not violations, "\n".join(violations)
+    assert "cropsuitelite" in adapter.read_text(encoding="utf-8").casefold()
 
 
 def test_farm_management_does_not_import_other_contexts() -> None:
@@ -121,9 +125,7 @@ def test_farm_management_does_not_import_other_contexts() -> None:
                 continue
             context_index = parts.index("contexts") + 1
             if context_index < len(parts) and parts[context_index] != "farm_management":
-                violations.append(
-                    f"{source_file.relative_to(SOURCE_ROOT)} imports {module}"
-                )
+                violations.append(f"{source_file.relative_to(SOURCE_ROOT)} imports {module}")
 
     assert not violations, "\n".join(violations)
 
@@ -138,13 +140,8 @@ def test_environmental_information_does_not_import_other_contexts() -> None:
             if "contexts" not in parts:
                 continue
             context_index = parts.index("contexts") + 1
-            if (
-                context_index < len(parts)
-                and parts[context_index] != "environmental_information"
-            ):
-                violations.append(
-                    f"{source_file.relative_to(SOURCE_ROOT)} imports {module}"
-                )
+            if context_index < len(parts) and parts[context_index] != "environmental_information":
+                violations.append(f"{source_file.relative_to(SOURCE_ROOT)} imports {module}")
 
     assert not violations, "\n".join(violations)
 
@@ -159,13 +156,8 @@ def test_agroclimatic_evaluation_does_not_import_other_contexts() -> None:
             if "contexts" not in parts:
                 continue
             context_index = parts.index("contexts") + 1
-            if (
-                context_index < len(parts)
-                and parts[context_index] != "agroclimatic_evaluation"
-            ):
-                violations.append(
-                    f"{source_file.relative_to(SOURCE_ROOT)} imports {module}"
-                )
+            if context_index < len(parts) and parts[context_index] != "agroclimatic_evaluation":
+                violations.append(f"{source_file.relative_to(SOURCE_ROOT)} imports {module}")
 
     assert not violations, "\n".join(violations)
 

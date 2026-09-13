@@ -18,7 +18,17 @@ The engine remains replaceable at the boundary and its scientific behavior can b
 
 ## Current implementation status
 
-The port and adapter are not implemented. The adapter is expected to wrap the blocking capability in [`CropSuiteLite/src/multicrop.py`](../../CropSuiteLite/src/multicrop.py), currently exposed by [`CropSuiteLite/evaluate.py`](../../CropSuiteLite/evaluate.py).
+The Application port and Infrastructure adapter are implemented in Agroclimatic
+Evaluation. `CropSuiteAdapter` launches an explicitly configured scientific
+Python interpreter in an isolated process; that process imports and invokes the
+blocking [`run_evaluation(...)`](../../CropSuiteLite/src/multicrop.py) capability
+for one crop. The existing CropSuiteLite capability then retains its own isolated
+subprocess call to
+[`scripts/run_evaluation_engine.py`](../../CropSuiteLite/scripts/run_evaluation_engine.py).
+
+This keeps CropSuiteLite scientific dependencies outside the VIA backend Python
+environment. The adapter is not connected to HTTP or a worker, and
+result/evidence persistence remains deferred.
 
 ## Source
 
