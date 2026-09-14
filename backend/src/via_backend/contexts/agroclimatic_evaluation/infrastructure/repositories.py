@@ -16,14 +16,10 @@ class InMemoryEvaluationRepository:
     def add(self, evaluation: Evaluation) -> None:
         with self._lock:
             if evaluation.id in self._evaluations:
-                raise EvaluationConflictError(
-                    f"Evaluation {evaluation.id} already exists."
-                )
+                raise EvaluationConflictError(f"Evaluation {evaluation.id} already exists.")
             self._evaluations[evaluation.id] = evaluation
 
-    def save(
-        self, evaluation: Evaluation, *, expected_status: EvaluationStatus
-    ) -> None:
+    def save(self, evaluation: Evaluation, *, expected_status: EvaluationStatus) -> None:
         with self._lock:
             current = self._evaluations.get(evaluation.id)
             if (
@@ -43,9 +39,7 @@ class InMemoryEvaluationRepository:
         with self._lock:
             current = self._evaluations.get(evaluation_id)
             if current is None:
-                raise EvaluationConflictError(
-                    f"Evaluation {evaluation_id} does not exist."
-                )
+                raise EvaluationConflictError(f"Evaluation {evaluation_id} does not exist.")
             try:
                 self._evaluations[evaluation_id] = current.record_outcome(outcome)
             except InvalidEvaluationTransitionError as error:
@@ -54,6 +48,23 @@ class InMemoryEvaluationRepository:
     def get(self, evaluation_id: UUID) -> Evaluation | None:
         with self._lock:
             return self._evaluations.get(evaluation_id)
+
+    def list_queued_ids(self, *, limit: int) -> tuple[UUID, ...]:
+        if isinstance(limit, bool) or limit < 1:
+            raise ValueError("limit must be a positive integer.")
+        with self._lock:
+            queued = (
+                evaluation
+                for evaluation in self._evaluations.values()
+                if evaluation.status is EvaluationStatus.QUEUED
+            )
+            return tuple(
+                evaluation.id
+                for evaluation in sorted(
+                    queued,
+                    key=lambda item: (item.created_at, item.id),
+                )[:limit]
+            )
 
     def list_all(self) -> tuple[Evaluation, ...]:
         with self._lock:

@@ -107,6 +107,22 @@ scientific options, spatial scope, and aggregation method. The distinction betwe
 a reusable `ScientificRun` and a parcel-specific `ParcelAssessment` is a proposed
 model, not current code.
 
+## Implemented worker host
+
+A separate backend worker process now polls PostgreSQL for queued evaluations
+and delegates execution to `AgroclimaticEvaluationExecutionService`. The worker
+composition root constructs the Infrastructure-owned `CropSuiteAdapter`; Domain
+and Application remain unaware of CropSuiteLite filesystem or process details.
+
+PostgreSQL remains the current durable source of work. Multiple worker processes
+may discover the same evaluation, while the existing optimistic
+`queued -> preparing` transition is the authoritative claim. Scientific
+execution does not run inside a database transaction.
+
+A crashed worker may leave an evaluation active. The current recovery mechanism
+is explicit fail-only recovery to `failed`; heartbeats, leases, automatic stale
+detection, retries, requeue and cancellation remain deferred.wsl
+
 ## Source
 
 See sections 11 through 14 and 22 of [`Arquitectura_y_backend_CropSuiteLite_Huaura_v2.docx`](../Arquitectura_y_backend_CropSuiteLite_Huaura_v2.docx).

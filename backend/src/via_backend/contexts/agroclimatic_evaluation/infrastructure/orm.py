@@ -43,12 +43,11 @@ class EvaluationRecord(Base):
             name="evaluation_status_supported",
         ),
         Index("ix_evaluations_parcel_id", "parcel_id"),
+        Index("ix_evaluations_status_created_at_id", "status", "created_at", "id"),
         Index("ix_evaluations_snapshot_geometry", "snapshot_geometry", postgresql_using="gist"),
     )
 
-    id: Mapped[UUID] = mapped_column(
-        PostgreSQLUUID(as_uuid=True), primary_key=True, nullable=False
-    )
+    id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), primary_key=True, nullable=False)
     project_id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), nullable=False)
     parcel_id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), nullable=False)
     parcel_version: Mapped[int] = mapped_column(Integer, nullable=False)
@@ -63,9 +62,7 @@ class EvaluationRecord(Base):
     )
     snapshot_geometry_kind: Mapped[str] = mapped_column(String(16), nullable=False)
     snapshot_crs: Mapped[str] = mapped_column(String(32), nullable=False)
-    snapshot_captured_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False
-    )
+    snapshot_captured_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     status: Mapped[str] = mapped_column(String(32), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     failure_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -111,8 +108,7 @@ class CropOutcomeRecord(Base):
             name="crop_outcome_elapsed_nonnegative",
         ),
         CheckConstraint(
-            "coverage_fraction IS NULL OR "
-            "(coverage_fraction >= 0 AND coverage_fraction <= 1)",
+            "coverage_fraction IS NULL OR (coverage_fraction >= 0 AND coverage_fraction <= 1)",
             name="crop_outcome_coverage_fraction_valid",
         ),
         CheckConstraint(

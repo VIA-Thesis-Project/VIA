@@ -104,10 +104,11 @@ def test_only_cropsuite_infrastructure_adapter_references_scientific_engine() ->
         / "infrastructure"
         / "cropsuite_adapter.py"
     )
+    allowed = {adapter, SOURCE_ROOT / "worker.py"}
     violations = [
         str(path.relative_to(SOURCE_ROOT))
         for path in SOURCE_ROOT.rglob("*.py")
-        if path != adapter and "cropsuitelite" in path.read_text(encoding="utf-8").casefold()
+        if path not in allowed and "cropsuitelite" in path.read_text(encoding="utf-8").casefold()
     ]
 
     assert not violations, "\n".join(violations)
@@ -219,3 +220,9 @@ def test_postgresql_adapters_satisfy_repository_method_contracts() -> None:
     assert dataset_methods <= set(dir(PostgreSQLDatasetRepository))
     assert version_methods <= set(dir(PostgreSQLDatasetVersionRepository))
     assert evaluation_methods <= set(dir(PostgreSQLEvaluationRepository))
+
+
+def test_worker_application_code_does_not_import_cropsuite_adapter() -> None:
+    worker_application = CONTEXTS_ROOT / "agroclimatic_evaluation" / "application" / "worker.py"
+
+    assert "cropsuiteadapter" not in worker_application.read_text(encoding="utf-8").casefold()

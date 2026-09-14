@@ -32,3 +32,11 @@ class ExecuteEvaluation:
     """Request synchronous execution of one already-persisted evaluation."""
 
     evaluation_id: UUID
+
+
+@dataclass(frozen=True, slots=True)
+class RecoverEvaluation:
+    """Fail one operator-confirmed orphaned active evaluation."""
+
+    evaluation_id: UUID
+    reason: str

@@ -1,10 +1,10 @@
 # Target evaluation flow
 
-The target flow accepts a short HTTP request, records enough immutable context to
-reproduce the evaluation, and delegates the long calculation to a recoverable
-worker. The current execution increment implements the worker-callable
-Application orchestration synchronously, but does not connect it to HTTP or a
-queue.
+The evaluation flow accepts a short HTTP request, records enough immutable context
+to reproduce the evaluation, and leaves the new resource in `queued`. A separate
+worker process polls PostgreSQL for queued evaluation IDs and delegates each ID to
+the existing synchronous Application execution service. HTTP never executes the
+scientific calculation.
 
 ## Request to result
 
@@ -15,9 +15,11 @@ POST evaluation request
   -> check Huaura scope and environmental coverage/data compatibility
   -> create an immutable ParcelSnapshot
   -> create and persist the Evaluation with crop and configuration references
-  -> schedule a recoverable, idempotent job
+  -> leave the Evaluation queued as the durable source of truth
   -> return an evaluation identifier for polling
-  -> worker claims the job and resolves exact input versions
+  -> separate worker polls PostgreSQL in created_at/id order
+  -> worker delegates the ID to the Application execution service
+  -> executor optimistically claims queued -> preparing
   -> CropSuiteAdapter invokes CropSuiteLite through ICropSuitabilityEngine
   -> validate outputs, units, grids, masks, values, and expected artifacts
   -> summarize the parcel and compare crops on common valid support
@@ -41,7 +43,7 @@ Authorization must precede calculation. A registered evaluation and its queue pu
 
 Cancellation is proposed. It must not be reported as complete while an unmanaged scientific process continues.
 
-## Implemented synchronous orchestration
+## Implemented worker-backed orchestration
 
 `AgroclimaticEvaluationExecutionService` loads an already-persisted queued
 evaluation and claims it with an optimistic `queued -> preparing` transition. It
@@ -51,8 +53,11 @@ through `ICropSuitabilityEngine`, and commits one same-context durable
 outcome it persists `running -> summarizing -> succeeded`.
 
 Each repository call opens a short transaction; the blocking scientific call is
-never enclosed in a database transaction. A future worker can call this same
-Application use case without changing its semantics.
+never enclosed in a database transaction. The separate `via-worker run` process
+discovers a bounded batch of queued IDs in FIFO order (`created_at`, then `id`)
+and calls this same use case. Two worker processes may observe the same row; the
+optimistic queued claim is authoritative, and the losing `ResourceConflictError`
+is benign contention rather than an evaluation failure.
 
 Returned per-crop `failed` and `no_coverage` values are completed scientific
 outcomes and do not abort later crops. A valid score of zero remains `succeeded`.
@@ -61,8 +66,10 @@ not that every per-crop status succeeded. Boundary or other orchestration
 exceptions stop remaining crops and persist overall `failed` with a minimal
 reason; they do not fabricate a crop outcome.
 
-Request creation remains request creation only. There is no HTTP run-now
-endpoint, broker, worker, retry, or cancellation mechanism in this increment.
+Request creation remains request creation only. There is no HTTP run-now or
+recovery endpoint, broker, automatic retry, or cancellation mechanism. One worker
+process executes evaluations sequentially; crop execution inside each evaluation
+also remains sequential.
 
 ## Current PoC states and required mapping
 
@@ -75,9 +82,16 @@ The future API requires an explicit mapping rather than renaming these values im
 - `Cancelled`, `Queued`, `Preparing`, and `Summarizing` do not exist in the current PoC.
 - `completed` does not guarantee that every crop has usable coverage; clients must inspect per-crop results.
 
-Retry transitions, crash recovery, cancellation semantics, and the final
-evidence/result model remain open decisions. The current no-retry executor
-rejects every non-queued state.
+The worker has no heartbeat, lease, automatic stale timeout, takeover, retry, or
+requeue. SIGINT does not attempt mid-CropSuite cancellation. Process death or
+interruption can therefore leave an evaluation in `preparing`, `running`, or
+`summarizing`. An operator who has confirmed the process is gone may run
+`via-worker recover <id> --reason <text>`; the Application recovery use case uses
+the aggregate's existing failure behavior and optimistic expected status to mark
+only an active evaluation `failed`. Already-persisted outcomes remain, missing
+outcomes are not fabricated, and the evaluation is never restarted or requeued.
+Automatic crash recovery, retry, cancellation semantics, and the final
+evidence/result model remain open decisions.
 
 ## Proposed query endpoints
 

@@ -1,6 +1,11 @@
 """Agroclimatic Evaluation application layer."""
 
-from .commands import ExecuteEvaluation, ParcelSnapshotInput, RequestEvaluation
+from .commands import (
+    ExecuteEvaluation,
+    ParcelSnapshotInput,
+    RecoverEvaluation,
+    RequestEvaluation,
+)
 from .execution import AgroclimaticEvaluationExecutionService
 from .ports import (
     CropExecutionStatus,
@@ -15,6 +20,7 @@ from .ports import (
     SuitabilityScoreSummary,
 )
 from .queries import GetEvaluation, ListEvaluations
+from .recovery import AgroclimaticEvaluationRecoveryService
 from .results import CropOutcomeResult, EvaluationResult, ParcelSnapshotResult
 from .service import (
     AgroclimaticEvaluationService,
@@ -22,10 +28,13 @@ from .service import (
     ResourceConflictError,
     ResourceNotFoundError,
 )
+from .worker import AgroclimaticEvaluationWorker, WorkerRunSummary
 
 __all__ = [
     "AgroclimaticEvaluationExecutionService",
+    "AgroclimaticEvaluationRecoveryService",
     "AgroclimaticEvaluationService",
+    "AgroclimaticEvaluationWorker",
     "CropExecutionStatus",
     "CropOutcomeResult",
     "CropSuitabilityEngineError",
@@ -41,10 +50,12 @@ __all__ = [
     "ListEvaluations",
     "ParcelSnapshotInput",
     "ParcelSnapshotResult",
+    "RecoverEvaluation",
     "RequestEvaluation",
     "ResourceConflictError",
     "ResourceNotFoundError",
     "ScientificExecutionFailure",
     "ScientificExecutionTrace",
     "SuitabilityScoreSummary",
+    "WorkerRunSummary",
 ]

@@ -4,9 +4,10 @@ from __future__ import annotations
 
 import os
 from collections.abc import Iterator
-from datetime import UTC, datetime
+from dataclasses import replace
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import pytest
 from alembic import command
@@ -15,6 +16,10 @@ from sqlalchemy import Engine, func, select, text
 from sqlalchemy.exc import IntegrityError
 
 from database_test_support import require_test_database_url
+from via_backend.contexts.agroclimatic_evaluation.application import (
+    AgroclimaticEvaluationRecoveryService,
+    RecoverEvaluation,
+)
 from via_backend.contexts.agroclimatic_evaluation.domain import (
     CropOutcome,
     CropOutcomeStatus,
@@ -245,3 +250,51 @@ def test_duplicate_crop_outcome_is_rejected_by_database(
 
     with pytest.raises(EvaluationConflictError):
         repository.add_outcome(evaluation.id, outcome)
+
+
+def test_queued_discovery_filters_orders_and_limits(
+    database: tuple[Engine, SessionFactory],
+) -> None:
+    _, sessions = database
+    repository = PostgreSQLEvaluationRepository(sessions)
+    older = replace(
+        _evaluation(),
+        id=UUID(int=20),
+        created_at=NOW - timedelta(minutes=1),
+    )
+    same_time_first = replace(_evaluation(), id=UUID(int=1))
+    same_time_second = replace(_evaluation(), id=UUID(int=2))
+    active = replace(_evaluation(), id=UUID(int=0)).prepare()
+    for evaluation in (same_time_second, active, older, same_time_first):
+        repository.add(evaluation)
+
+    assert repository.list_queued_ids(limit=2) == (
+        older.id,
+        same_time_first.id,
+    )
+
+
+def test_explicit_recovery_persists_failure_and_preserves_outcomes(
+    database: tuple[Engine, SessionFactory],
+) -> None:
+    _, sessions = database
+    repository = PostgreSQLEvaluationRepository(sessions)
+    evaluation = _evaluation()
+    repository.add(evaluation)
+    preparing = evaluation.prepare()
+    repository.save(preparing, expected_status=EvaluationStatus.QUEUED)
+    running = preparing.start_running()
+    repository.save(running, expected_status=EvaluationStatus.PREPARING)
+    outcome = _succeeded_outcome()
+    repository.add_outcome(evaluation.id, outcome)
+
+    result = AgroclimaticEvaluationRecoveryService(repository).recover_evaluation(
+        RecoverEvaluation(evaluation.id, "worker process terminated")
+    )
+
+    restored = repository.get(evaluation.id)
+    assert result.status is EvaluationStatus.FAILED
+    assert restored is not None
+    assert restored.status is EvaluationStatus.FAILED
+    assert restored.failure_reason == "worker process terminated"
+    assert restored.outcomes == (outcome,)

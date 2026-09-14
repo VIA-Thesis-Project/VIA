@@ -40,9 +40,7 @@ class PostgreSQLEvaluationRepository:
                     project_id=snapshot.project_id,
                     parcel_id=snapshot.parcel_id,
                     parcel_version=snapshot.parcel_version,
-                    snapshot_geometry=WKTElement(
-                        _multipolygon_wkt(snapshot.geometry), srid=4326
-                    ),
+                    snapshot_geometry=WKTElement(_multipolygon_wkt(snapshot.geometry), srid=4326),
                     snapshot_geometry_kind=snapshot.geometry.type,
                     snapshot_crs=snapshot.crs,
                     snapshot_captured_at=snapshot.captured_at,
@@ -70,9 +68,7 @@ class PostgreSQLEvaluationRepository:
                 f"Evaluation {evaluation.id} conflicts with persisted evaluation data."
             ) from error
 
-    def save(
-        self, evaluation: Evaluation, *, expected_status: EvaluationStatus
-    ) -> None:
+    def save(self, evaluation: Evaluation, *, expected_status: EvaluationStatus) -> None:
         with self._sessions.begin() as session:
             updated_id = session.scalar(
                 update(EvaluationRecord)
@@ -100,14 +96,11 @@ class PostgreSQLEvaluationRepository:
                     .with_for_update()
                 )
                 if status != EvaluationStatus.RUNNING.value:
-                    raise EvaluationConflictError(
-                        f"Evaluation {evaluation_id} is not running."
-                    )
+                    raise EvaluationConflictError(f"Evaluation {evaluation_id} is not running.")
                 session.add(_outcome_record(evaluation_id, outcome))
         except IntegrityError as error:
             raise EvaluationConflictError(
-                f"Evaluation {evaluation_id} already has an outcome for "
-                f"{outcome.crop_id}."
+                f"Evaluation {evaluation_id} already has an outcome for {outcome.crop_id}."
             ) from error
 
     def get(self, evaluation_id: UUID) -> Evaluation | None:
@@ -128,12 +121,23 @@ class PostgreSQLEvaluationRepository:
             record, geometry_json = row
             return _evaluation_from_row(record, geometry_json, crops, outcomes)
 
+    def list_queued_ids(self, *, limit: int) -> tuple[UUID, ...]:
+        if isinstance(limit, bool) or limit < 1:
+            raise ValueError("limit must be a positive integer.")
+        with self._sessions() as session:
+            return tuple(
+                session.scalars(
+                    select(EvaluationRecord.id)
+                    .where(EvaluationRecord.status == EvaluationStatus.QUEUED.value)
+                    .order_by(EvaluationRecord.created_at, EvaluationRecord.id)
+                    .limit(limit)
+                )
+            )
+
     def list_all(self) -> tuple[Evaluation, ...]:
         with self._sessions() as session:
             rows = session.execute(
-                _evaluation_query().order_by(
-                    EvaluationRecord.created_at, EvaluationRecord.id
-                )
+                _evaluation_query().order_by(EvaluationRecord.created_at, EvaluationRecord.id)
             )
             evaluations = []
             for record, geometry_json in rows:
@@ -194,9 +198,7 @@ def _evaluation_from_row(
     )
 
 
-def _load_outcomes(
-    session: Session, evaluation_id: UUID
-) -> tuple[CropOutcome, ...]:
+def _load_outcomes(session: Session, evaluation_id: UUID) -> tuple[CropOutcome, ...]:
     records = session.scalars(
         select(CropOutcomeRecord)
         .join(
@@ -252,9 +254,7 @@ def _outcome_from_record(record: CropOutcomeRecord) -> CropOutcome:
             valid_cells=cast(int, record.valid_cells),
             valid_area_m2=cast(float, record.valid_area_m2),
             coverage_fraction=cast(float, record.coverage_fraction),
-            zero_suitability_area_m2=cast(
-                float, record.zero_suitability_area_m2
-            ),
+            zero_suitability_area_m2=cast(float, record.zero_suitability_area_m2),
         )
     )
     return CropOutcome(
@@ -311,10 +311,7 @@ def _multipolygon_wkt(geometry: SnapshotGeometry) -> str:
         ring_texts = []
 
         for ring in polygon:
-            positions = ", ".join(
-                f"{x:.17g} {y:.17g}"
-                for x, y in ring
-            )
+            positions = ", ".join(f"{x:.17g} {y:.17g}" for x, y in ring)
             ring_texts.append(f"({positions})")
 
         polygon_texts.append(f"({', '.join(ring_texts)})")
