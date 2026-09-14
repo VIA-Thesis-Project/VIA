@@ -12,6 +12,9 @@ from via_backend.contexts.agroclimatic_evaluation.application import (
     AgroclimaticEvaluationExecutionService,
     AgroclimaticEvaluationRecoveryService,
     AgroclimaticEvaluationWorker,
+    CommonSupportResult,
+    CommonSupportStatus,
+    CropComparisonRequest,
     CropExecutionStatus,
     CropSuitabilityExecutionError,
     CropSuitabilityRequest,
@@ -21,6 +24,9 @@ from via_backend.contexts.agroclimatic_evaluation.application import (
     InvalidCommandError,
     RecoverEvaluation,
     ResourceConflictError,
+    ScientificArtifactDescriptor,
+    ScientificArtifactGrid,
+    ScientificArtifactRole,
     ScientificExecutionTrace,
     SuitabilityScoreSummary,
 )
@@ -111,6 +117,7 @@ def _engine_result(
             configuration_sha256=None,
             source_files_unchanged=True,
         ),
+        artifacts=(_artifact(crop_id),),
     )
 
 
@@ -126,6 +133,38 @@ class FakeEngine:
             raise response
         return response
 
+class FakeComparisonEngine:
+    def compare(
+        self,
+        request: CropComparisonRequest,
+    ) -> CommonSupportResult:
+        crop_ids = tuple(
+            crop.crop_id
+            for crop in request.crops
+        )
+
+        if not crop_ids:
+            return CommonSupportResult(
+                status=CommonSupportStatus.NO_SUCCESSFUL_CROPS,
+                method=None,
+                area_crs=None,
+                parcel_area_m2=100.0,
+                common_valid_area_m2=0.0,
+                common_coverage_fraction=0.0,
+                eligible_crops=(),
+                excluded_without_coverage=(),
+            )
+
+        return CommonSupportResult(
+            status=CommonSupportStatus.COMPARABLE,
+            method="area_weighted_mean_on_common_valid_cells",
+            area_crs="EPSG:6933",
+            parcel_area_m2=100.0,
+            common_valid_area_m2=100.0,
+            common_coverage_fraction=1.0,
+            eligible_crops=crop_ids,
+            excluded_without_coverage=(),
+        )
 
 def test_queued_discovery_filters_orders_and_limits() -> None:
     repository = InMemoryEvaluationRepository()
@@ -156,7 +195,7 @@ def test_run_once_executes_through_existing_execution_service() -> None:
     evaluation = _evaluation()
     repository.add(evaluation)
     engine = FakeEngine([_engine_result("maize")])
-    executor = AgroclimaticEvaluationExecutionService(repository, engine)
+    executor = _executor(repository, engine)
 
     summary = AgroclimaticEvaluationWorker(
         repository,
@@ -198,7 +237,7 @@ def test_no_queued_work_never_calls_engine() -> None:
     engine = FakeEngine([])
     worker = AgroclimaticEvaluationWorker(
         repository,
-        AgroclimaticEvaluationExecutionService(repository, engine),
+        _executor(repository, engine),
         batch_size=2,
     )
 
@@ -213,7 +252,7 @@ def test_claim_conflict_is_benign_and_later_work_continues() -> None:
     repository.add(first)
     repository.add(second)
     engine = FakeEngine([_engine_result("maize")])
-    executor = AgroclimaticEvaluationExecutionService(repository, engine)
+    executor = _executor(repository, engine)
 
     class ContendingExecutor:
         def execute_evaluation(self, command: ExecuteEvaluation):
@@ -255,7 +294,7 @@ def test_persisted_orchestration_failure_does_not_stop_later_work() -> None:
     )
     worker = AgroclimaticEvaluationWorker(
         repository,
-        AgroclimaticEvaluationExecutionService(repository, engine),
+        _executor(repository, engine),
         batch_size=2,
     )
 
@@ -294,7 +333,7 @@ def test_run_forever_sleeps_after_non_full_batch() -> None:
     repository = InMemoryEvaluationRepository()
     worker = AgroclimaticEvaluationWorker(
         repository,
-        AgroclimaticEvaluationExecutionService(repository, FakeEngine([])),
+        _executor(repository, FakeEngine([])),
         batch_size=1,
     )
     sleeps: list[float] = []
@@ -466,3 +505,38 @@ def test_concurrent_recovery_reports_conflict_without_overwrite() -> None:
     restored = repository.get(evaluation.id)
     assert restored is not None
     assert restored.failure_reason == "another operator recovered it"
+
+def _artifact(crop_id: str) -> ScientificArtifactDescriptor:
+    return ScientificArtifactDescriptor(
+        role=ScientificArtifactRole.CROP_SUITABILITY,
+        storage_reference=(
+            f"evaluations/fake/crops/{crop_id}/crop_suitability.tif"
+        ),
+        sha256="b" * 64,
+        media_type="image/tiff",
+        size_bytes=128,
+        grid=ScientificArtifactGrid(
+            crs="EPSG:4326",
+            width=1,
+            height=1,
+            transform=(
+                0.01,
+                0.0,
+                -77.6,
+                0.0,
+                -0.01,
+                -11.0,
+            ),
+            nodata=-1.0,
+        ),
+    )
+
+def _executor(
+    repository: InMemoryEvaluationRepository,
+    engine: FakeEngine,
+) -> AgroclimaticEvaluationExecutionService:
+    return AgroclimaticEvaluationExecutionService(
+        repository,
+        engine,
+        FakeComparisonEngine(),
+    )

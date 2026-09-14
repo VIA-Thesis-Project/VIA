@@ -7,6 +7,7 @@ import pytest
 
 from via_backend.contexts.agroclimatic_evaluation.infrastructure.scientific_artifact_store import (
     FilesystemScientificArtifactStore,
+    ResolvedScientificArtifact,
     ScientificArtifactConflictError,
     ScientificArtifactIntegrityError,
     ScientificArtifactStorageError,
@@ -121,3 +122,78 @@ def test_publish_rejects_content_that_does_not_match_expected_checksum(
     assert not (
         root / "evaluations/eval-1/crops/maize/crop_suitability.tif"
     ).exists()
+
+def test_resolve_returns_verified_durable_artifact(tmp_path: Path) -> None:
+    content = b"scientific-raster"
+    checksum = hashlib.sha256(content).hexdigest()
+
+    source = tmp_path / "source.tif"
+    source.write_bytes(content)
+
+    root = tmp_path / "artifacts"
+    store = FilesystemScientificArtifactStore(root)
+
+    published = store.publish(
+        source,
+        "evaluations/eval-1/crops/maize/crop_suitability.tif",
+    )
+
+    resolved = store.resolve(
+        published.storage_reference,
+        expected_sha256=checksum,
+        expected_size_bytes=len(content),
+    )
+
+    assert isinstance(resolved, ResolvedScientificArtifact)
+    assert resolved.path.read_bytes() == content
+    assert resolved.sha256 == checksum
+    assert resolved.size_bytes == len(content)
+
+
+def test_resolve_rejects_modified_durable_artifact(tmp_path: Path) -> None:
+    source = tmp_path / "source.tif"
+    source.write_bytes(b"original")
+
+    root = tmp_path / "artifacts"
+    store = FilesystemScientificArtifactStore(root)
+
+    published = store.publish(
+        source,
+        "evaluations/eval-1/crops/maize/crop_suitability.tif",
+    )
+
+    durable = root.joinpath(*published.storage_reference.split("/"))
+    durable.write_bytes(b"tampered")
+
+    with pytest.raises(
+        ScientificArtifactIntegrityError,
+        match="SHA-256",
+    ):
+        store.resolve(
+            published.storage_reference,
+            expected_sha256=published.sha256,
+            expected_size_bytes=published.size_bytes,
+        )
+
+
+def test_resolve_rejects_missing_durable_artifact(tmp_path: Path) -> None:
+    store = FilesystemScientificArtifactStore(tmp_path / "artifacts")
+
+    with pytest.raises(
+        ScientificArtifactStorageError,
+        match="does not exist",
+    ):
+        store.resolve(
+            "evaluations/eval-1/crops/maize/crop_suitability.tif",
+            expected_sha256="a" * 64,
+            expected_size_bytes=10,
+        )
+def test_resolve_rejects_unsafe_reference(tmp_path: Path) -> None:
+    store = FilesystemScientificArtifactStore(tmp_path / "artifacts")
+
+    with pytest.raises(ScientificArtifactStorageError):
+        store.resolve(
+            "../outside.tif",
+            expected_sha256="a" * 64,
+            expected_size_bytes=1,
+        )

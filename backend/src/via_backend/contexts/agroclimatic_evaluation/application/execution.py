@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+from ..domain.comparison import (
+    CommonSupport,
+    CommonSupportStatus,
+)
 from ..domain.errors import EvaluationConflictError
 from ..domain.models import Evaluation, EvaluationStatus
 from ..domain.outcomes import (
@@ -16,10 +20,22 @@ from ..domain.outcomes import (
 from ..domain.repositories import EvaluationRepository
 from .commands import ExecuteEvaluation
 from .ports import (
+    CommonSupportResult,
+    CropComparisonExecutionError,
+    CropComparisonInput,
+    CropComparisonRequest,
     CropSuitabilityRequest,
     CropSuitabilityResult,
+    ICropComparisonEngine,
     ICropSuitabilityEngine,
     InvalidEngineOutputError,
+    ScientificArtifactDescriptor,
+)
+from .ports import (
+    ScientificArtifactGrid as PortScientificArtifactGrid,
+)
+from .ports import (
+    ScientificArtifactRole as PortScientificArtifactRole,
 )
 from .results import EvaluationResult
 from .service import ResourceConflictError, ResourceNotFoundError
@@ -32,9 +48,11 @@ class AgroclimaticEvaluationExecutionService:
         self,
         evaluations: EvaluationRepository,
         engine: ICropSuitabilityEngine,
+        comparison_engine: ICropComparisonEngine,
     ) -> None:
         self._evaluations = evaluations
         self._engine = engine
+        self._comparison_engine = comparison_engine
 
     def execute_evaluation(self, command: ExecuteEvaluation) -> EvaluationResult:
         evaluation = self._evaluations.get(command.evaluation_id)
@@ -90,7 +108,15 @@ class AgroclimaticEvaluationExecutionService:
             )
             current = summarizing
 
-            succeeded = current.succeed()
+            comparison_result = self._comparison_engine.compare(
+                _comparison_request(current)
+            )
+
+            summarized = current.record_common_support(
+                _to_common_support(comparison_result)
+            )
+
+            succeeded = summarized.succeed()
             self._evaluations.save(
                 succeeded,
                 expected_status=EvaluationStatus.SUMMARIZING,
@@ -162,5 +188,73 @@ def _to_outcome(result: CropSuitabilityResult) -> CropOutcome:
                 ),
             )
             for artifact in result.artifacts
+        ),
+    )
+
+def _comparison_request(
+    evaluation: Evaluation,
+) -> CropComparisonRequest:
+    crops: list[CropComparisonInput] = []
+
+    for outcome in evaluation.outcomes:
+        if outcome.status is CropOutcomeStatus.FAILED:
+            continue
+
+        artifacts = tuple(
+            artifact
+            for artifact in outcome.artifacts
+            if artifact.role is ScientificArtifactRole.CROP_SUITABILITY
+        )
+
+        if len(artifacts) != 1:
+            raise CropComparisonExecutionError(
+                "Every non-failed crop outcome must have exactly one "
+                "crop-suitability artifact before comparison."
+            )
+
+        artifact = artifacts[0]
+
+        crops.append(
+            CropComparisonInput(
+                crop_id=outcome.crop_id,
+                artifact=ScientificArtifactDescriptor(
+                    role=PortScientificArtifactRole(
+                        artifact.role.value
+                    ),
+                    storage_reference=artifact.storage_reference,
+                    sha256=artifact.sha256,
+                    media_type=artifact.media_type,
+                    size_bytes=artifact.size_bytes,
+                    grid=PortScientificArtifactGrid(
+                        crs=artifact.grid.crs,
+                        width=artifact.grid.width,
+                        height=artifact.grid.height,
+                        transform=artifact.grid.transform,
+                        nodata=artifact.grid.nodata,
+                    ),
+                ),
+            )
+        )
+
+    return CropComparisonRequest(
+        evaluation_id=evaluation.id,
+        parcel_snapshot=evaluation.parcel_snapshot,
+        crops=tuple(crops),
+    )
+
+
+def _to_common_support(
+    result: CommonSupportResult,
+) -> CommonSupport:
+    return CommonSupport(
+        status=CommonSupportStatus(result.status.value),
+        method=result.method,
+        area_crs=result.area_crs,
+        parcel_area_m2=result.parcel_area_m2,
+        common_valid_area_m2=result.common_valid_area_m2,
+        common_coverage_fraction=result.common_coverage_fraction,
+        eligible_crops=result.eligible_crops,
+        excluded_without_coverage=(
+            result.excluded_without_coverage
         ),
     )

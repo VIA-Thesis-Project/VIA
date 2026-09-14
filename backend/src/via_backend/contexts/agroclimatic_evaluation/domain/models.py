@@ -7,8 +7,9 @@ from datetime import datetime
 from enum import StrEnum
 from uuid import UUID
 
+from .comparison import CommonSupport, CommonSupportStatus
 from .errors import DomainValidationError, InvalidEvaluationTransitionError
-from .outcomes import CropOutcome
+from .outcomes import CropOutcome, CropOutcomeStatus
 from .snapshot import ParcelSnapshot
 
 
@@ -34,6 +35,7 @@ class Evaluation:
     status: EvaluationStatus
     created_at: datetime
     outcomes: tuple[CropOutcome, ...] = ()
+    common_support: CommonSupport | None = None
     failure_reason: str | None = None
 
     def __post_init__(self) -> None:
@@ -78,6 +80,15 @@ class Evaluation:
             )
         object.__setattr__(self, "requested_crops", crops)
         object.__setattr__(self, "outcomes", outcomes)
+        if self.status in {
+            EvaluationStatus.QUEUED,
+            EvaluationStatus.PREPARING,
+            EvaluationStatus.RUNNING,
+            EvaluationStatus.CANCELLED,
+        } and self.common_support is not None:
+            raise DomainValidationError(
+            "Common support cannot exist before summarizing."
+        )
 
     def prepare(self) -> Evaluation:
         return self._transition(EvaluationStatus.QUEUED, EvaluationStatus.PREPARING)
@@ -104,6 +115,59 @@ class Evaluation:
     def start_summarizing(self) -> Evaluation:
         return self._transition(EvaluationStatus.RUNNING, EvaluationStatus.SUMMARIZING)
 
+    def record_common_support(
+        self,
+        common_support: CommonSupport,
+    ) -> Evaluation:
+        if self.status is not EvaluationStatus.SUMMARIZING:
+            raise InvalidEvaluationTransitionError(
+                "Common support can only be recorded while summarizing."
+            )
+
+        if self.common_support is not None:
+            raise InvalidEvaluationTransitionError(
+                "Common support has already been recorded."
+            )
+
+        comparable_crops = tuple(
+            outcome.crop_id
+            for outcome in self.outcomes
+            if outcome.status is not CropOutcomeStatus.FAILED
+        )
+
+        reported = (
+            *common_support.eligible_crops,
+            *common_support.excluded_without_coverage,
+        )
+
+        if set(reported) != set(comparable_crops):
+            raise DomainValidationError(
+                "Common support must partition every non-failed crop outcome."
+            )
+
+        if (
+            common_support.status
+            is CommonSupportStatus.NO_SUCCESSFUL_CROPS
+            and comparable_crops
+        ):
+            raise DomainValidationError(
+                "No-successful-crops requires every crop outcome to have failed."
+            )
+
+        if (
+            common_support.status
+            is not CommonSupportStatus.NO_SUCCESSFUL_CROPS
+            and not comparable_crops
+        ):
+            raise DomainValidationError(
+                "A spatial comparison requires at least one non-failed crop."
+            )
+
+        return replace(
+            self,
+            common_support=common_support,
+        )
+    
     def succeed(self) -> Evaluation:
         return self._transition(EvaluationStatus.SUMMARIZING, EvaluationStatus.SUCCEEDED)
 

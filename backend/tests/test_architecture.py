@@ -96,23 +96,36 @@ def test_context_interfaces_do_not_import_infrastructure() -> None:
     assert not violations, "\n".join(violations)
 
 
-def test_only_cropsuite_infrastructure_adapter_references_scientific_engine() -> None:
-    adapter = (
+def test_only_cropsuite_infrastructure_adapters_reference_scientific_engine() -> None:
+    infrastructure = (
         SOURCE_ROOT
         / "contexts"
         / "agroclimatic_evaluation"
         / "infrastructure"
-        / "cropsuite_adapter.py"
     )
-    allowed = {adapter, SOURCE_ROOT / "worker.py"}
+
+    allowed = {
+        infrastructure / "cropsuite_adapter.py",
+        infrastructure / "cropsuite_comparison_adapter.py",
+        SOURCE_ROOT / "worker.py",
+    }
+
     violations = [
         str(path.relative_to(SOURCE_ROOT))
         for path in SOURCE_ROOT.rglob("*.py")
-        if path not in allowed and "cropsuitelite" in path.read_text(encoding="utf-8").casefold()
+        if path not in allowed
+        and "cropsuitelite" in path.read_text(encoding="utf-8").casefold()
     ]
 
     assert not violations, "\n".join(violations)
-    assert "cropsuitelite" in adapter.read_text(encoding="utf-8").casefold()
+
+    assert "cropsuitelite" in (
+        infrastructure / "cropsuite_adapter.py"
+    ).read_text(encoding="utf-8").casefold()
+
+    assert "cropsuitelite" in (
+        infrastructure / "cropsuite_comparison_adapter.py"
+    ).read_text(encoding="utf-8").casefold()
 
 
 def test_farm_management_does_not_import_other_contexts() -> None:

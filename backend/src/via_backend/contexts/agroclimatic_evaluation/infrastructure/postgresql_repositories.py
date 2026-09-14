@@ -13,6 +13,10 @@ from sqlalchemy.orm import Session
 
 from via_backend.infrastructure.database import SessionFactory
 
+from ..domain.comparison import (
+    CommonSupport,
+    CommonSupportStatus,
+)
 from ..domain.errors import EvaluationConflictError
 from ..domain.models import Evaluation, EvaluationStatus
 from ..domain.outcomes import (
@@ -27,6 +31,7 @@ from ..domain.outcomes import (
 from ..domain.snapshot import ParcelSnapshot, SnapshotGeometry
 from .orm import (
     CropOutcomeRecord,
+    EvaluationCommonSupportRecord,
     EvaluationCropRecord,
     EvaluationRecord,
     ScientificArtifactRecord,
@@ -76,24 +81,41 @@ class PostgreSQLEvaluationRepository:
                 f"Evaluation {evaluation.id} conflicts with persisted evaluation data."
             ) from error
 
-    def save(self, evaluation: Evaluation, *, expected_status: EvaluationStatus) -> None:
-        with self._sessions.begin() as session:
-            updated_id = session.scalar(
-                update(EvaluationRecord)
-                .where(
-                    EvaluationRecord.id == evaluation.id,
-                    EvaluationRecord.status == expected_status.value,
+    def save(
+        self,
+        evaluation: Evaluation,
+        *,
+        expected_status: EvaluationStatus,
+    ) -> None:
+        try:
+            with self._sessions.begin() as session:
+                updated_id = session.scalar(
+                    update(EvaluationRecord)
+                    .where(
+                        EvaluationRecord.id == evaluation.id,
+                        EvaluationRecord.status == expected_status.value,
+                    )
+                    .values(
+                        status=evaluation.status.value,
+                        failure_reason=evaluation.failure_reason,
+                    )
+                    .returning(EvaluationRecord.id)
                 )
-                .values(
-                    status=evaluation.status.value,
-                    failure_reason=evaluation.failure_reason,
+
+                if updated_id is None:
+                    raise EvaluationConflictError(
+                        f"Evaluation {evaluation.id} changed before it could be saved."
+                    )
+
+                _persist_common_support(
+                    session,
+                    evaluation,
                 )
-                .returning(EvaluationRecord.id)
-            )
-            if updated_id is None:
-                raise EvaluationConflictError(
-                    f"Evaluation {evaluation.id} changed before it could be saved."
-                )
+        except IntegrityError as error:
+            raise EvaluationConflictError(
+                f"Evaluation {evaluation.id} conflicts with persisted "
+                "common-support data."
+            ) from error
 
     def add_outcome(self, evaluation_id: UUID, outcome: CropOutcome) -> None:
         try:
@@ -141,7 +163,16 @@ class PostgreSQLEvaluationRepository:
             )
             outcomes = _load_outcomes(session, evaluation_id)
             record, geometry_json = row
-            return _evaluation_from_row(record, geometry_json, crops, outcomes)
+            return _evaluation_from_row(
+                record,
+                geometry_json,
+                crops,
+                outcomes,
+                _load_common_support(
+                    session,
+                    evaluation_id,
+                ),
+            )
 
     def list_queued_ids(self, *, limit: int) -> tuple[UUID, ...]:
         if isinstance(limit, bool) or limit < 1:
@@ -176,6 +207,7 @@ class PostgreSQLEvaluationRepository:
                         geometry_json,
                         crops,
                         _load_outcomes(session, record.id),
+                        _load_common_support(session, record.id),
                     )
                 )
             return tuple(evaluations)
@@ -193,6 +225,7 @@ def _evaluation_from_row(
     geometry_json: str,
     crops: tuple[str, ...],
     outcomes: tuple[CropOutcome, ...],
+    common_support: CommonSupport | None,
 ) -> Evaluation:
     stored_geometry = json.loads(geometry_json)
     if record.snapshot_geometry_kind == "Polygon":
@@ -216,9 +249,89 @@ def _evaluation_from_row(
         status=EvaluationStatus(record.status),
         created_at=record.created_at,
         outcomes=outcomes,
+        common_support=common_support,
         failure_reason=record.failure_reason,
     )
 
+def _persist_common_support(
+    session: Session,
+    evaluation: Evaluation,
+) -> None:
+    common_support = evaluation.common_support
+
+    if common_support is None:
+        return
+
+    existing = session.get(
+        EvaluationCommonSupportRecord,
+        evaluation.id,
+    )
+
+    if existing is None:
+        session.add(
+            _common_support_record(
+                evaluation.id,
+                common_support,
+            )
+        )
+        return
+
+    if _common_support_from_record(existing) != common_support:
+        raise EvaluationConflictError(
+            f"Evaluation {evaluation.id} already has different "
+            "common-support data."
+        )
+
+
+def _load_common_support(
+    session: Session,
+    evaluation_id: UUID,
+) -> CommonSupport | None:
+    record = session.get(
+        EvaluationCommonSupportRecord,
+        evaluation_id,
+    )
+
+    if record is None:
+        return None
+
+    return _common_support_from_record(record)
+
+
+def _common_support_record(
+    evaluation_id: UUID,
+    common_support: CommonSupport,
+) -> EvaluationCommonSupportRecord:
+    return EvaluationCommonSupportRecord(
+        evaluation_id=evaluation_id,
+        status=common_support.status.value,
+        method=common_support.method,
+        area_crs=common_support.area_crs,
+        parcel_area_m2=common_support.parcel_area_m2,
+        common_valid_area_m2=common_support.common_valid_area_m2,
+        common_coverage_fraction=common_support.common_coverage_fraction,
+        eligible_crops=list(common_support.eligible_crops),
+        excluded_without_coverage=list(
+            common_support.excluded_without_coverage
+        ),
+    )
+
+
+def _common_support_from_record(
+    record: EvaluationCommonSupportRecord,
+) -> CommonSupport:
+    return CommonSupport(
+        status=CommonSupportStatus(record.status),
+        method=record.method,
+        area_crs=record.area_crs,
+        parcel_area_m2=record.parcel_area_m2,
+        common_valid_area_m2=record.common_valid_area_m2,
+        common_coverage_fraction=record.common_coverage_fraction,
+        eligible_crops=tuple(record.eligible_crops),
+        excluded_without_coverage=tuple(
+            record.excluded_without_coverage
+        ),
+    )
 
 def _load_outcomes(
     session: Session,

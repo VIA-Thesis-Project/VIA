@@ -33,6 +33,14 @@ class ScientificArtifactIntegrityError(ScientificArtifactStorageError):
 class ScientificArtifactStore(Protocol):
     """Publish immutable scientific files behind opaque logical references."""
 
+    def resolve(
+        self,
+        storage_reference: str,
+        *,
+        expected_sha256: str,
+        expected_size_bytes: int,
+    ) -> ResolvedScientificArtifact: ...
+
     def publish(
         self,
         source: Path,
@@ -48,6 +56,44 @@ class FilesystemScientificArtifactStore:
     def __init__(self, root: Path) -> None:
         self._root = root.resolve()
         self._root.mkdir(parents=True, exist_ok=True)
+
+    def resolve(
+        self,
+        storage_reference: str,
+        *,
+        expected_sha256: str,
+        expected_size_bytes: int,
+    ) -> ResolvedScientificArtifact:
+        reference = _validated_reference(storage_reference)
+        path = self._root.joinpath(*reference.parts).resolve()
+
+        if not _is_within(path, self._root):
+            raise ScientificArtifactStorageError(
+                "Scientific artifact reference escapes the configured storage root."
+            )
+
+        if not path.is_file():
+            raise ScientificArtifactStorageError(
+                "Durable scientific artifact does not exist."
+            )
+
+        sha256, size_bytes = _file_identity(path)
+
+        if sha256 != expected_sha256:
+            raise ScientificArtifactIntegrityError(
+                "Durable scientific artifact SHA-256 does not match persisted metadata."
+            )
+
+        if size_bytes != expected_size_bytes:
+            raise ScientificArtifactIntegrityError(
+                "Durable scientific artifact size does not match persisted metadata."
+            )
+
+        return ResolvedScientificArtifact(
+            path=path,
+            sha256=sha256,
+            size_bytes=size_bytes,
+        )
 
     def publish(
         self,
@@ -161,3 +207,11 @@ def _is_within(path: Path, parent: Path) -> bool:
     except ValueError:
         return False
     return True
+
+@dataclass(frozen=True, slots=True)
+class ResolvedScientificArtifact:
+    """Verified local artifact available only inside Infrastructure."""
+
+    path: Path
+    sha256: str
+    size_bytes: int

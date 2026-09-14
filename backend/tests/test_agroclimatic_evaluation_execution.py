@@ -9,12 +9,19 @@ import pytest
 
 from via_backend.contexts.agroclimatic_evaluation.application import (
     AgroclimaticEvaluationExecutionService,
+    CommonSupportResult,
+    CommonSupportStatus,
+    CropComparisonExecutionError,
+    CropComparisonRequest,
     CropExecutionStatus,
     CropSuitabilityExecutionError,
     CropSuitabilityRequest,
     CropSuitabilityResult,
     ExecuteEvaluation,
     ResourceConflictError,
+    ScientificArtifactDescriptor,
+    ScientificArtifactGrid,
+    ScientificArtifactRole,
     ScientificExecutionFailure,
     ScientificExecutionTrace,
     SuitabilityScoreSummary,
@@ -69,6 +76,30 @@ def _evaluation(crops: tuple[str, ...] = ("maize", "potato", "rice")) -> Evaluat
         created_at=NOW,
     )
 
+def _artifact(crop_id: str) -> ScientificArtifactDescriptor:
+    return ScientificArtifactDescriptor(
+        role=ScientificArtifactRole.CROP_SUITABILITY,
+        storage_reference=(
+            f"evaluations/fake/crops/{crop_id}/crop_suitability.tif"
+        ),
+        sha256="a" * 64,
+        media_type="image/tiff",
+        size_bytes=128,
+        grid=ScientificArtifactGrid(
+            crs="EPSG:4326",
+            width=1,
+            height=1,
+            transform=(
+                0.01,
+                0.0,
+                -77.6,
+                0.0,
+                -0.01,
+                -11.0,
+            ),
+            nodata=-1.0,
+        ),
+    )
 
 def _result(
     crop_id: str,
@@ -113,6 +144,7 @@ def _result(
             configuration_sha256="configuration-sha256",
             source_files_unchanged=True,
         ),
+        artifacts=() if failed else (_artifact(crop_id),),
     )
 
 
@@ -130,6 +162,50 @@ class FakeEngine:
             raise response
         return response
 
+class FakeComparisonEngine:
+    def __init__(
+        self,
+        error: Exception | None = None,
+    ) -> None:
+        self.error = error
+        self.requests: list[CropComparisonRequest] = []
+
+    def compare(
+        self,
+        request: CropComparisonRequest,
+    ) -> CommonSupportResult:
+        self.requests.append(request)
+
+        if self.error is not None:
+            raise self.error
+
+        crop_ids = tuple(
+            crop.crop_id
+            for crop in request.crops
+        )
+
+        if not crop_ids:
+            return CommonSupportResult(
+                status=CommonSupportStatus.NO_SUCCESSFUL_CROPS,
+                method=None,
+                area_crs=None,
+                parcel_area_m2=100.0,
+                common_valid_area_m2=0.0,
+                common_coverage_fraction=0.0,
+                eligible_crops=(),
+                excluded_without_coverage=(),
+            )
+
+        return CommonSupportResult(
+            status=CommonSupportStatus.COMPARABLE,
+            method="area_weighted_mean_on_common_valid_cells",
+            area_crs="EPSG:6933",
+            parcel_area_m2=100.0,
+            common_valid_area_m2=80.0,
+            common_coverage_fraction=0.8,
+            eligible_crops=crop_ids,
+            excluded_without_coverage=(),
+        )
 
 class RecordingRepository(InMemoryEvaluationRepository):
     def __init__(self) -> None:
@@ -150,7 +226,11 @@ def _execute(
     repository = RecordingRepository()
     repository.add(evaluation)
     engine = FakeEngine(responses)
-    AgroclimaticEvaluationExecutionService(repository, engine).execute_evaluation(
+    AgroclimaticEvaluationExecutionService(
+        repository,
+        engine,
+        FakeComparisonEngine(),
+    ).execute_evaluation(
         ExecuteEvaluation(evaluation.id)
     )
     return repository, engine
@@ -258,7 +338,11 @@ def test_fatal_engine_error_stops_execution_and_marks_evaluation_failed() -> Non
             _result("rice"),
         ]
     )
-    service = AgroclimaticEvaluationExecutionService(repository, engine)
+    service = AgroclimaticEvaluationExecutionService(
+        repository, 
+        engine,
+        FakeComparisonEngine()
+    )
 
     with pytest.raises(
         CropSuitabilityExecutionError, match="engine boundary unavailable"
@@ -283,7 +367,7 @@ def test_non_queued_evaluation_is_rejected_without_engine_call() -> None:
 
     with pytest.raises(ResourceConflictError, match="preparing"):
         AgroclimaticEvaluationExecutionService(
-            repository, engine
+            repository, engine, FakeComparisonEngine(),
         ).execute_evaluation(ExecuteEvaluation(evaluation.id))
 
     assert engine.requests == []
@@ -363,3 +447,92 @@ def test_all_reliable_outcome_and_trace_fields_round_trip_in_memory() -> None:
         configuration_sha256="configuration-sha256",
         source_files_unchanged=True,
     )
+
+def test_summarizing_compares_only_non_failed_crop_outcomes() -> None:
+    evaluation = _evaluation()
+    repository = RecordingRepository()
+    repository.add(evaluation)
+
+    engine = FakeEngine(
+        [
+            _result("maize", CropExecutionStatus.FAILED),
+            _result("potato"),
+            _result(
+                "rice",
+                CropExecutionStatus.NO_COVERAGE,
+                mean=None,
+            ),
+        ]
+    )
+    comparison = FakeComparisonEngine()
+
+    AgroclimaticEvaluationExecutionService(
+        repository,
+        engine,
+        comparison,
+    ).execute_evaluation(
+        ExecuteEvaluation(evaluation.id)
+    )
+
+    assert len(comparison.requests) == 1
+
+    request = comparison.requests[0]
+
+    assert tuple(
+        crop.crop_id
+        for crop in request.crops
+    ) == ("potato", "rice")
+
+    restored = repository.get(evaluation.id)
+
+    assert restored is not None
+    assert restored.status is EvaluationStatus.SUCCEEDED
+    assert restored.common_support is not None
+    assert restored.common_support.eligible_crops == (
+        "potato",
+        "rice",
+    )
+
+def test_comparison_failure_marks_summarizing_evaluation_failed() -> None:
+    evaluation = _evaluation(("maize",))
+    repository = RecordingRepository()
+    repository.add(evaluation)
+
+    engine = FakeEngine([_result("maize")])
+    comparison = FakeComparisonEngine(
+        CropComparisonExecutionError(
+            "comparison boundary unavailable"
+        )
+    )
+
+    service = AgroclimaticEvaluationExecutionService(
+        repository,
+        engine,
+        comparison,
+    )
+
+    with pytest.raises(
+        CropComparisonExecutionError,
+        match="comparison boundary unavailable",
+    ):
+        service.execute_evaluation(
+            ExecuteEvaluation(evaluation.id)
+        )
+
+    restored = repository.get(evaluation.id)
+
+    assert restored is not None
+    assert restored.status is EvaluationStatus.FAILED
+    assert len(restored.outcomes) == 1
+    assert restored.common_support is None
+    assert restored.failure_reason == (
+        "CropComparisonExecutionError: "
+        "comparison boundary unavailable"
+    )
+
+    assert repository.saved_statuses == [
+        EvaluationStatus.PREPARING,
+        EvaluationStatus.RUNNING,
+        EvaluationStatus.SUMMARIZING,
+        EvaluationStatus.FAILED,
+    ]

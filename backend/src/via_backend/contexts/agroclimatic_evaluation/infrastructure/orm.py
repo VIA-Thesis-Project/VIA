@@ -20,7 +20,7 @@ from sqlalchemy import (
     Text,
     UniqueConstraint,
 )
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 from sqlalchemy.dialects.postgresql import UUID as PostgreSQLUUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -69,6 +69,102 @@ class EvaluationRecord(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     failure_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
 
+class EvaluationCommonSupportRecord(Base):
+    __tablename__ = "evaluation_common_support"
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ("
+            "'comparable', "
+            "'no_common_coverage', "
+            "'no_successful_crops'"
+            ")",
+            name="common_support_status_supported",
+        ),
+        CheckConstraint(
+            "parcel_area_m2 > 0",
+            name="common_support_parcel_area_positive",
+        ),
+        CheckConstraint(
+            "common_valid_area_m2 >= 0 "
+            "AND common_valid_area_m2 <= parcel_area_m2",
+            name="common_support_area_valid",
+        ),
+        CheckConstraint(
+            "common_coverage_fraction >= 0 "
+            "AND common_coverage_fraction <= 1",
+            name="common_support_fraction_valid",
+        ),
+        CheckConstraint(
+            "("
+            "status = 'no_successful_crops' "
+            "AND method IS NULL "
+            "AND area_crs IS NULL "
+            "AND common_valid_area_m2 = 0 "
+            "AND common_coverage_fraction = 0 "
+            "AND cardinality(eligible_crops) = 0 "
+            "AND cardinality(excluded_without_coverage) = 0"
+            ") OR ("
+            "status IN ('comparable', 'no_common_coverage') "
+            "AND method = 'area_weighted_mean_on_common_valid_cells' "
+            "AND area_crs = 'EPSG:6933'"
+            ")",
+            name="common_support_payload_matches_status",
+        ),
+        CheckConstraint(
+            "status <> 'comparable' "
+            "OR (common_valid_area_m2 > 0 "
+            "AND cardinality(eligible_crops) > 0)",
+            name="common_support_comparable_has_area",
+        ),
+        CheckConstraint(
+            "status <> 'no_common_coverage' "
+            "OR (common_valid_area_m2 = 0 "
+            "AND common_coverage_fraction = 0)",
+            name="common_support_no_common_has_zero_area",
+        ),
+    )
+
+    evaluation_id: Mapped[UUID] = mapped_column(
+        PostgreSQLUUID(as_uuid=True),
+        ForeignKey(
+            f"{AGROCLIMATIC_EVALUATION_SCHEMA}.evaluations.id",
+            ondelete="CASCADE",
+        ),
+        primary_key=True,
+        nullable=False,
+    )
+    status: Mapped[str] = mapped_column(
+        String(32),
+        nullable=False,
+    )
+    method: Mapped[str | None] = mapped_column(
+        String(120),
+        nullable=True,
+    )
+    area_crs: Mapped[str | None] = mapped_column(
+        String(32),
+        nullable=True,
+    )
+    parcel_area_m2: Mapped[float] = mapped_column(
+        Float,
+        nullable=False,
+    )
+    common_valid_area_m2: Mapped[float] = mapped_column(
+        Float,
+        nullable=False,
+    )
+    common_coverage_fraction: Mapped[float] = mapped_column(
+        Float,
+        nullable=False,
+    )
+    eligible_crops: Mapped[list[str]] = mapped_column(
+        ARRAY(String(120)),
+        nullable=False,
+    )
+    excluded_without_coverage: Mapped[list[str]] = mapped_column(
+        ARRAY(String(120)),
+        nullable=False,
+    )
 
 class EvaluationCropRecord(Base):
     __tablename__ = "evaluation_crops"

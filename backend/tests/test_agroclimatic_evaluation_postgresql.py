@@ -21,6 +21,8 @@ from via_backend.contexts.agroclimatic_evaluation.application import (
     RecoverEvaluation,
 )
 from via_backend.contexts.agroclimatic_evaluation.domain import (
+    CommonSupport,
+    CommonSupportStatus,
     CropOutcome,
     CropOutcomeStatus,
     Evaluation,
@@ -35,6 +37,7 @@ from via_backend.contexts.agroclimatic_evaluation.domain import (
     SuitabilitySummary,
 )
 from via_backend.contexts.agroclimatic_evaluation.infrastructure.orm import (
+    EvaluationCommonSupportRecord,
     EvaluationCropRecord,
     EvaluationRecord,
 )
@@ -327,3 +330,95 @@ def test_explicit_recovery_persists_failure_and_preserves_outcomes(
     assert restored.status is EvaluationStatus.FAILED
     assert restored.failure_reason == "worker process terminated"
     assert restored.outcomes == (outcome,)
+
+def _common_support() -> CommonSupport:
+    return CommonSupport(
+        status=CommonSupportStatus.COMPARABLE,
+        method="area_weighted_mean_on_common_valid_cells",
+        area_crs="EPSG:6933",
+        parcel_area_m2=100.0,
+        common_valid_area_m2=80.0,
+        common_coverage_fraction=0.8,
+        eligible_crops=("rice", "potato"),
+        excluded_without_coverage=("maize",),
+    )
+
+def test_common_support_round_trips_atomically_with_success(
+    database: tuple[Engine, SessionFactory],
+) -> None:
+    engine, sessions = database
+    repository = PostgreSQLEvaluationRepository(sessions)
+
+    evaluation = _evaluation()
+    repository.add(evaluation)
+
+    preparing = evaluation.prepare()
+    repository.save(
+        preparing,
+        expected_status=EvaluationStatus.QUEUED,
+    )
+
+    running = preparing.start_running()
+    repository.save(
+        running,
+        expected_status=EvaluationStatus.PREPARING,
+    )
+
+    current = running
+
+    for crop_id in evaluation.requested_crops:
+        outcome = _succeeded_outcome(crop_id)
+        repository.add_outcome(
+            evaluation.id,
+            outcome,
+        )
+        current = current.record_outcome(outcome)
+
+    summarizing = current.start_summarizing()
+    repository.save(
+        summarizing,
+        expected_status=EvaluationStatus.RUNNING,
+    )
+
+    summarized = summarizing.record_common_support(
+        _common_support()
+    )
+    succeeded = summarized.succeed()
+
+    repository.save(
+        succeeded,
+        expected_status=EvaluationStatus.SUMMARIZING,
+    )
+
+    restored = repository.get(evaluation.id)
+
+    assert restored is not None
+    assert restored == succeeded
+
+    common_support = restored.common_support
+
+    assert common_support is not None
+    assert common_support == _common_support()
+    assert common_support.eligible_crops == (
+        "rice",
+        "potato",
+    )
+    assert common_support.excluded_without_coverage == (
+        "maize",
+    )
+
+    with engine.connect() as connection:
+        record = connection.execute(
+            select(
+                EvaluationCommonSupportRecord.status,
+                EvaluationCommonSupportRecord.eligible_crops,
+                EvaluationCommonSupportRecord.excluded_without_coverage,
+            ).where(
+                EvaluationCommonSupportRecord.evaluation_id
+                == evaluation.id
+            )
+        ).one()
+
+    assert record.status == "comparable"
+    assert record.eligible_crops == ["rice", "potato"]
+    assert record.excluded_without_coverage == ["maize"]

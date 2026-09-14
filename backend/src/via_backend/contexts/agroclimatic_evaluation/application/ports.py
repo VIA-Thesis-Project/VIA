@@ -102,6 +102,65 @@ class CropSuitabilityResult:
     trace: ScientificExecutionTrace
     artifacts: tuple[ScientificArtifactDescriptor, ...] = ()
 
+class CommonSupportStatus(StrEnum):
+    """Scientific common-support outcome across evaluated crops."""
+
+    COMPARABLE = "comparable"
+    NO_COMMON_COVERAGE = "no_common_coverage"
+    NO_SUCCESSFUL_CROPS = "no_successful_crops"
+
+
+@dataclass(frozen=True, slots=True)
+class CropComparisonInput:
+    """One durable crop suitability raster offered to scientific comparison."""
+
+    crop_id: str
+    artifact: ScientificArtifactDescriptor
+
+
+@dataclass(frozen=True, slots=True)
+class CropComparisonRequest:
+    """Compare crop suitability only on identical valid spatial support."""
+
+    evaluation_id: UUID
+    parcel_snapshot: ParcelSnapshot
+    crops: tuple[CropComparisonInput, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class CommonSupportResult:
+    """Scientific support shared by all usable crop suitability rasters."""
+
+    status: CommonSupportStatus
+    method: str | None
+    area_crs: str | None
+    parcel_area_m2: float
+    common_valid_area_m2: float
+    common_coverage_fraction: float
+    eligible_crops: tuple[str, ...]
+    excluded_without_coverage: tuple[str, ...]
+
+
+class CropComparisonEngineError(RuntimeError):
+    """Base error for the scientific crop-comparison boundary."""
+
+
+class CropComparisonExecutionError(CropComparisonEngineError):
+    """Raised when scientific common-support comparison cannot execute."""
+
+
+class InvalidComparisonOutputError(CropComparisonEngineError):
+    """Raised when scientific comparison returns an invalid contract."""
+
+
+@runtime_checkable
+class ICropComparisonEngine(Protocol):
+    """Compare durable crop outputs using the authoritative scientific engine."""
+
+    def compare(
+        self,
+        request: CropComparisonRequest,
+    ) -> CommonSupportResult: ...
 
 class CropSuitabilityEngineError(RuntimeError):
     """Base error for failures to invoke or understand the engine boundary."""

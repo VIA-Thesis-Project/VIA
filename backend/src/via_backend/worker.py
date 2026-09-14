@@ -20,6 +20,7 @@ from via_backend.contexts.agroclimatic_evaluation.application import (
 )
 from via_backend.contexts.agroclimatic_evaluation.infrastructure import (
     CropSuiteAdapter,
+    CropSuiteComparisonAdapter,
     FilesystemScientificArtifactStore,
     PostgreSQLEvaluationRepository,
 )
@@ -54,9 +55,16 @@ def create_worker(settings: WorkerSettings) -> WorkerRuntime:
         max_workers=settings.cropsuite_max_workers,
         artifact_store=artifact_store,
     )
+    comparison_engine = CropSuiteComparisonAdapter(
+        engine_root=engine_root,
+        python_executable=python_executable,
+        workspace_root=workspace_root,
+        artifact_store=artifact_store,
+    )
     executor = AgroclimaticEvaluationExecutionService(
         evaluations=evaluations,
         engine=scientific_engine,
+        comparison_engine=comparison_engine,
     )
     return WorkerRuntime(
         database_engine=database_engine,
