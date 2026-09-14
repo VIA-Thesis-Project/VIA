@@ -774,9 +774,9 @@
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/agroclimatic_evaluation/infrastructure/__init__.py": {
-    "mtime": 1789261684.6309,
-    "seen": 1789266582.9492323,
-    "ast_hash": "359e71f98b89a912fdb55b512990b6b4",
+    "mtime": 1789408815.6195886,
+    "seen": 1789412565.6265368,
+    "ast_hash": "b88622f8f888ae80d168f6993520f3f8",
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/agroclimatic_evaluation/interfaces/__init__.py": {
@@ -1056,9 +1056,9 @@
     "semantic_hash": "147774db32a5f22008dac63554067cac"
   },
   "backend/src/via_backend/config.py": {
-    "mtime": 1789306600.6565318,
-    "seen": 1789353630.8273757,
-    "ast_hash": "f731d149b97302fb6c0b57f88f8a121d",
+    "mtime": 1789409251.621474,
+    "seen": 1789412565.6265118,
+    "ast_hash": "e4a8ca214dbe47458605fd7e6c034a4c",
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/farm_management/infrastructure/database.py": {
@@ -1080,9 +1080,9 @@
     "semantic_hash": ""
   },
   "backend/tests/test_config.py": {
-    "mtime": 1789351607.231578,
-    "seen": 1789353630.8274636,
-    "ast_hash": "0862170669b6f00fbad43d46c2e8d1d2",
+    "mtime": 1789409106.3398888,
+    "seen": 1789412565.6266236,
+    "ast_hash": "238d6a7a69f8c3fc6e66faa5ef6f0a02",
     "semantic_hash": ""
   },
   "backend/tests/test_farm_management_postgresql.py": {
@@ -1512,21 +1512,21 @@
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/agroclimatic_evaluation/infrastructure/cropsuite_adapter.py": {
-    "mtime": 1789265355.8668826,
-    "seen": 1789266582.949233,
-    "ast_hash": "4bed7b833d9c7c2552a4734181760f63",
+    "mtime": 1789411097.5458798,
+    "seen": 1789412565.6265383,
+    "ast_hash": "e25fcfa5635f6281a84f128c6f2f4cb8",
     "semantic_hash": ""
   },
   "backend/tests/test_cropsuite_adapter.py": {
-    "mtime": 1789265961.8638895,
-    "seen": 1789266582.9492915,
-    "ast_hash": "3a2a6532298fd394d04685357ad6c783",
+    "mtime": 1789410405.8488421,
+    "seen": 1789412565.6266248,
+    "ast_hash": "cdca55c0e6c663a39fe780f831251f37",
     "semantic_hash": ""
   },
   "backend/tests/test_cropsuite_adapter_scientific.py": {
-    "mtime": 1789265766.9554687,
-    "seen": 1789266582.9492922,
-    "ast_hash": "305448a43fe258f588a74de245c4de80",
+    "mtime": 1789411497.5474012,
+    "seen": 1789412565.6266258,
+    "ast_hash": "fa70ca1d62e9a821d98bae02b23cc862",
     "semantic_hash": ""
   },
   "docs/adr/ADR-014-postgresql-postgis-agroclimatic-evaluation-persistence.md": {
@@ -1578,9 +1578,9 @@
     "semantic_hash": ""
   },
   "backend/src/via_backend/worker.py": {
-    "mtime": 1789306600.6565318,
-    "seen": 1789353630.8274562,
-    "ast_hash": "e610e933c200d6b9fccd0e44b0f3dffd",
+    "mtime": 1789409007.6040888,
+    "seen": 1789412565.6266122,
+    "ast_hash": "4ea70012e906934c1d6f78b484da006f",
     "semantic_hash": ""
   },
   "backend/tests/database_test_support.py": {
@@ -1644,15 +1644,15 @@
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/agroclimatic_evaluation/infrastructure/scientific_artifact_store.py": {
-    "mtime": 1789407444.2494154,
-    "seen": 1789407790.917325,
-    "ast_hash": "6248e1e18c70321141dfacebb634ae40",
+    "mtime": 1789408500.727246,
+    "seen": 1789412565.6265445,
+    "ast_hash": "74c62c889bfb13bcce6f639107b17c17",
     "semantic_hash": ""
   },
   "backend/tests/test_scientific_artifact_store.py": {
-    "mtime": 1789407475.928066,
-    "seen": 1789407790.9173934,
-    "ast_hash": "8429230df326b128269d002cd15d369a",
+    "mtime": 1789409267.3144507,
+    "seen": 1789412565.6266418,
+    "ast_hash": "dd2e15be9a7862d667411dc0f49143a7",
     "semantic_hash": ""
   }
 }
