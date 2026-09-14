@@ -17,9 +17,12 @@ cultivos por evaluación. Cada trabajo utiliza únicamente los archivos seleccio
 copiados sin modificaciones a carpetas propias y referenciadas por `plant_param_dir`.
 La selección no elimina ni reescribe archivos del catálogo compartido.
 
-La selección por CLI y el servicio Python están implementados; la interfaz web
-y su backend modular siguen pendientes. Los parámetros disponibles no implican
-que los 79 cultivos y variantes hayan sido ejecutados o validados para Huaura.
+La selección por CLI y el motor científico Python están implementados. VIA ya
+dispone de un backend modular con persistencia PostgreSQL/PostGIS, ejecución
+agroclimática en background, integración aislada con CropSuiteLite y API de
+consulta de estado, resultados y evidencia. La interfaz web continúa pendiente.
+Los parámetros disponibles no implican que los 79 cultivos y variantes hayan
+sido ejecutados o validados para Huaura.
 
 ## Evaluar varios cultivos en una parcela
 
@@ -44,8 +47,7 @@ La opción `--whole-huaura` permite un diagnóstico provincial explícito.
 Véase [uso y alcance del flujo multicultivo](CropSuiteLite/docs/multicrop_evaluation.md).
 
 La [versión 2 del documento de arquitectura](docs/Arquitectura_y_backend_CropSuiteLite_Huaura_v2.docx)
-incorpora la selección multicultivo, los resultados por parcela y su integración
-prevista con el backend modular.
+incorpora la selección multicultivo, los resultados por parcela y la arquitectura que actualmente guía su integración con el backend modular.
 
 ## Ejecutar la referencia anterior de maíz
 

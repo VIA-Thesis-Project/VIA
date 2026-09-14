@@ -18,7 +18,19 @@ The first backend can be deployed simply while retaining architectural boundarie
 
 ## Current implementation status
 
-The backend modular monolith does not exist. The repository contains the CropSuiteLite PoC that it will integrate.
+The VIA backend is implemented as a layered modular monolith under
+[`backend/`](../../backend). Delivered slices currently include Farm Management,
+Environmental Information, and Agroclimatic Evaluation, with explicit
+Application contracts and context-owned persistence.
+
+The HTTP API and the background evaluation worker are separate process entry
+points while remaining part of the same modular backend. PostgreSQL/PostGIS is
+shared infrastructure, but module dependency and data-ownership boundaries are
+enforced by architecture tests and Import Linter contracts.
+
+Identity & Access and deterministic Decision Support are not yet complete.
+Service extraction remains deferred until an observed scaling,
+failure-isolation, resource, or independent-evolution need justifies it.
 
 ## Source
 

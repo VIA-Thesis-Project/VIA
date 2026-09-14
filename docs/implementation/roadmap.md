@@ -1,6 +1,51 @@
 # VIA architecture implementation roadmap
 
-This roadmap translates the architecture source into seven increments. It is planning documentation; the modular foundation, Farm Management project/parcel persistence, the Environmental Information dataset-metadata slice, and extent-based coverage are implemented, while later scientific-execution stages remain future work. Each increment must preserve CropSuiteLite behavior and the decision status in the ADRs.
+This roadmap translates the architecture source into the original seven
+implementation increments and records the current delivery state. The modular
+foundation, Farm Management persistence, Environmental Information metadata and
+coverage, Agroclimatic Evaluation persistence, CropSuiteLite adapter,
+background execution, PostgreSQL polling worker, orphan recovery, and
+evaluation read/result/evidence APIs are implemented.
+
+The current focus is deterministic-core closure before public deployment and
+before any LLM/RAG integration. Each increment must preserve CropSuiteLite
+behavior and the decision status recorded in the ADRs.
+
+## Current delivery plan
+
+The remaining work is organized into three pre-LLM phases.
+
+### A — Deterministic core closure
+
+1. Documentation synchronization.
+2. Common spatial support for scientifically valid multicrop comparison.
+3. Comparable crop results over that common support.
+4. Deterministic Decision Support and viability/ranking contracts.
+5. Exact environmental input resolution and `EnvironmentalInputManifest`.
+6. Scientific traceability and reproducibility hardening.
+7. Operational closure for recovery, retention, artifacts, and runtime limits.
+
+The deterministic core must remain usable without an explanation provider.
+
+### B — Production deployment
+
+Package and deploy the FastAPI API process, PostgreSQL-backed worker, isolated
+scientific Python runtime, CropSuiteLite source, persistence, artifact storage,
+HTTPS, secrets, supervision, backups, and observability.
+
+CropSuiteLite remains a local scientific engine behind
+`ICropSuitabilityEngine`; production deployment does not require a CropSuiteLite
+HTTP service.
+
+### C — End-to-end validation
+
+Validate the deployed flow from parcel and environmental inputs through queued
+evaluation, worker execution, CropSuiteLite, persisted outcomes, deterministic
+Decision Support, evidence retrieval, failure/recovery behavior, performance,
+and reproducibility.
+
+LLM and RAG integration starts only after phases A, B, and C establish a stable
+deterministic core.
 
 ## 1 Modeling
 
@@ -56,6 +101,13 @@ input selection remain future work.
 
 **Out of scope.** Starting calculations, queue operation, cancellation, recommendations, and LLM explanations.
 
+**Current implementation status.** Evaluation polling, ordered persisted
+per-crop results, safe evidence projection, and a finalized Application-owned
+public result contract are implemented. Active evaluations remain explicitly
+non-final, and successful zero suitability, no coverage, and crop failure remain
+distinct states. Deterministic multicrop comparison and Decision Support remain
+future work.
+
 ## 5 On-demand execution
 
 **Objective.** Execute accepted evaluations recoverably outside the HTTP process through the CropSuiteLite boundary.
@@ -67,6 +119,16 @@ input selection remain future work.
 **Acceptance criteria.** HTTP returns without waiting for the engine; interrupted publication is recoverable; work directories are isolated; selected crops run sequentially with limited internal processes; one crop failure does not stop the others; expected outputs and compatibility are verified before success; source and artifact identities are persisted; relevant PoC and adapter tests pass.
 
 **Out of scope.** Changing scientific rules, automatic shared caching without compatibility proof, unlimited concurrency, public hosting, and decision-support recommendations.
+
+**Current implementation status.** Persisted evaluation requests, lifecycle
+transitions, the CropSuite port/adapter, sequential crop execution, PostgreSQL
+polling worker, per-crop outcome persistence, and explicit orphan recovery are
+implemented. HTTP does not wait for scientific execution.
+
+Automatic retries, leases, heartbeats, stale-job detection, cancellation,
+complete environmental input identity, full reproducibility metadata, durable
+artifact identity, and retention policy remain intentionally unresolved or
+deferred.
 
 ## 6 Public deployment
 

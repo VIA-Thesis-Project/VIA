@@ -18,7 +18,25 @@ The initial API, composition root, bounded-context packages, and tests can share
 
 ## Current implementation status
 
-[`backend/`](../../backend) contains the Python package, FastAPI startup, technical health endpoint, bounded-context layers, and architecture tests. Farm Management has a [minimum project/parcel vertical slice](../architecture/farm-management-slice.md) with in-memory adapters and the PostgreSQL/PostGIS persistence selected by [`ADR-011`](ADR-011-postgresql-postgis-farm-persistence.md). Authentication, worker execution, environmental evaluation, `ICropSuitabilityEngine`, and `CropSuiteAdapter` are not implemented.
+[`backend/`](../../backend) contains the Python package, FastAPI composition
+root, technical health endpoint, bounded-context layers, migrations, tests,
+static verification, and architecture dependency checks.
+
+Farm Management provides project/parcel behavior with PostgreSQL/PostGIS
+persistence. Environmental Information provides dataset metadata, structural
+compatibility, and parcel coverage capabilities. Agroclimatic Evaluation
+provides persisted evaluation requests, immutable parcel snapshots, lifecycle
+transitions, per-crop outcomes, the `ICropSuitabilityEngine` boundary,
+`CropSuiteAdapter`, background worker execution, explicit orphan recovery, and
+read/status/result/evidence APIs.
+
+Long scientific work executes outside the HTTP request process. The worker
+invokes CropSuiteLite through the Infrastructure adapter and an explicitly
+configured scientific Python subprocess.
+
+Identity & Access, deterministic Decision Support, complete environmental input
+resolution, full scientific reproducibility evidence, and production deployment
+remain incomplete.
 
 ## Source
 
