@@ -27,6 +27,9 @@ from via_backend.contexts.agroclimatic_evaluation.domain import (
     EvaluationConflictError,
     EvaluationStatus,
     ParcelSnapshot,
+    ScientificArtifact,
+    ScientificArtifactGrid,
+    ScientificArtifactRole,
     ScientificTrace,
     SnapshotGeometry,
     SuitabilitySummary,
@@ -208,8 +211,34 @@ def _succeeded_outcome(crop_id: str = "rice") -> CropOutcome:
             configuration_sha256="configuration-sha256",
             source_files_unchanged=True,
         ),
+        artifacts=(_scientific_artifact(),),
     )
 
+def _scientific_artifact() -> ScientificArtifact:
+    return ScientificArtifact(
+        role=ScientificArtifactRole.CROP_SUITABILITY,
+        storage_reference=(
+            "evaluations/00000000-0000-0000-0000-000000000001/"
+            "crops/maize/crop_suitability.tif"
+        ),
+        sha256="a" * 64,
+        media_type="image/tiff",
+        size_bytes=723,
+        grid=ScientificArtifactGrid(
+            crs="EPSG:4326",
+            width=12,
+            height=8,
+            transform=(
+                0.0041666667,
+                0.0,
+                -77.5,
+                0.0,
+                -0.0041666667,
+                -11.0,
+            ),
+            nodata=-1.0,
+        ),
+    )
 
 def test_crop_outcome_and_trace_fields_round_trip(
     database: tuple[Engine, SessionFactory],

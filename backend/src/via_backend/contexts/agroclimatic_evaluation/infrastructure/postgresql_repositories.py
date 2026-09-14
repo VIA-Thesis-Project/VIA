@@ -18,11 +18,19 @@ from ..domain.models import Evaluation, EvaluationStatus
 from ..domain.outcomes import (
     CropOutcome,
     CropOutcomeStatus,
+    ScientificArtifact,
+    ScientificArtifactGrid,
+    ScientificArtifactRole,
     ScientificTrace,
     SuitabilitySummary,
 )
 from ..domain.snapshot import ParcelSnapshot, SnapshotGeometry
-from .orm import CropOutcomeRecord, EvaluationCropRecord, EvaluationRecord
+from .orm import (
+    CropOutcomeRecord,
+    EvaluationCropRecord,
+    EvaluationRecord,
+    ScientificArtifactRecord,
+)
 
 
 class PostgreSQLEvaluationRepository:
@@ -98,6 +106,20 @@ class PostgreSQLEvaluationRepository:
                 if status != EvaluationStatus.RUNNING.value:
                     raise EvaluationConflictError(f"Evaluation {evaluation_id} is not running.")
                 session.add(_outcome_record(evaluation_id, outcome))
+
+                # Materialize the crop outcome before inserting artifact rows whose
+                # composite foreign key references it. Both operations remain inside
+                # the same database transaction.
+                session.flush()
+
+                session.add_all(
+                    _artifact_record(
+                        evaluation_id,
+                        outcome.crop_id,
+                        artifact,
+                    )
+                    for artifact in outcome.artifacts
+                )
         except IntegrityError as error:
             raise EvaluationConflictError(
                 f"Evaluation {evaluation_id} already has an outcome for {outcome.crop_id}."
@@ -198,18 +220,52 @@ def _evaluation_from_row(
     )
 
 
-def _load_outcomes(session: Session, evaluation_id: UUID) -> tuple[CropOutcome, ...]:
-    records = session.scalars(
-        select(CropOutcomeRecord)
-        .join(
-            EvaluationCropRecord,
-            (EvaluationCropRecord.evaluation_id == CropOutcomeRecord.evaluation_id)
-            & (EvaluationCropRecord.crop_id == CropOutcomeRecord.crop_id),
+def _load_outcomes(
+    session: Session,
+    evaluation_id: UUID,
+) -> tuple[CropOutcome, ...]:
+    outcome_records = tuple(
+        session.scalars(
+            select(CropOutcomeRecord)
+            .join(
+                EvaluationCropRecord,
+                (
+                    EvaluationCropRecord.evaluation_id
+                    == CropOutcomeRecord.evaluation_id
+                )
+                & (
+                    EvaluationCropRecord.crop_id
+                    == CropOutcomeRecord.crop_id
+                ),
+            )
+            .where(CropOutcomeRecord.evaluation_id == evaluation_id)
+            .order_by(EvaluationCropRecord.position)
         )
-        .where(CropOutcomeRecord.evaluation_id == evaluation_id)
-        .order_by(EvaluationCropRecord.position)
     )
-    return tuple(_outcome_from_record(record) for record in records)
+
+    artifact_records = session.scalars(
+        select(ScientificArtifactRecord)
+        .where(ScientificArtifactRecord.evaluation_id == evaluation_id)
+        .order_by(
+            ScientificArtifactRecord.crop_id,
+            ScientificArtifactRecord.role,
+        )
+    )
+
+    artifacts_by_crop: dict[str, list[ScientificArtifact]] = {}
+
+    for record in artifact_records:
+        artifacts_by_crop.setdefault(record.crop_id, []).append(
+            _artifact_from_record(record)
+        )
+
+    return tuple(
+        _outcome_from_record(
+            record,
+            tuple(artifacts_by_crop.get(record.crop_id, ())),
+        )
+        for record in outcome_records
+    )
 
 
 def _outcome_record(evaluation_id: UUID, outcome: CropOutcome) -> CropOutcomeRecord:
@@ -241,8 +297,59 @@ def _outcome_record(evaluation_id: UUID, outcome: CropOutcome) -> CropOutcomeRec
         source_files_unchanged=trace.source_files_unchanged,
     )
 
+def _artifact_record(
+    evaluation_id: UUID,
+    crop_id: str,
+    artifact: ScientificArtifact,
+) -> ScientificArtifactRecord:
+    return ScientificArtifactRecord(
+        evaluation_id=evaluation_id,
+        crop_id=crop_id,
+        role=artifact.role.value,
+        storage_reference=artifact.storage_reference,
+        sha256=artifact.sha256,
+        media_type=artifact.media_type,
+        size_bytes=artifact.size_bytes,
+        crs=artifact.grid.crs,
+        width=artifact.grid.width,
+        height=artifact.grid.height,
+        transform=list(artifact.grid.transform),
+        nodata=artifact.grid.nodata,
+    )
 
-def _outcome_from_record(record: CropOutcomeRecord) -> CropOutcome:
+
+def _artifact_from_record(
+    record: ScientificArtifactRecord,
+) -> ScientificArtifact:
+    transform = tuple(float(value) for value in record.transform)
+
+    if len(transform) != 6:
+        raise ValueError(
+            "Persisted scientific artifact transform must contain six coefficients."
+        )
+
+    return ScientificArtifact(
+        role=ScientificArtifactRole(record.role),
+        storage_reference=record.storage_reference,
+        sha256=record.sha256,
+        media_type=record.media_type,
+        size_bytes=record.size_bytes,
+        grid=ScientificArtifactGrid(
+            crs=record.crs,
+            width=record.width,
+            height=record.height,
+            transform=cast(
+                tuple[float, float, float, float, float, float],
+                transform,
+            ),
+            nodata=record.nodata,
+        ),
+    )
+
+def _outcome_from_record(
+    record: CropOutcomeRecord,
+    artifacts: tuple[ScientificArtifact, ...],
+) -> CropOutcome:
     status = CropOutcomeStatus(record.status)
     summary = (
         None
@@ -274,6 +381,7 @@ def _outcome_from_record(record: CropOutcomeRecord) -> CropOutcome:
             configuration_sha256=record.configuration_sha256,
             source_files_unchanged=record.source_files_unchanged,
         ),
+        artifacts=artifacts,
     )
 
 

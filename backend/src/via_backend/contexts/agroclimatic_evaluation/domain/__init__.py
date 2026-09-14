@@ -9,6 +9,9 @@ from .models import Evaluation, EvaluationStatus
 from .outcomes import (
     CropOutcome,
     CropOutcomeStatus,
+    ScientificArtifact,
+    ScientificArtifactGrid,
+    ScientificArtifactRole,
     ScientificTrace,
     SuitabilitySummary,
 )
@@ -26,6 +29,9 @@ __all__ = [
     "InvalidEvaluationTransitionError",
     "ParcelSnapshot",
     "ScientificTrace",
+    "ScientificArtifact",
+    "ScientificArtifactGrid",
+    "ScientificArtifactRole",
     "SnapshotGeometry",
     "SuitabilitySummary",
 ]

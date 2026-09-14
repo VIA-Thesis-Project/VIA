@@ -7,6 +7,7 @@ from uuid import UUID
 
 from geoalchemy2 import Geometry
 from sqlalchemy import (
+    BigInteger,
     Boolean,
     CheckConstraint,
     DateTime,
@@ -19,6 +20,7 @@ from sqlalchemy import (
     Text,
     UniqueConstraint,
 )
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import UUID as PostgreSQLUUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -157,3 +159,80 @@ class CropOutcomeRecord(Base):
     parameter_sha256: Mapped[str | None] = mapped_column(String(128), nullable=True)
     configuration_sha256: Mapped[str | None] = mapped_column(String(128), nullable=True)
     source_files_unchanged: Mapped[bool] = mapped_column(Boolean, nullable=False)
+
+class ScientificArtifactRecord(Base):
+    __tablename__ = "scientific_artifacts"
+    __table_args__ = (
+        CheckConstraint(
+            "role IN ('crop_suitability')",
+            name="scientific_artifact_role_supported",
+        ),
+        CheckConstraint(
+            "storage_reference <> '' "
+            "AND storage_reference = btrim(storage_reference)",
+            name="scientific_artifact_storage_reference_nonempty_trimmed",
+        ),
+        CheckConstraint(
+            "sha256 ~ '^[0-9a-f]{64}$'",
+            name="scientific_artifact_sha256_valid",
+        ),
+        CheckConstraint(
+            "media_type <> '' AND media_type = btrim(media_type)",
+            name="scientific_artifact_media_type_nonempty_trimmed",
+        ),
+        CheckConstraint(
+            "size_bytes > 0",
+            name="scientific_artifact_size_positive",
+        ),
+        CheckConstraint(
+            "crs <> '' AND crs = btrim(crs)",
+            name="scientific_artifact_crs_nonempty_trimmed",
+        ),
+        CheckConstraint(
+            "width > 0",
+            name="scientific_artifact_width_positive",
+        ),
+        CheckConstraint(
+            "height > 0",
+            name="scientific_artifact_height_positive",
+        ),
+        CheckConstraint(
+            "jsonb_typeof(transform) = 'array' "
+            "AND jsonb_array_length(transform) = 6",
+            name="scientific_artifact_transform_six_coefficients",
+        ),
+        ForeignKeyConstraint(
+            ["evaluation_id", "crop_id"],
+            [
+                f"{AGROCLIMATIC_EVALUATION_SCHEMA}.crop_outcomes.evaluation_id",
+                f"{AGROCLIMATIC_EVALUATION_SCHEMA}.crop_outcomes.crop_id",
+            ],
+            name="fk_scientific_artifacts_crop_outcome",
+            ondelete="CASCADE",
+        ),
+    )
+
+    evaluation_id: Mapped[UUID] = mapped_column(
+        PostgreSQLUUID(as_uuid=True),
+        primary_key=True,
+        nullable=False,
+    )
+    crop_id: Mapped[str] = mapped_column(
+        String(120),
+        primary_key=True,
+        nullable=False,
+    )
+    role: Mapped[str] = mapped_column(
+        String(64),
+        primary_key=True,
+        nullable=False,
+    )
+    storage_reference: Mapped[str] = mapped_column(Text, nullable=False)
+    sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    media_type: Mapped[str] = mapped_column(String(120), nullable=False)
+    size_bytes: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    crs: Mapped[str] = mapped_column(Text, nullable=False)
+    width: Mapped[int] = mapped_column(Integer, nullable=False)
+    height: Mapped[int] = mapped_column(Integer, nullable=False)
+    transform: Mapped[list[float]] = mapped_column(JSONB, nullable=False)
+    nodata: Mapped[float | None] = mapped_column(Float, nullable=True)
