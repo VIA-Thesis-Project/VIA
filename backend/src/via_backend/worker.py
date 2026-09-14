@@ -20,6 +20,7 @@ from via_backend.contexts.agroclimatic_evaluation.application import (
 )
 from via_backend.contexts.agroclimatic_evaluation.infrastructure import (
     CropSuiteAdapter,
+    FilesystemScientificArtifactStore,
     PostgreSQLEvaluationRepository,
 )
 from via_backend.infrastructure import create_database
@@ -38,9 +39,12 @@ class WorkerRuntime:
 
 def create_worker(settings: WorkerSettings) -> WorkerRuntime:
     """Compose the production worker and fail fast on missing scientific settings."""
-    engine_root, python_executable, workspace_root = settings.require_scientific_execution()
+    engine_root, python_executable, workspace_root, artifacts_root = (
+        settings.require_scientific_execution()
+    )
     database_engine, sessions = create_database(settings.database_url)
     evaluations = PostgreSQLEvaluationRepository(sessions)
+    artifact_store = FilesystemScientificArtifactStore(artifacts_root)
     scientific_engine = CropSuiteAdapter(
         engine_root=engine_root,
         python_executable=python_executable,
@@ -48,6 +52,7 @@ def create_worker(settings: WorkerSettings) -> WorkerRuntime:
         source_config=settings.cropsuite_source_config,
         catalog=settings.cropsuite_catalog,
         max_workers=settings.cropsuite_max_workers,
+        artifact_store=artifact_store,
     )
     executor = AgroclimaticEvaluationExecutionService(
         evaluations=evaluations,

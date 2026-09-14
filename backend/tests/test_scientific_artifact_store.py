@@ -8,6 +8,7 @@ import pytest
 from via_backend.contexts.agroclimatic_evaluation.infrastructure.scientific_artifact_store import (
     FilesystemScientificArtifactStore,
     ScientificArtifactConflictError,
+    ScientificArtifactIntegrityError,
     ScientificArtifactStorageError,
 )
 
@@ -100,3 +101,23 @@ def test_publish_rejects_missing_source(tmp_path: Path) -> None:
             tmp_path / "missing.tif",
             "evaluations/eval-1/crops/maize/crop_suitability.tif",
         )
+
+def test_publish_rejects_content_that_does_not_match_expected_checksum(
+    tmp_path: Path,
+) -> None:
+    source = tmp_path / "source.tif"
+    source.write_bytes(b"actual-content")
+
+    root = tmp_path / "artifacts"
+    store = FilesystemScientificArtifactStore(root)
+
+    with pytest.raises(ScientificArtifactIntegrityError):
+        store.publish(
+            source,
+            "evaluations/eval-1/crops/maize/crop_suitability.tif",
+            expected_sha256="0" * 64,
+        )
+
+    assert not (
+        root / "evaluations/eval-1/crops/maize/crop_suitability.tif"
+    ).exists()

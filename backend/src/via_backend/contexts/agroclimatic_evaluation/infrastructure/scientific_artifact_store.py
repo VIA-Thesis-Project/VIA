@@ -27,6 +27,8 @@ class PublishedScientificArtifact:
     sha256: str
     size_bytes: int
 
+class ScientificArtifactIntegrityError(ScientificArtifactStorageError):
+    """Raised when published bytes do not match the expected scientific checksum."""
 
 class ScientificArtifactStore(Protocol):
     """Publish immutable scientific files behind opaque logical references."""
@@ -35,6 +37,8 @@ class ScientificArtifactStore(Protocol):
         self,
         source: Path,
         storage_reference: str,
+        *,
+        expected_sha256: str | None = None,
     ) -> PublishedScientificArtifact: ...
 
 
@@ -49,6 +53,8 @@ class FilesystemScientificArtifactStore:
         self,
         source: Path,
         storage_reference: str,
+        *,
+        expected_sha256: str | None = None,
     ) -> PublishedScientificArtifact:
         source_path = source.resolve()
         if not source_path.is_file():
@@ -74,6 +80,11 @@ class FilesystemScientificArtifactStore:
                 os.fsync(target_file.fileno())
 
             candidate_sha256, candidate_size = _file_identity(temporary)
+
+            if expected_sha256 is not None and candidate_sha256 != expected_sha256:
+                raise ScientificArtifactIntegrityError(
+                    "Scientific artifact content does not match the expected SHA-256."
+                )
 
             if destination.exists():
                 stored_sha256, stored_size = _file_identity(destination)

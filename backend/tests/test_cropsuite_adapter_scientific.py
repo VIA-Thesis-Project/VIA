@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import os
 from datetime import UTC, datetime
 from pathlib import Path
@@ -12,6 +13,7 @@ import pytest
 from via_backend.contexts.agroclimatic_evaluation.application.ports import (
     CropExecutionStatus,
     CropSuitabilityRequest,
+    ScientificArtifactRole,
 )
 from via_backend.contexts.agroclimatic_evaluation.domain import (
     ParcelSnapshot,
@@ -19,6 +21,9 @@ from via_backend.contexts.agroclimatic_evaluation.domain import (
 )
 from via_backend.contexts.agroclimatic_evaluation.infrastructure.cropsuite_adapter import (
     CropSuiteAdapter,
+)
+from via_backend.contexts.agroclimatic_evaluation.infrastructure.scientific_artifact_store import (
+    FilesystemScientificArtifactStore,
 )
 
 
@@ -29,18 +34,26 @@ def test_real_cropsuite_adapter_smoke() -> None:
     engine_root_value = os.environ.get("VIA_CROPSUITE_ROOT")
     workspace_value = os.environ.get("VIA_CROPSUITE_WORKSPACE")
     python_value = os.environ.get("VIA_CROPSUITE_PYTHON")
-    if not engine_root_value or not workspace_value or not python_value:
+    artifacts_root_value = os.environ.get("VIA_ARTIFACTS_ROOT")
+    if (
+        not engine_root_value
+        or not workspace_value
+        or not python_value
+        or not artifacts_root_value
+    ):
         pytest.fail(
-            "Set VIA_CROPSUITE_ROOT, VIA_CROPSUITE_WORKSPACE "
-            "and VIA_CROPSUITE_PYTHON."
+            "Set VIA_CROPSUITE_ROOT, VIA_CROPSUITE_WORKSPACE, "
+            "VIA_CROPSUITE_PYTHON and VIA_ARTIFACTS_ROOT."
         )
 
     engine_root = Path(engine_root_value)
+    artifacts_root = Path(artifacts_root_value)
     adapter = CropSuiteAdapter(
         engine_root=engine_root,
         workspace_root=Path(workspace_value),
         python_executable=Path(python_value),
         max_workers=1,
+        artifact_store=FilesystemScientificArtifactStore(artifacts_root),
     )
     geometry = SnapshotGeometry.from_geojson(
         {
@@ -76,3 +89,26 @@ def test_real_cropsuite_adapter_smoke() -> None:
         CropExecutionStatus.NO_COVERAGE,
     }
     assert result.trace.engine_identifier == "CropSuiteLite"
+    assert len(result.artifacts) == 1
+
+    artifact = result.artifacts[0]
+
+    assert artifact.role is ScientificArtifactRole.CROP_SUITABILITY
+    assert artifact.media_type == "image/tiff"
+    assert artifact.size_bytes > 0
+    assert len(artifact.sha256) == 64
+
+    assert artifact.grid.width > 0
+    assert artifact.grid.height > 0
+    assert artifact.grid.crs
+    assert len(artifact.grid.transform) == 6
+
+    durable_path = artifacts_root.joinpath(
+        *artifact.storage_reference.split("/")
+    )
+
+    assert durable_path.is_file()
+    assert durable_path.stat().st_size == artifact.size_bytes
+
+    durable_sha256 = hashlib.sha256(durable_path.read_bytes()).hexdigest()
+    assert durable_sha256 == artifact.sha256

@@ -18,6 +18,7 @@ from via_backend.contexts.agroclimatic_evaluation.application.ports import (
     CropSuitabilityRequest,
     ICropSuitabilityEngine,
     InvalidEngineOutputError,
+    ScientificArtifactRole,
 )
 from via_backend.contexts.agroclimatic_evaluation.domain import (
     ParcelSnapshot,
@@ -25,6 +26,9 @@ from via_backend.contexts.agroclimatic_evaluation.domain import (
 )
 from via_backend.contexts.agroclimatic_evaluation.infrastructure.cropsuite_adapter import (
     CropSuiteAdapter,
+)
+from via_backend.contexts.agroclimatic_evaluation.infrastructure.scientific_artifact_store import (
+    FilesystemScientificArtifactStore,
 )
 
 
@@ -311,3 +315,114 @@ def run_evaluation(
     assert result.suitability is not None
     assert result.suitability.mean == 72.5
     assert Path(marker.read_text(encoding="utf-8")).resolve() == Path(sys.executable).resolve()
+
+@pytest.mark.parametrize(
+    ("status", "mean", "valid_cells"),
+    [
+        ("succeeded", 72.5, 2),
+        ("no_coverage", None, 0),
+    ],
+)
+def test_adapter_publishes_durable_crop_suitability_artifact(
+    tmp_path: Path,
+    status: str,
+    mean: float | None,
+    valid_cells: int,
+) -> None:
+    content = b"fake-geotiff-content"
+    checksum = hashlib.sha256(content).hexdigest()
+
+    def runner(**arguments: Any) -> dict[str, Any]:
+        output_root = Path(arguments["output_root"])
+        result_directory = output_root / "engine-result"
+        result_directory.mkdir(parents=True)
+
+        source = result_directory / "crop_suitability.tif"
+        source.write_bytes(content)
+
+        report = _report(
+            status,
+            mean=mean,
+            valid_cells=valid_cells,
+        )
+        crop = report["crops"][0]
+        crop["result_directory"] = str(result_directory)
+        crop["via_artifact"] = {
+            "sha256": checksum,
+            "grid": {
+                "crs": "EPSG:4326",
+                "width": 2,
+                "height": 1,
+                "transform": [0.1, 0.0, -77.0, 0.0, -0.1, -11.0],
+                "nodata": -1.0,
+            },
+        }
+        return report
+
+    artifact_root = tmp_path / "artifacts"
+    adapter = CropSuiteAdapter(
+        engine_root=tmp_path / "engine",
+        workspace_root=tmp_path / "workspace",
+        max_workers=1,
+        runner=runner,
+        artifact_store=FilesystemScientificArtifactStore(artifact_root),
+    )
+
+    result = adapter.evaluate(_request())
+
+    assert len(result.artifacts) == 1
+
+    artifact = result.artifacts[0]
+    assert artifact.role is ScientificArtifactRole.CROP_SUITABILITY
+    assert artifact.sha256 == checksum
+    assert artifact.media_type == "image/tiff"
+    assert artifact.size_bytes == len(content)
+    assert artifact.grid.crs == "EPSG:4326"
+
+    durable_path = artifact_root.joinpath(
+        *artifact.storage_reference.split("/")
+    )
+    assert durable_path.read_bytes() == content
+
+def test_adapter_rejects_artifact_outside_request_workspace(
+    tmp_path: Path,
+) -> None:
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    source = outside / "crop_suitability.tif"
+    source.write_bytes(b"content")
+
+    checksum = hashlib.sha256(b"content").hexdigest()
+
+    def runner(**arguments: Any) -> dict[str, Any]:
+        del arguments
+
+        report = _report()
+        crop = report["crops"][0]
+        crop["result_directory"] = str(outside)
+        crop["via_artifact"] = {
+            "sha256": checksum,
+            "grid": {
+                "crs": "EPSG:4326",
+                "width": 1,
+                "height": 1,
+                "transform": [1.0, 0.0, 0.0, 0.0, -1.0, 0.0],
+                "nodata": -1.0,
+            },
+        }
+        return report
+
+    adapter = CropSuiteAdapter(
+        engine_root=tmp_path / "engine",
+        workspace_root=tmp_path / "workspace",
+        runner=runner,
+        artifact_store=FilesystemScientificArtifactStore(
+            tmp_path / "artifacts"
+        ),
+    )
+
+    with pytest.raises(
+        InvalidEngineOutputError,
+        match="escapes the request workspace",
+    ):
+        adapter.evaluate(_request())
