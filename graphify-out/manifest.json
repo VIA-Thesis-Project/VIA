@@ -606,10 +606,10 @@
     "semantic_hash": "d4c2cc17355f244cfe8d77e792c6f813"
   },
   "README.md": {
-    "mtime": 1789087720.4720914,
-    "seen": 1789135460.8657882,
-    "ast_hash": "2518eb07d0453162b36e51837e64aa68",
-    "semantic_hash": "2518eb07d0453162b36e51837e64aa68"
+    "mtime": 1789401044.902045,
+    "seen": 1789407113.50709,
+    "ast_hash": "4de75d4b14c57918c09beb71bd4a1f58",
+    "semantic_hash": ""
   },
   "data/huaura/README.md": {
     "mtime": 1788565548.6088104,
@@ -624,10 +624,10 @@
     "semantic_hash": "81a5ce229f1e4028c28f23f3c4a10b60"
   },
   "docs/adr/ADR-001-modular-monolith.md": {
-    "mtime": 1789108860.9814627,
-    "seen": 1789135460.86579,
-    "ast_hash": "c07412e420059a1a815e0a882401a857",
-    "semantic_hash": "c07412e420059a1a815e0a882401a857"
+    "mtime": 1789401089.152375,
+    "seen": 1789407113.5070968,
+    "ast_hash": "0f9024f65efd80b92c0c1d25220eccc8",
+    "semantic_hash": ""
   },
   "docs/adr/ADR-002-layered-bounded-contexts.md": {
     "mtime": 1789108860.9824636,
@@ -642,9 +642,9 @@
     "semantic_hash": "b7b51702adf25ee8db41cdcdf515c235"
   },
   "docs/adr/ADR-004-cropsuite-port-adapter.md": {
-    "mtime": 1789266429.5897043,
-    "seen": 1789266582.949375,
-    "ast_hash": "f27818e037c087a1ce7feb9dd9209ebb",
+    "mtime": 1789401112.4359024,
+    "seen": 1789407113.5071013,
+    "ast_hash": "78dfd39ce16d07e06134f8ee4140a370",
     "semantic_hash": ""
   },
   "docs/adr/ADR-005-background-worker.md": {
@@ -714,9 +714,9 @@
     "semantic_hash": "f9dda8459e16b35c59ba9379d8d31ee4"
   },
   "docs/implementation/roadmap.md": {
-    "mtime": 1789226481.4521568,
-    "seen": 1789226700.090846,
-    "ast_hash": "2459ad594e75ef47af1f506083e3fedd",
+    "mtime": 1789401223.6057234,
+    "seen": 1789407113.5071375,
+    "ast_hash": "d9c1710139c79853cf5d745198946a4c",
     "semantic_hash": ""
   },
   "graphify-out/converted/Arquitectura_y_backend_CropSuiteLite_Huaura_v2_0e904345.md": {
@@ -762,9 +762,9 @@
     "semantic_hash": "9182063fb78990e08e3acf8c2ccbc92c"
   },
   "backend/src/via_backend/contexts/agroclimatic_evaluation/application/__init__.py": {
-    "mtime": 1789357465.7348423,
-    "seen": 1789395691.2144933,
-    "ast_hash": "eb1b093b0ffac94c8fbc58d5fb33c292",
+    "mtime": 1789406763.86414,
+    "seen": 1789407113.5068069,
+    "ast_hash": "4dd25f4017ce3b660be22a97b0235094",
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/agroclimatic_evaluation/domain/__init__.py": {
@@ -954,10 +954,10 @@
     "semantic_hash": "96195195e8fa9eb29d61fa5d4aab68c6"
   },
   "docs/adr/ADR-010-python-fastapi-backend.md": {
-    "mtime": 1789193516.1229827,
-    "seen": 1789197987.2910256,
-    "ast_hash": "aaba77ae42d1bb57cff8606376b72a6a",
-    "semantic_hash": "aaba77ae42d1bb57cff8606376b72a6a"
+    "mtime": 1789401127.8192437,
+    "seen": 1789407113.5071108,
+    "ast_hash": "49e6a991744ba6f8af3a92bd11cc1602",
+    "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/farm_management/application/commands.py": {
     "mtime": 1789246563.2735195,
@@ -1506,9 +1506,9 @@
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/agroclimatic_evaluation/application/ports.py": {
-    "mtime": 1789262249.0869288,
-    "seen": 1789266582.9492242,
-    "ast_hash": "0bca409f2e2297e00327de5640cb1fb6",
+    "mtime": 1789406252.9669044,
+    "seen": 1789407113.5068133,
+    "ast_hash": "92e8db3be38c0b96acfded18aa2f6a02",
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/agroclimatic_evaluation/infrastructure/cropsuite_adapter.py": {
@@ -1542,15 +1542,15 @@
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/agroclimatic_evaluation/application/execution.py": {
-    "mtime": 1789395603.5895126,
-    "seen": 1789395691.214497,
-    "ast_hash": "459124f88e5102105e217827a03a8979",
+    "mtime": 1789406495.9154658,
+    "seen": 1789407113.5068114,
+    "ast_hash": "9bb1b160430e213b686c84c6cbc5cc67",
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/agroclimatic_evaluation/domain/outcomes.py": {
-    "mtime": 1789273579.4469447,
-    "seen": 1789275401.8065367,
-    "ast_hash": "7a994372d6559fe93815c8724ce1e0ce",
+    "mtime": 1789406690.7123108,
+    "seen": 1789407113.5068321,
+    "ast_hash": "aa869dbf77c9710de732f9a7bf2614d2",
     "semantic_hash": ""
   },
   "backend/tests/test_agroclimatic_evaluation_execution.py": {
