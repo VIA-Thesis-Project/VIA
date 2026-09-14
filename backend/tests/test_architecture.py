@@ -226,3 +226,70 @@ def test_worker_application_code_does_not_import_cropsuite_adapter() -> None:
     worker_application = CONTEXTS_ROOT / "agroclimatic_evaluation" / "application" / "worker.py"
 
     assert "cropsuiteadapter" not in worker_application.read_text(encoding="utf-8").casefold()
+
+
+def test_evaluation_query_path_does_not_reference_engine_or_worker_control() -> None:
+    application = CONTEXTS_ROOT / "agroclimatic_evaluation" / "application"
+    query_files = [
+        application / "queries.py",
+        application / "read_models.py",
+        application / "public.py",
+        application / "service.py",
+    ]
+
+    forbidden = {
+        "cropsuiteadapter",
+        "icropsuitabilityengine",
+        "listevaluationsqueued",
+        "list_queued_ids",
+        "worker",
+    }
+    violations = [
+        f"{path.name}: {term}"
+        for path in query_files
+        for term in forbidden
+        if term in path.read_text(encoding="utf-8").casefold()
+    ]
+
+    assert not violations, "\n".join(violations)
+
+
+def test_evaluation_http_read_resources_do_not_expose_persistence_types() -> None:
+    http = CONTEXTS_ROOT / "agroclimatic_evaluation" / "interfaces" / "http.py"
+    modules = _imported_modules(http)
+
+    assert all("infrastructure" not in module.casefold() for module in modules)
+    assert all("orm" not in module.casefold() for module in modules)
+    assert all("sqlalchemy" not in module.casefold() for module in modules)
+    assert "cropsuiteadapter" not in http.read_text(encoding="utf-8").casefold()
+
+
+def test_finalized_result_public_contract_has_no_internal_storage_dependency() -> None:
+    public_contract = CONTEXTS_ROOT / "agroclimatic_evaluation" / "application" / "public.py"
+    modules = _imported_modules(public_contract)
+    source = public_contract.read_text(encoding="utf-8").casefold()
+
+    assert all("repositories" not in module.casefold() for module in modules)
+    assert all("infrastructure" not in module.casefold() for module in modules)
+    assert all("orm" not in module.casefold() for module in modules)
+    assert "evaluationrepository" not in source
+    assert "postgresqlevaluationrepository" not in source
+
+
+def test_decision_support_does_not_read_evaluation_internals() -> None:
+    decision_support = CONTEXTS_ROOT / "decision_support"
+    forbidden = {
+        "evaluationrepository",
+        "postgresqlevaluationrepository",
+        "evaluationrecord",
+        "cropoutcomerecord",
+        "agroclimatic_evaluation.infrastructure",
+    }
+    violations = [
+        f"{path.relative_to(SOURCE_ROOT)}: {term}"
+        for path in decision_support.rglob("*.py")
+        for term in forbidden
+        if term in path.read_text(encoding="utf-8").casefold()
+    ]
+
+    assert not violations, "\n".join(violations)

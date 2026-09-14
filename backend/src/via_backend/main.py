@@ -115,7 +115,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         create_environmental_information_router(environmental_information)
     )
     application.include_router(
-        create_agroclimatic_evaluation_router(agroclimatic_evaluation)
+        create_agroclimatic_evaluation_router(agroclimatic_evaluation),
+        prefix="/api/v1",
     )
     return application
 

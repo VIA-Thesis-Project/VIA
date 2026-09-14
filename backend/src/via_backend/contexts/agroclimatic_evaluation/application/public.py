@@ -1,0 +1,73 @@
+"""Stable contracts deliberately published to other bounded contexts."""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from datetime import datetime
+from enum import StrEnum
+from typing import Protocol, runtime_checkable
+from uuid import UUID
+
+
+class FinalizedCropOutcomeStatus(StrEnum):
+    SUCCEEDED = "succeeded"
+    NO_COVERAGE = "no_coverage"
+    FAILED = "failed"
+
+
+@dataclass(frozen=True, slots=True)
+class GetFinalizedEvaluationResult:
+    evaluation_id: UUID
+
+
+@dataclass(frozen=True, slots=True)
+class FinalizedSuitabilitySummary:
+    mean: float | None
+    minimum: float | None
+    maximum: float | None
+    valid_cells: int
+    valid_area_m2: float
+    coverage_fraction: float
+    zero_suitability_area_m2: float
+
+
+@dataclass(frozen=True, slots=True)
+class FinalizedScientificTrace:
+    engine_identifier: str
+    started_at: datetime
+    finished_at: datetime
+    elapsed_seconds: float
+    execution_mode: str
+    parcel_sha256: str
+    parameter_sha256: str | None
+    configuration_sha256: str | None
+    source_files_unchanged: bool
+
+
+@dataclass(frozen=True, slots=True)
+class FinalizedCropOutcome:
+    crop_id: str
+    status: FinalizedCropOutcomeStatus
+    suitability: FinalizedSuitabilitySummary | None
+    trace: FinalizedScientificTrace
+
+
+@dataclass(frozen=True, slots=True)
+class FinalizedEvaluationResult:
+    evaluation_id: UUID
+    requested_crops: tuple[str, ...]
+    project_id: UUID
+    parcel_id: UUID
+    parcel_version: int
+    parcel_captured_at: datetime
+    created_at: datetime
+    outcomes: tuple[FinalizedCropOutcome, ...]
+
+
+@runtime_checkable
+class FinalizedEvaluationResultReader(Protocol):
+    """Public local interface for a future Decision Support consumer."""
+
+    def get_finalized_evaluation_result(
+        self, query: GetFinalizedEvaluationResult
+    ) -> FinalizedEvaluationResult: ...

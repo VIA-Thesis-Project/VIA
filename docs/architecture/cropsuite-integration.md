@@ -7,8 +7,8 @@ CropSuiteLite is the existing scientific engine. The backend must preserve it be
 `ICropSuitabilityEngine` is the Application port for requesting a verified suitability calculation. `CropSuiteAdapter` is the Infrastructure implementation that translates an approved application request into CropSuiteLite configuration and files, invokes the existing engine, and returns verified result and artifact references.
 
 The names are concrete backend contracts in Agroclimatic Evaluation. Synchronous
-Application orchestration and minimal per-crop persistence are now implemented;
-worker dispatch remains future work:
+Application orchestration, minimal per-crop persistence, and PostgreSQL polling
+worker dispatch are now implemented:
 
 ```text
 ExecuteEvaluation application use case
@@ -77,7 +77,7 @@ source-files-unchanged result. A durable engine commit/version, dependency
 versions, dataset manifest, full evidence/artifact model, and retention policy
 are not reliably available at this boundary and are explicitly deferred.
 
-## Application orchestration and future worker responsibilities
+## Application orchestration and worker responsibilities
 
 `AgroclimaticEvaluationExecutionService` now loads and claims a queued
 evaluation, persists active lifecycle transitions, invokes the port once per
@@ -86,10 +86,10 @@ finishes the aggregate. An explicit per-crop failure remains an outcome and does
 not make the orchestration fail; a boundary exception stops the sequence and
 persists overall failure.
 
-The future worker should call this use case, then add recoverable claiming,
-retry/recovery policy, cancellation, exact environmental input resolution,
-artifact/evidence retention, and publication. It must treat shared inputs as
-immutable and avoid a global output directory.
+The PostgreSQL polling worker calls this use case and relies on its optimistic
+claiming behavior. Future increments may add retry policy, cancellation, exact
+environmental input resolution, artifact retention, and publication. Shared
+inputs must remain immutable and a global output directory must not be used.
 
 ## Scientific preservation constraints
 
@@ -97,15 +97,16 @@ The adapter must not change crop parameter files, interpolation, precipitation u
 
 ## Future work not yet implemented
 
-The repository provides only the reliable current per-crop summary, failure, and
-trace fields. It does not yet provide the final result/evidence model, a durable
-queue, retries, recovery, cancellation, quotas, API authorization,
-shared climate-preparation cache, compatible-run reuse, or retention policy.
-HTTP request creation remains separate from scientific execution. Reuse requires
-a manifest key covering engine, parameters, inputs, scenario, management,
-scientific options, spatial scope, and aggregation method. The distinction between
-a reusable `ScientificRun` and a parcel-specific `ParcelAssessment` is a proposed
-model, not current code.
+The repository provides the reliable current per-crop summary and trace fields
+through read-only status, result, and evidence queries. HTTP omits raw diagnostic
+messages and the opaque execution reference. Application publishes a finalized
+result contract for future Decision Support use, but the final
+`SuitabilityEvidence`/artifact model, retries, cancellation, quotas,
+authorization, shared climate-preparation cache, compatible-run reuse, and
+retention policy remain deferred. HTTP request creation remains separate from
+scientific execution. Reuse still requires a manifest key covering engine,
+parameters, inputs, scenario, management, scientific options, spatial scope, and
+aggregation method.
 
 ## Implemented worker host
 
@@ -121,7 +122,7 @@ execution does not run inside a database transaction.
 
 A crashed worker may leave an evaluation active. The current recovery mechanism
 is explicit fail-only recovery to `failed`; heartbeats, leases, automatic stale
-detection, retries, requeue and cancellation remain deferred.wsl
+detection, retries, requeue and cancellation remain deferred.
 
 ## Source
 

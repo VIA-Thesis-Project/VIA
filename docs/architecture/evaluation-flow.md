@@ -93,9 +93,19 @@ outcomes are not fabricated, and the evaluation is never restarted or requeued.
 Automatic crash recovery, retry, cancellation semantics, and the final
 evidence/result model remain open decisions.
 
-## Proposed query endpoints
+## Implemented query endpoints
 
-The architecture source proposes `POST /api/v1/evaluations` plus polling and read endpoints for evaluation status, result, and evidence. A `202 Accepted` response with an identifier and polling location is illustrative. Final routes and schemas must be decided before clients or migrations are generated.
+Agroclimatic Evaluation now exposes its versioned read surface:
+
+- `GET /api/v1/evaluations/{evaluation_id}` returns lifecycle status, deterministic requested-crop order, requested and completed crop counts, creation time, and safe parcel-snapshot identity fields. It does not invent a progress percentage.
+- `GET /api/v1/evaluations/{evaluation_id}/result` returns the outcomes currently persisted in request order. Its explicit availability is `pending` when none are persisted, `partial` while an active evaluation has outcomes, `final` only after overall `succeeded`, and `failed` after overall orchestration failure.
+- `GET /api/v1/evaluations/{evaluation_id}/evidence` returns the currently persisted safe per-crop trace subset with the same availability semantics.
+
+Lifecycle status and per-crop outcome status are separate. A `succeeded` crop with mean zero remains a valid result; `no_coverage` retains null summary values and zero valid support; `failed` has no suitability summary. Public resources do not expose persisted diagnostic messages or the opaque execution reference.
+
+Application also publishes the immutable `FinalizedEvaluationResult` contract through `FinalizedEvaluationResultReader`. The reader accepts only overall `succeeded` evaluations and exposes ordered outcomes, current suitability summaries, safe trace metadata, and snapshot identity without repositories, ORM records, tables, CropSuiteLite types, or filesystem paths.
+
+Decision Support remains deferred. The current independent per-crop summaries do not contain the common-valid-support comparison required by ADR-009. Consumers must not sort independent means and call that a ranking; common-support ranking remains a later scientifically justified contract.
 
 ## Reproducibility requirements
 

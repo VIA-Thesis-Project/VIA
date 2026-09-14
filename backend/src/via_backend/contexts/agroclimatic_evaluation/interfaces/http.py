@@ -1,4 +1,4 @@
-"""FastAPI resources for Agroclimatic Evaluation requests."""
+"""FastAPI resources for Agroclimatic Evaluation requests and reads."""
 
 from __future__ import annotations
 
@@ -10,7 +10,13 @@ from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel, ConfigDict, Field
 
 from ..application.commands import ParcelSnapshotInput, RequestEvaluation
-from ..application.queries import GetEvaluation, ListEvaluations
+from ..application.queries import (
+    GetEvaluation,
+    GetEvaluationEvidence,
+    GetEvaluationResult,
+    ListEvaluations,
+)
+from ..application.read_models import EvaluationResultAvailability
 from ..application.service import (
     AgroclimaticEvaluationService,
     InvalidCommandError,
@@ -18,6 +24,7 @@ from ..application.service import (
     ResourceNotFoundError,
 )
 from ..domain.models import EvaluationStatus
+from ..domain.outcomes import CropOutcomeStatus
 
 
 class _RequestModel(BaseModel):
@@ -69,6 +76,85 @@ class EvaluationResponse(BaseModel):
     created_at: datetime
 
 
+class EvaluationStatusResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    evaluation_id: UUID
+    status: EvaluationStatus
+    requested_crops: list[str]
+    requested_crop_count: int
+    completed_crop_count: int
+    created_at: datetime
+    project_id: UUID
+    parcel_id: UUID
+    parcel_version: int
+    parcel_captured_at: datetime
+    failed: bool
+
+
+class SuitabilitySummaryResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    mean: float | None
+    minimum: float | None
+    maximum: float | None
+    valid_cells: int
+    valid_area_m2: float
+    coverage_fraction: float
+    zero_suitability_area_m2: float
+
+
+class CropOutcomeResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    crop_id: str
+    status: CropOutcomeStatus
+    suitability: SuitabilitySummaryResponse | None
+
+
+class EvaluationResultResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    evaluation_id: UUID
+    evaluation_status: EvaluationStatus
+    availability: EvaluationResultAvailability
+    requested_crops: list[str]
+    requested_crop_count: int
+    completed_crop_count: int
+    outcomes: list[CropOutcomeResponse]
+
+
+class ScientificTraceResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    engine_identifier: str
+    started_at: datetime
+    finished_at: datetime
+    elapsed_seconds: float
+    execution_mode: str
+    parcel_sha256: str
+    parameter_sha256: str | None
+    configuration_sha256: str | None
+    source_files_unchanged: bool
+
+
+class CropEvidenceResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    crop_id: str
+    status: CropOutcomeStatus
+    trace: ScientificTraceResponse
+
+
+class EvaluationEvidenceResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    evaluation_id: UUID
+    evaluation_status: EvaluationStatus
+    availability: EvaluationResultAvailability
+    evidence: list[CropEvidenceResponse]
+
+
 def create_router(service: AgroclimaticEvaluationService) -> APIRouter:
     """Create a router bound to the supplied evaluation application service."""
     router = APIRouter(prefix="/evaluations", tags=["agroclimatic-evaluation"])
@@ -106,13 +192,29 @@ def create_router(service: AgroclimaticEvaluationService) -> APIRouter:
             )
         ]
 
-    @router.get("/{evaluation_id}", response_model=EvaluationResponse)
-    def get_evaluation(evaluation_id: UUID) -> EvaluationResponse:
+    @router.get("/{evaluation_id}/result", response_model=EvaluationResultResponse)
+    def get_evaluation_result(evaluation_id: UUID) -> EvaluationResultResponse:
+        result = _execute(
+            service.get_evaluation_result,
+            GetEvaluationResult(evaluation_id),
+        )
+        return EvaluationResultResponse.model_validate(result)
+
+    @router.get("/{evaluation_id}/evidence", response_model=EvaluationEvidenceResponse)
+    def get_evaluation_evidence(evaluation_id: UUID) -> EvaluationEvidenceResponse:
+        result = _execute(
+            service.get_evaluation_evidence,
+            GetEvaluationEvidence(evaluation_id),
+        )
+        return EvaluationEvidenceResponse.model_validate(result)
+
+    @router.get("/{evaluation_id}", response_model=EvaluationStatusResponse)
+    def get_evaluation(evaluation_id: UUID) -> EvaluationStatusResponse:
         result = _execute(
             service.get_evaluation,
             GetEvaluation(evaluation_id),
         )
-        return EvaluationResponse.model_validate(result)
+        return EvaluationStatusResponse.model_validate(result)
 
     return router
 

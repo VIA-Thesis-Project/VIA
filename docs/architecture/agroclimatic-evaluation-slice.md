@@ -1,4 +1,4 @@
-# Agroclimatic Evaluation request, worker, and recovery slice
+# Agroclimatic Evaluation request, worker, recovery, and read slice
 
 ## Ownership
 
@@ -62,15 +62,45 @@ it, sleeping after a non-full batch, and uses standard logging. A persisted
 orchestration failure does not stop later work. A failure that was not persisted
 as `failed` escapes instead of being silently swallowed as ordinary work.
 
-The current REST surface remains:
+The current versioned REST surface is:
 
-- `POST /evaluations` — persist a request and return `201 Created`;
-- `GET /evaluations/{evaluation_id}` — return one request or `404`;
-- `GET /evaluations` — return requests in deterministic creation order.
+- `POST /api/v1/evaluations` persists a request and returns `201 Created`;
+- `GET /api/v1/evaluations` returns requests in deterministic creation order;
+- `GET /api/v1/evaluations/{evaluation_id}` returns polling status and persisted counts;
+- `GET /api/v1/evaluations/{evaluation_id}/result` returns currently persisted ordered outcomes;
+- `GET /api/v1/evaluations/{evaluation_id}/evidence` returns the safe current evidence subset.
 
-`201` is used instead of the future illustrative `202` because no execution is
-scheduled in this slice. Invalid domain input returns `422`; a persistence identity
-conflict maps to `409`.
+The status resource reports `requested_crop_count`, `completed_crop_count`, and
+lifecycle `status`; it does not invent a numeric percentage. Result availability
+is `pending`, `partial`, `final`, or `failed`. Only overall `succeeded`
+is final. Overall failure is public as a safe boolean/availability state while
+persisted orchestration and crop diagnostic messages remain internal.
+
+## Read contracts and current evidence
+
+The read use cases are immutable `GetEvaluation`, `GetEvaluationResult`, and
+`GetEvaluationEvidence` queries over the existing aggregate repository. No
+separate read store or schema is introduced. They do not claim work, mutate
+lifecycle state, invoke the scientific engine, or control the worker.
+
+The HTTP evidence resource exposes the currently reliable persisted fields:
+`engine_identifier`, `started_at`, `finished_at`, `elapsed_seconds`,
+`execution_mode`, `parcel_sha256`, `parameter_sha256`,
+`configuration_sha256`, and `source_files_unchanged`. It omits the opaque
+`execution_reference` because it may encode an internal execution location, and
+it omits raw failure diagnostics.
+
+The Application `public.py` module deliberately publishes
+`FinalizedEvaluationResult`, its immutable nested values, and
+`FinalizedEvaluationResultReader` for future local cross-context use. The
+reader returns a contract only for overall `succeeded` evaluations. It exposes
+no Evaluation aggregate, repository, ORM mapping, table, CropSuite adapter, or
+CropSuiteLite type.
+
+Decision Support behavior is still absent. Independent per-crop means are not
+ranked because they do not prove the common valid spatial support required by
+ADR-009. No common coverage is reconstructed from independent coverage fractions.
+
 
 ## Deliberately deferred
 
@@ -97,4 +127,4 @@ documented in [`cropsuite-integration.md`](cropsuite-integration.md).
 Persistence follows
 [ADR-014](../adr/ADR-014-postgresql-postgis-agroclimatic-evaluation-persistence.md);
 PostgreSQL polling and explicit recovery follow
-[ADR-015](../adr/ADR-015-postgresql-polling-worker-and-orphan-recovery.md).
+[ADR-015](../adr/ADR-015-postgresql-polling-evaluation-worker.md).

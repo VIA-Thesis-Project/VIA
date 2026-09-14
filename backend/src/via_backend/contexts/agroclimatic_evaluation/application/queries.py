@@ -10,5 +10,15 @@ class GetEvaluation:
 
 
 @dataclass(frozen=True, slots=True)
+class GetEvaluationResult:
+    evaluation_id: UUID
+
+
+@dataclass(frozen=True, slots=True)
+class GetEvaluationEvidence:
+    evaluation_id: UUID
+
+
+@dataclass(frozen=True, slots=True)
 class ListEvaluations:
     pass

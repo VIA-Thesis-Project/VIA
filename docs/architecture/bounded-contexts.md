@@ -38,7 +38,7 @@ The contexts below are the current modeling hypothesis for the VIA modular monol
 
 **Owned model and data.** Evaluation, exact `ParcelSnapshot`, execution or `ScientificRun`, per-crop result, evidence, artifact references, attempts, timestamps, and state.
 
-**Public collaboration.** Obtains an authorized parcel version from Farm Management and compatible dataset versions from Environmental Information. Uses `ICropSuitabilityEngine`; Infrastructure supplies `CropSuiteAdapter`. Publishes completed results and evidence to Decision Support through stable contracts or an idempotent integration event.
+**Public collaboration.** Obtains an authorized parcel version from Farm Management and compatible dataset versions from Environmental Information. Uses `ICropSuitabilityEngine`; Infrastructure supplies `CropSuiteAdapter`. Publishes the current finalized result through the Application-owned `FinalizedEvaluationResultReader` contract. Decision Support remains a future consumer; no integration event is introduced while a local query contract is sufficient.
 
 **Must not access directly.** Another context's entities, repositories, or tables. Domain must not depend on CropSuiteLite, HTTP, a queue, an ORM, or filesystem paths.
 
