@@ -768,9 +768,9 @@
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/agroclimatic_evaluation/domain/__init__.py": {
-    "mtime": 1789273768.6018062,
-    "seen": 1789275401.8065333,
-    "ast_hash": "4561f103ae7d1af1ccabbc9cc8117ad0",
+    "mtime": 1789413618.8439653,
+    "seen": 1789414888.6263387,
+    "ast_hash": "622a44ae4d3452b13b21a22a359fb3c5",
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/agroclimatic_evaluation/infrastructure/__init__.py": {
@@ -1452,15 +1452,15 @@
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/agroclimatic_evaluation/infrastructure/orm.py": {
-    "mtime": 1789306600.6575315,
-    "seen": 1789353630.8273947,
-    "ast_hash": "a60f37298c4b227ac005300a4bc42c58",
+    "mtime": 1789412956.0167854,
+    "seen": 1789414888.626349,
+    "ast_hash": "991158b4ba2cb858484af1fc3e2cdeaf",
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/agroclimatic_evaluation/infrastructure/postgresql_repositories.py": {
-    "mtime": 1789306600.6575315,
-    "seen": 1789353630.8273957,
-    "ast_hash": "9c9ee5f9a51680a831a2ce6bba5ccb1e",
+    "mtime": 1789413467.3640623,
+    "seen": 1789414888.6263502,
+    "ast_hash": "db7f2d00fdab53e78f681381ebb6e5a5",
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/agroclimatic_evaluation/infrastructure/repositories.py": {
@@ -1488,9 +1488,9 @@
     "semantic_hash": ""
   },
   "backend/tests/test_agroclimatic_evaluation_postgresql.py": {
-    "mtime": 1789350196.03707,
-    "seen": 1789353630.8274605,
-    "ast_hash": "adb826856bac4616f07f0cf25f70caf2",
+    "mtime": 1789413467.3630466,
+    "seen": 1789414888.626428,
+    "ast_hash": "ede9bac46bf37032b6c0b78d4f311c79",
     "semantic_hash": ""
   },
   "backend/tests/test_agroclimatic_evaluation_repositories.py": {
@@ -1653,6 +1653,12 @@
     "mtime": 1789409267.3144507,
     "seen": 1789412565.6266418,
     "ast_hash": "dd2e15be9a7862d667411dc0f49143a7",
+    "semantic_hash": ""
+  },
+  "backend/migrations/versions/20260914_0006_scientific_artifacts.py": {
+    "mtime": 1789413307.9336858,
+    "seen": 1789414888.6263137,
+    "ast_hash": "5fe3e0eddccffbcaa908573e29505f4c",
     "semantic_hash": ""
   }
 }
