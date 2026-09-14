@@ -7,6 +7,9 @@ from ..domain.models import Evaluation, EvaluationStatus
 from ..domain.outcomes import (
     CropOutcome,
     CropOutcomeStatus,
+    ScientificArtifact,
+    ScientificArtifactGrid,
+    ScientificArtifactRole,
     ScientificTrace,
     SuitabilitySummary,
 )
@@ -142,5 +145,22 @@ def _to_outcome(result: CropSuitabilityResult) -> CropOutcome:
             parameter_sha256=trace.parameter_sha256,
             configuration_sha256=trace.configuration_sha256,
             source_files_unchanged=trace.source_files_unchanged,
+        ),
+        artifacts=tuple(
+            ScientificArtifact(
+                role=ScientificArtifactRole(artifact.role.value),
+                storage_reference=artifact.storage_reference,
+                sha256=artifact.sha256,
+                media_type=artifact.media_type,
+                size_bytes=artifact.size_bytes,
+                grid=ScientificArtifactGrid(
+                    crs=artifact.grid.crs,
+                    width=artifact.grid.width,
+                    height=artifact.grid.height,
+                    transform=artifact.grid.transform,
+                    nodata=artifact.grid.nodata,
+                ),
+            )
+            for artifact in result.artifacts
         ),
     )

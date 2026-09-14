@@ -40,6 +40,33 @@ class SuitabilityScoreSummary:
     coverage_fraction: float
     zero_suitability_area_m2: float
 
+@dataclass(frozen=True, slots=True)
+class ScientificArtifactGrid:
+    """Portable grid identity needed to verify comparable scientific rasters."""
+
+    crs: str
+    width: int
+    height: int
+    transform: tuple[float, float, float, float, float, float]
+    nodata: float | None
+
+
+class ScientificArtifactRole(StrEnum):
+    """Scientific artifact roles understood by VIA."""
+
+    CROP_SUITABILITY = "crop_suitability"
+
+
+@dataclass(frozen=True, slots=True)
+class ScientificArtifactDescriptor:
+    """Durable opaque reference to one verified scientific artifact."""
+
+    role: ScientificArtifactRole
+    storage_reference: str
+    sha256: str
+    media_type: str
+    size_bytes: int
+    grid: ScientificArtifactGrid
 
 @dataclass(frozen=True, slots=True)
 class ScientificExecutionFailure:
@@ -73,6 +100,7 @@ class CropSuitabilityResult:
     suitability: SuitabilityScoreSummary | None
     failure: ScientificExecutionFailure | None
     trace: ScientificExecutionTrace
+    artifacts: tuple[ScientificArtifactDescriptor, ...] = ()
 
 
 class CropSuitabilityEngineError(RuntimeError):

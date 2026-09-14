@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import math
+import re
 from dataclasses import dataclass
 from datetime import datetime
 from enum import StrEnum
@@ -15,6 +17,67 @@ class CropOutcomeStatus(StrEnum):
     SUCCEEDED = "succeeded"
     NO_COVERAGE = "no_coverage"
     FAILED = "failed"
+
+
+_SHA256_PATTERN = re.compile(r"^[0-9a-f]{64}$")
+
+
+class ScientificArtifactRole(StrEnum):
+    """Scientific artifact role persisted by Agroclimatic Evaluation."""
+
+    CROP_SUITABILITY = "crop_suitability"
+
+
+@dataclass(frozen=True, slots=True)
+class ScientificArtifactGrid:
+    """Immutable spatial grid identity for a scientific raster."""
+
+    crs: str
+    width: int
+    height: int
+    transform: tuple[float, float, float, float, float, float]
+    nodata: float | None
+
+    def __post_init__(self) -> None:
+        if not self.crs or self.crs != self.crs.strip():
+            raise DomainValidationError("Artifact CRS must be non-empty and trimmed.")
+        if isinstance(self.width, bool) or self.width < 1:
+            raise DomainValidationError("Artifact width must be a positive integer.")
+        if isinstance(self.height, bool) or self.height < 1:
+            raise DomainValidationError("Artifact height must be a positive integer.")
+        if len(self.transform) != 6 or not all(math.isfinite(value) for value in self.transform):
+            raise DomainValidationError(
+                "Artifact affine transform must contain six finite values."
+            )
+        if self.nodata is not None and not math.isfinite(self.nodata):
+            raise DomainValidationError("Artifact nodata must be finite when supplied.")
+
+
+@dataclass(frozen=True, slots=True)
+class ScientificArtifact:
+    """Durable scientific evidence referenced without exposing filesystem paths."""
+
+    role: ScientificArtifactRole
+    storage_reference: str
+    sha256: str
+    media_type: str
+    size_bytes: int
+    grid: ScientificArtifactGrid
+
+    def __post_init__(self) -> None:
+        if (
+            not self.storage_reference
+            or self.storage_reference != self.storage_reference.strip()
+        ):
+            raise DomainValidationError(
+                "Artifact storage reference must be non-empty and trimmed."
+            )
+        if not _SHA256_PATTERN.fullmatch(self.sha256):
+            raise DomainValidationError("Artifact SHA-256 must be 64 lowercase hex characters.")
+        if not self.media_type or self.media_type != self.media_type.strip():
+            raise DomainValidationError("Artifact media type must be non-empty and trimmed.")
+        if isinstance(self.size_bytes, bool) or self.size_bytes < 1:
+            raise DomainValidationError("Artifact size must be a positive integer.")
 
 
 @dataclass(frozen=True, slots=True)
@@ -65,6 +128,7 @@ class CropOutcome:
     suitability: SuitabilitySummary | None
     failure_message: str | None
     trace: ScientificTrace
+    artifacts: tuple[ScientificArtifact, ...] = ()
 
     def __post_init__(self) -> None:
         if not self.crop_id or self.crop_id != self.crop_id.strip():
@@ -77,4 +141,15 @@ class CropOutcome:
         elif self.failure_message is not None or self.suitability is None:
             raise DomainValidationError(
                 "A completed non-failed crop outcome requires a suitability summary."
+            )
+        roles = [artifact.role for artifact in self.artifacts]
+
+        if len(set(roles)) != len(roles):
+            raise DomainValidationError(
+                "A crop outcome cannot contain duplicate scientific artifact roles."
+            )
+
+        if self.status is CropOutcomeStatus.FAILED and self.artifacts:
+            raise DomainValidationError(
+                "A failed crop outcome cannot contain scientific result artifacts."
             )
