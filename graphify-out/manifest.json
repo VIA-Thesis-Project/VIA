@@ -1642,5 +1642,17 @@
     "seen": 1789395691.2148263,
     "ast_hash": "2eb5bc147b162cd1bf7cfa322eec91b6",
     "semantic_hash": ""
+  },
+  "backend/src/via_backend/contexts/agroclimatic_evaluation/infrastructure/scientific_artifact_store.py": {
+    "mtime": 1789407444.2494154,
+    "seen": 1789407790.917325,
+    "ast_hash": "6248e1e18c70321141dfacebb634ae40",
+    "semantic_hash": ""
+  },
+  "backend/tests/test_scientific_artifact_store.py": {
+    "mtime": 1789407475.928066,
+    "seen": 1789407790.9173934,
+    "ast_hash": "8429230df326b128269d002cd15d369a",
+    "semantic_hash": ""
   }
 }
