@@ -690,15 +690,15 @@
     "semantic_hash": "ed50e909b702c4fdbb9c85136ac4b1e7"
   },
   "docs/architecture/cropsuite-integration.md": {
-    "mtime": 1789273962.94806,
-    "seen": 1789275401.806759,
-    "ast_hash": "a947999a1a3086c4c00fabd4b0bd93e1",
+    "mtime": 1789323964.6883743,
+    "seen": 1789353630.827563,
+    "ast_hash": "7ba3d0f7e0f755120e61b0ee50231208",
     "semantic_hash": ""
   },
   "docs/architecture/evaluation-flow.md": {
-    "mtime": 1789273962.944072,
-    "seen": 1789275401.806763,
-    "ast_hash": "79c33b736f9d9fd5745372d21bf475d8",
+    "mtime": 1789307113.5677679,
+    "seen": 1789353630.827566,
+    "ast_hash": "16c4d0eb72e96f4bfb2a8d1b4ff39e52",
     "semantic_hash": ""
   },
   "docs/architecture/overview.md": {
@@ -732,9 +732,9 @@
     "semantic_hash": "f417bdcb4f71006284ab89e8ea3a5327"
   },
   "backend/pyproject.toml": {
-    "mtime": 1789261684.8360567,
-    "seen": 1789266582.949214,
-    "ast_hash": "beeb48697bfc366baebe149de79d510f",
+    "mtime": 1789306551.4750066,
+    "seen": 1789353630.8273718,
+    "ast_hash": "3d8651329a59e71eeb1e96e3b6a4fbad",
     "semantic_hash": ""
   },
   "backend/src/via_backend/__init__.py": {
@@ -762,9 +762,9 @@
     "semantic_hash": "9182063fb78990e08e3acf8c2ccbc92c"
   },
   "backend/src/via_backend/contexts/agroclimatic_evaluation/application/__init__.py": {
-    "mtime": 1789273862.8970778,
-    "seen": 1789275401.8065238,
-    "ast_hash": "605920610b0a3b820c7142768ed4d3e4",
+    "mtime": 1789306600.6565318,
+    "seen": 1789353630.8273787,
+    "ast_hash": "69359f0dc9311be6aca87cca4ba0c00d",
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/agroclimatic_evaluation/domain/__init__.py": {
@@ -930,9 +930,9 @@
     "semantic_hash": ""
   },
   "backend/tests/test_architecture.py": {
-    "mtime": 1789261823.1512635,
-    "seen": 1789266582.9492898,
-    "ast_hash": "612e8bab680d23cee6be7b89989027f9",
+    "mtime": 1789307604.4292738,
+    "seen": 1789353630.827463,
+    "ast_hash": "475babffd6b9c926f6c188004a8ac573",
     "semantic_hash": ""
   },
   "backend/tests/test_health.py": {
@@ -1056,9 +1056,9 @@
     "semantic_hash": "147774db32a5f22008dac63554067cac"
   },
   "backend/src/via_backend/config.py": {
-    "mtime": 1789249998.801172,
-    "seen": 1789251650.0940776,
-    "ast_hash": "a3b7badb8e4459dbeaa8cf03093bad98",
+    "mtime": 1789306600.6565318,
+    "seen": 1789353630.8273757,
+    "ast_hash": "f731d149b97302fb6c0b57f88f8a121d",
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/farm_management/infrastructure/database.py": {
@@ -1080,15 +1080,15 @@
     "semantic_hash": ""
   },
   "backend/tests/test_config.py": {
-    "mtime": 1789250230.9904728,
-    "seen": 1789251650.0941434,
-    "ast_hash": "0f6e49f89a5f9360e819095a2580fe9c",
+    "mtime": 1789351607.231578,
+    "seen": 1789353630.8274636,
+    "ast_hash": "0862170669b6f00fbad43d46c2e8d1d2",
     "semantic_hash": ""
   },
   "backend/tests/test_farm_management_postgresql.py": {
-    "mtime": 1789247968.0271032,
-    "seen": 1789248030.6596043,
-    "ast_hash": "f071bbb80dc8b8aa62a6abdccdd55388",
+    "mtime": 1789350158.978788,
+    "seen": 1789353630.8274736,
+    "ast_hash": "d7398b591d899ec6d55873bd074a2c8d",
     "semantic_hash": ""
   },
   "backend/compose.yaml": {
@@ -1104,10 +1104,10 @@
     "semantic_hash": "c5a7ebbeecd0ac3b89d9c237ef15ea7c"
   },
   "docs/architecture/farm-management-persistence.md": {
-    "mtime": 1789193516.121982,
-    "seen": 1789197987.2910285,
-    "ast_hash": "4c8f338f88a1c32e011b9c9e97113a7a",
-    "semantic_hash": "4c8f338f88a1c32e011b9c9e97113a7a"
+    "mtime": 1789350215.9112048,
+    "seen": 1789353630.8275666,
+    "ast_hash": "df03eff501169c4c8f12feb0f9d64f88",
+    "semantic_hash": ""
   },
   "graphify-out/memory/query_20260912_060606_5f4afb72_optimistic_stale_write_handling_introduced_in_the.md": {
     "mtime": 1789193166.7577403,
@@ -1254,9 +1254,9 @@
     "semantic_hash": ""
   },
   "backend/tests/test_environmental_information_postgresql.py": {
-    "mtime": 1789247574.9302783,
-    "seen": 1789248030.6595993,
-    "ast_hash": "0d7a9e73893892c9c43383dd7ad01f53",
+    "mtime": 1789350196.0360699,
+    "seen": 1789353630.82747,
+    "ast_hash": "80d1268c8b3effe551c3e78bf2e208d5",
     "semantic_hash": ""
   },
   "backend/tests/test_environmental_information_repositories.py": {
@@ -1320,9 +1320,9 @@
     "semantic_hash": ""
   },
   "backend/tests/test_environmental_information_coverage_postgresql.py": {
-    "mtime": 1789246563.2835183,
-    "seen": 1789248030.6595972,
-    "ast_hash": "09032c3aa554df9aefabbe473515e9a6",
+    "mtime": 1789350196.0360699,
+    "seen": 1789353630.8274686,
+    "ast_hash": "06c5154d5236102c857c202037afad3f",
     "semantic_hash": ""
   },
   "docs/adr/ADR-013-extent-coverage-and-crs-comparison.md": {
@@ -1398,9 +1398,9 @@
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/agroclimatic_evaluation/application/commands.py": {
-    "mtime": 1789273630.7132888,
-    "seen": 1789275401.8065255,
-    "ast_hash": "1c6ad325bf4638342ce98a997e6bd5f5",
+    "mtime": 1789306600.6575315,
+    "seen": 1789353630.8273795,
+    "ast_hash": "dafede5da19c32a1e2b94409bc45935b",
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/agroclimatic_evaluation/application/queries.py": {
@@ -1410,15 +1410,15 @@
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/agroclimatic_evaluation/application/results.py": {
-    "mtime": 1789273630.714286,
-    "seen": 1789275401.8065312,
-    "ast_hash": "1178240dd01d4c240a5593f8f4ee9039",
+    "mtime": 1789306640.590893,
+    "seen": 1789353630.8273842,
+    "ast_hash": "a9c2b5d16ca5ca7ef53d224204151ccb",
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/agroclimatic_evaluation/application/service.py": {
-    "mtime": 1789249503.6898692,
-    "seen": 1789251650.0940838,
-    "ast_hash": "5d6a2957f0a57208c883af4d60744953",
+    "mtime": 1789306640.590893,
+    "seen": 1789353630.8273852,
+    "ast_hash": "d4006c29fa5e37f035c8023bd2f62f6b",
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/agroclimatic_evaluation/domain/errors.py": {
@@ -1434,9 +1434,9 @@
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/agroclimatic_evaluation/domain/repositories.py": {
-    "mtime": 1789273579.4489434,
-    "seen": 1789275401.8065376,
-    "ast_hash": "cf0773fdf2d2cb46e1b2f75aec63a0ab",
+    "mtime": 1789306600.6565318,
+    "seen": 1789353630.8273907,
+    "ast_hash": "7184323dc61c90b3a5cb5cb2e7b989e6",
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/agroclimatic_evaluation/domain/snapshot.py": {
@@ -1452,21 +1452,21 @@
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/agroclimatic_evaluation/infrastructure/orm.py": {
-    "mtime": 1789273741.7065063,
-    "seen": 1789275401.806544,
-    "ast_hash": "f2d0c36bef771cc9f07b6ba5c6d8c1ab",
+    "mtime": 1789306600.6575315,
+    "seen": 1789353630.8273947,
+    "ast_hash": "a60f37298c4b227ac005300a4bc42c58",
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/agroclimatic_evaluation/infrastructure/postgresql_repositories.py": {
-    "mtime": 1789274283.602492,
-    "seen": 1789275401.8065455,
-    "ast_hash": "d66696ce243cd5bc8e5538d9dff39dec",
+    "mtime": 1789306600.6575315,
+    "seen": 1789353630.8273957,
+    "ast_hash": "9c9ee5f9a51680a831a2ce6bba5ccb1e",
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/agroclimatic_evaluation/infrastructure/repositories.py": {
-    "mtime": 1789273675.5618746,
-    "seen": 1789275401.8065464,
-    "ast_hash": "061b9bf2c4eedd5e6643e6c50501e98d",
+    "mtime": 1789306600.6575315,
+    "seen": 1789353630.8273966,
+    "ast_hash": "8a8448de37edb5b21686315ef4bb10a8",
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/agroclimatic_evaluation/interfaces/http.py": {
@@ -1488,9 +1488,9 @@
     "semantic_hash": ""
   },
   "backend/tests/test_agroclimatic_evaluation_postgresql.py": {
-    "mtime": 1789273890.474322,
-    "seen": 1789275401.8066251,
-    "ast_hash": "b953e3e795e5a6f05457fbf3073a2731",
+    "mtime": 1789350196.03707,
+    "seen": 1789353630.8274605,
+    "ast_hash": "adb826856bac4616f07f0cf25f70caf2",
     "semantic_hash": ""
   },
   "backend/tests/test_agroclimatic_evaluation_repositories.py": {
@@ -1500,9 +1500,9 @@
     "semantic_hash": ""
   },
   "docs/architecture/agroclimatic-evaluation-slice.md": {
-    "mtime": 1789273962.9460752,
-    "seen": 1789275401.8067555,
-    "ast_hash": "fd67dee36065f5fc43220a185e94f2d1",
+    "mtime": 1789307261.1464984,
+    "seen": 1789353630.8275604,
+    "ast_hash": "2f32fd681921afe92d46b76b43ddea74",
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/agroclimatic_evaluation/application/ports.py": {
@@ -1542,9 +1542,9 @@
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/agroclimatic_evaluation/application/execution.py": {
-    "mtime": 1789273768.6018062,
-    "seen": 1789275401.8065264,
-    "ast_hash": "c9409a6b9495b7882f2e44bbe3f9b8d3",
+    "mtime": 1789306640.590893,
+    "seen": 1789353630.8273804,
+    "ast_hash": "3126e82fe021aff0218de17d48d3b88b",
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/agroclimatic_evaluation/domain/outcomes.py": {
@@ -1557,6 +1557,66 @@
     "mtime": 1789274371.8196497,
     "seen": 1789275401.8066235,
     "ast_hash": "4f42aa8fd25bac5ff5a5b7127a3c8065",
+    "semantic_hash": ""
+  },
+  "backend/migrations/versions/20260912_0005_agroclimatic_evaluation_worker_index.py": {
+    "mtime": 1789306576.8376515,
+    "seen": 1789353630.82737,
+    "ast_hash": "3e2adb85b2ff79293fb0642d72dad8b9",
+    "semantic_hash": ""
+  },
+  "backend/src/via_backend/contexts/agroclimatic_evaluation/application/recovery.py": {
+    "mtime": 1789306600.6575315,
+    "seen": 1789353630.8273833,
+    "ast_hash": "3ab3a27af9dda975510c7c2286337b7c",
+    "semantic_hash": ""
+  },
+  "backend/src/via_backend/contexts/agroclimatic_evaluation/application/worker.py": {
+    "mtime": 1789306600.6575315,
+    "seen": 1789353630.827386,
+    "ast_hash": "dce9bac1b0b2528b86b7fd4b73c25338",
+    "semantic_hash": ""
+  },
+  "backend/src/via_backend/worker.py": {
+    "mtime": 1789306600.6565318,
+    "seen": 1789353630.8274562,
+    "ast_hash": "e610e933c200d6b9fccd0e44b0f3dffd",
+    "semantic_hash": ""
+  },
+  "backend/tests/database_test_support.py": {
+    "mtime": 1789349869.8017774,
+    "seen": 1789353630.827457,
+    "ast_hash": "701ce97cf1cddbfd89413a80cef68e4b",
+    "semantic_hash": ""
+  },
+  "backend/tests/test_agroclimatic_evaluation_worker.py": {
+    "mtime": 1789351607.231578,
+    "seen": 1789353630.8274624,
+    "ast_hash": "fa7e7ef62b00481cf38924c9295ea91b",
+    "semantic_hash": ""
+  },
+  "backend/tests/test_database_test_support.py": {
+    "mtime": 1789349882.7659667,
+    "seen": 1789353630.827466,
+    "ast_hash": "31845492972303e5ce21b7f88226a2fb",
+    "semantic_hash": ""
+  },
+  "docs/adr/ADR-015-postgresql-polling-evaluation-worker.md": {
+    "mtime": 1789307720.943684,
+    "seen": 1789353630.8275597,
+    "ast_hash": "d22ba73cbdb19df0da2af87d7119eed2",
+    "semantic_hash": ""
+  },
+  "graphify-out/memory/query_20260914_014851_7c502872_locate_via_test_database_url_safety__postgresql_in.md": {
+    "mtime": 1789350531.5984297,
+    "seen": 1789353630.8275871,
+    "ast_hash": "d52c1218b48dcd4d4472677c6c587b76",
+    "semantic_hash": ""
+  },
+  "graphify-out/memory/query_20260914_020758_d1cf4f80_trace_the_worker_executor_result_protocol_and_conf.md": {
+    "mtime": 1789351678.7715192,
+    "seen": 1789353630.8275876,
+    "ast_hash": "2971e1a2e7359143943602ccfafb89a7",
     "semantic_hash": ""
   }
 }
