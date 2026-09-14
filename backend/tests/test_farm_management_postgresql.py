@@ -15,9 +15,9 @@ from alembic import command
 from alembic.config import Config
 from geoalchemy2.elements import WKTElement
 from sqlalchemy import Engine, func, select, text
-from sqlalchemy.engine import make_url
 from sqlalchemy.exc import IntegrityError
 
+from database_test_support import require_test_database_url
 from via_backend.contexts.farm_management.domain import (
     Parcel,
     ParcelGeometry,
@@ -38,13 +38,7 @@ BACKEND_ROOT = Path(__file__).parents[1]
 
 
 def _database_url() -> str:
-    value = os.getenv("VIA_TEST_DATABASE_URL")
-    if not value:
-        pytest.skip("Set VIA_TEST_DATABASE_URL to run PostgreSQL/PostGIS tests.")
-    database_name = make_url(value).database or ""
-    if not database_name.casefold().endswith("_test"):
-        pytest.fail("VIA_TEST_DATABASE_URL must name a database ending in '_test'.")
-    return value
+    return require_test_database_url()
 
 
 @pytest.fixture(scope="session")

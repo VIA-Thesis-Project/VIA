@@ -42,7 +42,13 @@ python -m pytest -m integration
 `VIA_DATABASE_URL` selects PostgreSQL automatically when
 `VIA_FARM_MANAGEMENT_REPOSITORY` is omitted. With neither setting, the application
 uses process-local memory. Integration tests additionally require
-`VIA_TEST_DATABASE_URL`; as a safety check its database name must end in `_test`.
+`VIA_TEST_DATABASE_URL`; by default, its database name must end in `_test`.
+Dedicated, disposable externally managed PostgreSQL test databases whose names
+cannot follow that convention require the explicit test-only opt-in
+`VIA_ALLOW_EXTERNAL_TEST_DATABASE=1`. The guard runs before Alembic or table
+cleanup, does not affect `VIA_DATABASE_URL`, and is not provider-specific. Never
+point destructive integration tests at a database containing development or
+production data. Alembic remains the source of truth for creating VIA's schemas.
 
 The first migration enables PostGIS when permitted, creates only the Farm
 Management schema and tables, and leaves the shared extension installed during a

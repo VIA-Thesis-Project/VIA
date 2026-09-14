@@ -13,8 +13,8 @@ import pytest
 from alembic import command
 from alembic.config import Config
 from sqlalchemy import Engine, text
-from sqlalchemy.engine import make_url
 
+from database_test_support import require_test_database_url
 from via_backend.contexts.environmental_information.application import (
     CheckDatasetVersionCoverage,
     EnvironmentalInformationService,
@@ -38,12 +38,7 @@ BACKEND_ROOT = Path(__file__).parents[1]
 
 
 def _database_url() -> str:
-    value = os.getenv("VIA_TEST_DATABASE_URL")
-    if not value:
-        pytest.skip("Set VIA_TEST_DATABASE_URL to run PostgreSQL/PostGIS tests.")
-    if not (make_url(value).database or "").casefold().endswith("_test"):
-        pytest.fail("VIA_TEST_DATABASE_URL must name a database ending in '_test'.")
-    return value
+    return require_test_database_url()
 
 
 @pytest.fixture(scope="module")
