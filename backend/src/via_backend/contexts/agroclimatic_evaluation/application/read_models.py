@@ -7,6 +7,7 @@ from datetime import datetime
 from enum import StrEnum
 from uuid import UUID
 
+from ..domain.comparison import CommonSupportStatus
 from ..domain.models import Evaluation, EvaluationStatus
 from ..domain.outcomes import CropOutcomeStatus
 
@@ -70,6 +71,23 @@ class PersistedCropOutcomeResult:
     status: CropOutcomeStatus
     suitability: SuitabilitySummaryResult | None
 
+@dataclass(frozen=True, slots=True)
+class CommonSupportReadResult:
+    status: CommonSupportStatus
+    method: str | None
+    area_crs: str | None
+    parcel_area_m2: float
+    common_valid_area_m2: float
+    common_coverage_fraction: float
+    eligible_crops: tuple[str, ...]
+    excluded_without_coverage: tuple[str, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class ComparableCropReadResult:
+    crop_id: str
+    mean: float
+    rank: int
 
 @dataclass(frozen=True, slots=True)
 class EvaluationReadResult:
@@ -80,9 +98,13 @@ class EvaluationReadResult:
     requested_crop_count: int
     completed_crop_count: int
     outcomes: tuple[PersistedCropOutcomeResult, ...]
+    common_support: CommonSupportReadResult | None
+    comparable_crops: tuple[ComparableCropReadResult, ...]
 
     @classmethod
     def from_domain(cls, evaluation: Evaluation) -> EvaluationReadResult:
+        common_support = evaluation.common_support
+
         return cls(
             evaluation_id=evaluation.id,
             evaluation_status=evaluation.status,
@@ -102,7 +124,9 @@ class EvaluationReadResult:
                             valid_cells=outcome.suitability.valid_cells,
                             valid_area_m2=outcome.suitability.valid_area_m2,
                             coverage_fraction=outcome.suitability.coverage_fraction,
-                            zero_suitability_area_m2=(outcome.suitability.zero_suitability_area_m2),
+                            zero_suitability_area_m2=(
+                                outcome.suitability.zero_suitability_area_m2
+                            ),
                         )
                         if outcome.suitability is not None
                         else None
@@ -110,8 +134,33 @@ class EvaluationReadResult:
                 )
                 for outcome in evaluation.outcomes
             ),
+            common_support=(
+                CommonSupportReadResult(
+                    status=common_support.status,
+                    method=common_support.method,
+                    area_crs=common_support.area_crs,
+                    parcel_area_m2=common_support.parcel_area_m2,
+                    common_valid_area_m2=common_support.common_valid_area_m2,
+                    common_coverage_fraction=(
+                        common_support.common_coverage_fraction
+                    ),
+                    eligible_crops=common_support.eligible_crops,
+                    excluded_without_coverage=(
+                        common_support.excluded_without_coverage
+                    ),
+                )
+                if common_support is not None
+                else None
+            ),
+            comparable_crops=tuple(
+                ComparableCropReadResult(
+                    crop_id=crop.crop_id,
+                    mean=crop.mean,
+                    rank=crop.rank,
+                )
+                for crop in evaluation.comparable_crops
+            ),
         )
-
 
 @dataclass(frozen=True, slots=True)
 class ScientificTraceResult:

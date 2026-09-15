@@ -23,6 +23,7 @@ from via_backend.contexts.agroclimatic_evaluation.application import (
 from via_backend.contexts.agroclimatic_evaluation.domain import (
     CommonSupport,
     CommonSupportStatus,
+    ComparableCrop,
     CropOutcome,
     CropOutcomeStatus,
     Evaluation,
@@ -38,6 +39,7 @@ from via_backend.contexts.agroclimatic_evaluation.domain import (
 )
 from via_backend.contexts.agroclimatic_evaluation.infrastructure.orm import (
     EvaluationCommonSupportRecord,
+    EvaluationComparableCropRecord,
     EvaluationCropRecord,
     EvaluationRecord,
 )
@@ -343,7 +345,23 @@ def _common_support() -> CommonSupport:
         excluded_without_coverage=("maize",),
     )
 
-def test_common_support_round_trips_atomically_with_success(
+
+
+def _comparable_crops() -> tuple[ComparableCrop, ...]:
+    return (
+        ComparableCrop(
+            crop_id="rice",
+            mean=82.0,
+            rank=1,
+        ),
+        ComparableCrop(
+            crop_id="potato",
+            mean=74.0,
+            rank=2,
+        ),
+    )
+
+def test_comparison_round_trips_atomically_with_success(
     database: tuple[Engine, SessionFactory],
 ) -> None:
     engine, sessions = database
@@ -380,8 +398,9 @@ def test_common_support_round_trips_atomically_with_success(
         expected_status=EvaluationStatus.RUNNING,
     )
 
-    summarized = summarizing.record_common_support(
-        _common_support()
+    summarized = summarizing.record_comparison(
+        _common_support(),
+        _comparable_crops(),
     )
     succeeded = summarized.succeed()
 
@@ -406,6 +425,7 @@ def test_common_support_round_trips_atomically_with_success(
     assert common_support.excluded_without_coverage == (
         "maize",
     )
+    assert restored.comparable_crops == _comparable_crops()
 
     with engine.connect() as connection:
         record = connection.execute(
@@ -419,6 +439,164 @@ def test_common_support_round_trips_atomically_with_success(
             )
         ).one()
 
+        comparable_records = tuple(
+            connection.execute(
+                select(
+                    EvaluationComparableCropRecord.crop_id,
+                    EvaluationComparableCropRecord.position,
+                    EvaluationComparableCropRecord.mean,
+                    EvaluationComparableCropRecord.rank,
+                )
+                .where(
+                    EvaluationComparableCropRecord.evaluation_id
+                    == evaluation.id
+                )
+                .order_by(EvaluationComparableCropRecord.position)
+            )
+        )
+
     assert record.status == "comparable"
     assert record.eligible_crops == ["rice", "potato"]
     assert record.excluded_without_coverage == ["maize"]
+    assert comparable_records == (
+        ("rice", 0, 82.0, 1),
+        ("potato", 1, 74.0, 2),
+    )
+
+
+def test_legacy_common_support_without_comparable_crops_still_round_trips(
+    database: tuple[Engine, SessionFactory],
+) -> None:
+    _, sessions = database
+    repository = PostgreSQLEvaluationRepository(sessions)
+
+    evaluation = _evaluation()
+    repository.add(evaluation)
+
+    preparing = evaluation.prepare()
+    repository.save(
+        preparing,
+        expected_status=EvaluationStatus.QUEUED,
+    )
+
+    running = preparing.start_running()
+    repository.save(
+        running,
+        expected_status=EvaluationStatus.PREPARING,
+    )
+
+    current = running
+    for crop_id in evaluation.requested_crops:
+        outcome = _succeeded_outcome(crop_id)
+        repository.add_outcome(evaluation.id, outcome)
+        current = current.record_outcome(outcome)
+
+    summarizing = current.start_summarizing()
+    repository.save(
+        summarizing,
+        expected_status=EvaluationStatus.RUNNING,
+    )
+
+    legacy_succeeded = (
+        summarizing
+        .record_common_support(_common_support())
+        .succeed()
+    )
+
+    repository.save(
+        legacy_succeeded,
+        expected_status=EvaluationStatus.SUMMARIZING,
+    )
+
+    restored = repository.get(evaluation.id)
+
+    assert restored is not None
+    assert restored == legacy_succeeded
+    assert restored.common_support == _common_support()
+    assert restored.comparable_crops == ()
+
+
+def test_comparison_persistence_rolls_back_final_state_atomically_on_conflict(
+    database: tuple[Engine, SessionFactory],
+) -> None:
+    engine, sessions = database
+    repository = PostgreSQLEvaluationRepository(sessions)
+
+    evaluation = _evaluation()
+    repository.add(evaluation)
+
+    preparing = evaluation.prepare()
+    repository.save(
+        preparing,
+        expected_status=EvaluationStatus.QUEUED,
+    )
+
+    running = preparing.start_running()
+    repository.save(
+        running,
+        expected_status=EvaluationStatus.PREPARING,
+    )
+
+    current = running
+    for crop_id in evaluation.requested_crops:
+        outcome = _succeeded_outcome(crop_id)
+        repository.add_outcome(evaluation.id, outcome)
+        current = current.record_outcome(outcome)
+
+    summarizing = current.start_summarizing()
+    repository.save(
+        summarizing,
+        expected_status=EvaluationStatus.RUNNING,
+    )
+
+    succeeded = summarizing.record_comparison(
+        _common_support(),
+        _comparable_crops(),
+    ).succeed()
+
+    with sessions.begin() as session:
+        session.add(
+            EvaluationComparableCropRecord(
+                evaluation_id=evaluation.id,
+                crop_id="rice",
+                position=0,
+                mean=1.0,
+                rank=1,
+            )
+        )
+
+    with pytest.raises(
+        EvaluationConflictError,
+        match="comparable-crop data",
+    ):
+        repository.save(
+            succeeded,
+            expected_status=EvaluationStatus.SUMMARIZING,
+        )
+
+    with engine.connect() as connection:
+        status = connection.scalar(
+            select(EvaluationRecord.status).where(
+                EvaluationRecord.id == evaluation.id
+            )
+        )
+        common_support_count = connection.scalar(
+            select(func.count())
+            .select_from(EvaluationCommonSupportRecord)
+            .where(
+                EvaluationCommonSupportRecord.evaluation_id
+                == evaluation.id
+            )
+        )
+        comparable_count = connection.scalar(
+            select(func.count())
+            .select_from(EvaluationComparableCropRecord)
+            .where(
+                EvaluationComparableCropRecord.evaluation_id
+                == evaluation.id
+            )
+        )
+
+    assert status == EvaluationStatus.SUMMARIZING.value
+    assert common_support_count == 0
+    assert comparable_count == 1

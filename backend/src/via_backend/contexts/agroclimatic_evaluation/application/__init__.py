@@ -10,10 +10,12 @@ from .execution import AgroclimaticEvaluationExecutionService
 from .ports import (
     CommonSupportResult,
     CommonSupportStatus,
+    ComparableCropResult,
     CropComparisonEngineError,
     CropComparisonExecutionError,
     CropComparisonInput,
     CropComparisonRequest,
+    CropComparisonResult,
     CropExecutionStatus,
     CropSuitabilityEngineError,
     CropSuitabilityExecutionError,
@@ -31,6 +33,9 @@ from .ports import (
     SuitabilityScoreSummary,
 )
 from .public import (
+    FinalizedCommonSupport,
+    FinalizedCommonSupportStatus,
+    FinalizedComparableCrop,
     FinalizedCropOutcome,
     FinalizedCropOutcomeStatus,
     FinalizedEvaluationResult,
@@ -46,6 +51,8 @@ from .queries import (
     ListEvaluations,
 )
 from .read_models import (
+    CommonSupportReadResult,
+    ComparableCropReadResult,
     CropEvidenceResult,
     EvaluationEvidenceResult,
     EvaluationReadResult,
@@ -121,12 +128,16 @@ __all__ = [
     "CropComparisonRequest",
     "ICropComparisonEngine",
     "InvalidComparisonOutputError",
-    "CommonSupportResult",
-    "CommonSupportStatus",
-    "CropComparisonEngineError",
     "CropComparisonExecutionError",
     "CropComparisonInput",
     "CropComparisonRequest",
     "ICropComparisonEngine",
     "InvalidComparisonOutputError",
+    "ComparableCropResult",
+    "CropComparisonResult",
+    "CommonSupportReadResult",
+    "ComparableCropReadResult",
+    "FinalizedCommonSupport",
+    "FinalizedCommonSupportStatus",
+    "FinalizedComparableCrop",
 ]

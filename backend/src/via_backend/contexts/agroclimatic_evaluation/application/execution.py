@@ -4,7 +4,10 @@ from __future__ import annotations
 
 from ..domain.comparison import (
     CommonSupport,
-    CommonSupportStatus,
+    ComparableCrop,
+)
+from ..domain.comparison import (
+    CommonSupportStatus as DomainCommonSupportStatus,
 )
 from ..domain.errors import EvaluationConflictError
 from ..domain.models import Evaluation, EvaluationStatus
@@ -21,6 +24,7 @@ from ..domain.repositories import EvaluationRepository
 from .commands import ExecuteEvaluation
 from .ports import (
     CommonSupportResult,
+    ComparableCropResult,
     CropComparisonExecutionError,
     CropComparisonInput,
     CropComparisonRequest,
@@ -42,7 +46,7 @@ from .service import ResourceConflictError, ResourceNotFoundError
 
 
 class AgroclimaticEvaluationExecutionService:
-    """Execute requested crops sequentially through the Application-owned port."""
+    """Execute requested crops and summarize them through Application-owned ports."""
 
     def __init__(
         self,
@@ -54,12 +58,17 @@ class AgroclimaticEvaluationExecutionService:
         self._engine = engine
         self._comparison_engine = comparison_engine
 
-    def execute_evaluation(self, command: ExecuteEvaluation) -> EvaluationResult:
+    def execute_evaluation(
+        self,
+        command: ExecuteEvaluation,
+    ) -> EvaluationResult:
         evaluation = self._evaluations.get(command.evaluation_id)
+
         if evaluation is None:
             raise ResourceNotFoundError(
                 f"Evaluation {command.evaluation_id} was not found."
             )
+
         if evaluation.status is not EvaluationStatus.QUEUED:
             raise ResourceConflictError(
                 f"Evaluation {evaluation.id} cannot execute from "
@@ -67,6 +76,7 @@ class AgroclimaticEvaluationExecutionService:
             )
 
         preparing = evaluation.prepare()
+
         try:
             self._evaluations.save(
                 preparing,
@@ -76,12 +86,15 @@ class AgroclimaticEvaluationExecutionService:
             raise ResourceConflictError(str(error)) from error
 
         current = preparing
+
         try:
             running = current.start_running()
+
             self._evaluations.save(
                 running,
                 expected_status=EvaluationStatus.PREPARING,
             )
+
             current = running
 
             for crop_id in current.requested_crops:
@@ -92,42 +105,68 @@ class AgroclimaticEvaluationExecutionService:
                         crop_id=crop_id,
                     )
                 )
+
                 if result.crop_id != crop_id:
                     raise InvalidEngineOutputError(
                         "Engine result did not preserve the requested crop identity."
                     )
+
                 outcome = _to_outcome(result)
+
                 updated = current.record_outcome(outcome)
-                self._evaluations.add_outcome(current.id, outcome)
+
+                self._evaluations.add_outcome(
+                    current.id,
+                    outcome,
+                )
+
                 current = updated
 
             summarizing = current.start_summarizing()
+
             self._evaluations.save(
                 summarizing,
                 expected_status=EvaluationStatus.RUNNING,
             )
+
             current = summarizing
 
             comparison_result = self._comparison_engine.compare(
                 _comparison_request(current)
             )
 
-            summarized = current.record_common_support(
-                _to_common_support(comparison_result)
+            summarized = current.record_comparison(
+                common_support=_to_common_support(
+                    comparison_result.common_support
+                ),
+                comparable_crops=tuple(
+                    _to_comparable_crop(crop)
+                    for crop in comparison_result.comparable_crops
+                ),
             )
 
             succeeded = summarized.succeed()
+
             self._evaluations.save(
                 succeeded,
                 expected_status=EvaluationStatus.SUMMARIZING,
             )
+
             return EvaluationResult.from_domain(succeeded)
+
         except Exception as error:
             self._persist_failure(current, error)
             raise
 
-    def _persist_failure(self, evaluation: Evaluation, error: Exception) -> None:
-        failed = evaluation.fail(f"{type(error).__name__}: {error}")
+    def _persist_failure(
+        self,
+        evaluation: Evaluation,
+        error: Exception,
+    ) -> None:
+        failed = evaluation.fail(
+            f"{type(error).__name__}: {error}"
+        )
+
         try:
             self._evaluations.save(
                 failed,
@@ -140,9 +179,12 @@ class AgroclimaticEvaluationExecutionService:
             )
 
 
-def _to_outcome(result: CropSuitabilityResult) -> CropOutcome:
+def _to_outcome(
+    result: CropSuitabilityResult,
+) -> CropOutcome:
     suitability = result.suitability
     trace = result.trace
+
     return CropOutcome(
         crop_id=result.crop_id,
         status=CropOutcomeStatus(result.status.value),
@@ -159,7 +201,11 @@ def _to_outcome(result: CropSuitabilityResult) -> CropOutcome:
             if suitability is not None
             else None
         ),
-        failure_message=result.failure.message if result.failure is not None else None,
+        failure_message=(
+            result.failure.message
+            if result.failure is not None
+            else None
+        ),
         trace=ScientificTrace(
             engine_identifier=trace.engine_identifier,
             execution_reference=trace.execution_reference,
@@ -174,7 +220,9 @@ def _to_outcome(result: CropSuitabilityResult) -> CropOutcome:
         ),
         artifacts=tuple(
             ScientificArtifact(
-                role=ScientificArtifactRole(artifact.role.value),
+                role=ScientificArtifactRole(
+                    artifact.role.value
+                ),
                 storage_reference=artifact.storage_reference,
                 sha256=artifact.sha256,
                 media_type=artifact.media_type,
@@ -191,6 +239,7 @@ def _to_outcome(result: CropSuitabilityResult) -> CropOutcome:
         ),
     )
 
+
 def _comparison_request(
     evaluation: Evaluation,
 ) -> CropComparisonRequest:
@@ -203,7 +252,8 @@ def _comparison_request(
         artifacts = tuple(
             artifact
             for artifact in outcome.artifacts
-            if artifact.role is ScientificArtifactRole.CROP_SUITABILITY
+            if artifact.role
+            is ScientificArtifactRole.CROP_SUITABILITY
         )
 
         if len(artifacts) != 1:
@@ -247,14 +297,28 @@ def _to_common_support(
     result: CommonSupportResult,
 ) -> CommonSupport:
     return CommonSupport(
-        status=CommonSupportStatus(result.status.value),
+        status=DomainCommonSupportStatus(
+            result.status.value
+        ),
         method=result.method,
         area_crs=result.area_crs,
         parcel_area_m2=result.parcel_area_m2,
         common_valid_area_m2=result.common_valid_area_m2,
-        common_coverage_fraction=result.common_coverage_fraction,
+        common_coverage_fraction=(
+            result.common_coverage_fraction
+        ),
         eligible_crops=result.eligible_crops,
         excluded_without_coverage=(
             result.excluded_without_coverage
         ),
+    )
+
+
+def _to_comparable_crop(
+    result: ComparableCropResult,
+) -> ComparableCrop:
+    return ComparableCrop(
+        crop_id=result.crop_id,
+        mean=result.mean,
+        rank=result.rank,
     )

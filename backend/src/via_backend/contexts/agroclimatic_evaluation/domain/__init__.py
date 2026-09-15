@@ -1,6 +1,10 @@
 """Agroclimatic Evaluation domain layer."""
 
-from .comparison import CommonSupport, CommonSupportStatus
+from .comparison import (
+    CommonSupport,
+    CommonSupportStatus,
+    ComparableCrop,
+)
 from .errors import (
     DomainValidationError,
     EvaluationConflictError,
@@ -37,4 +41,5 @@ __all__ = [
     "SuitabilitySummary",
     "CommonSupport",
     "CommonSupportStatus",
+    "ComparableCrop"
 ]

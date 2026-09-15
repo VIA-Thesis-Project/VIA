@@ -150,3 +150,106 @@ class CommonSupport:
             "excluded_without_coverage",
             excluded,
         )
+
+@dataclass(frozen=True, slots=True)
+class ComparableCrop:
+    """One crop ranked on the exact common valid spatial support."""
+
+    crop_id: str
+    mean: float
+    rank: int
+
+    def __post_init__(self) -> None:
+        if (
+            not self.crop_id
+            or self.crop_id != self.crop_id.strip()
+            or len(self.crop_id) > 120
+        ):
+            raise DomainValidationError(
+                "Comparable crop identifier must be non-empty, trimmed, "
+                "and at most 120 characters."
+            )
+
+        if (
+            isinstance(self.mean, bool)
+            or not isinstance(self.mean, (int, float))
+            or not math.isfinite(self.mean)
+            or not 0.0 <= self.mean <= 100.0
+        ):
+            raise DomainValidationError(
+                "Comparable crop mean must be finite and between 0 and 100."
+            )
+
+        if (
+            isinstance(self.rank, bool)
+            or not isinstance(self.rank, int)
+            or self.rank < 1
+        ):
+            raise DomainValidationError(
+                "Comparable crop rank must be a positive integer."
+            )
+
+
+def validate_comparable_crops(
+    common_support: CommonSupport,
+    crops: tuple[ComparableCrop, ...],
+) -> None:
+    """Validate deterministic scientific ranking semantics."""
+
+    if common_support.status is not CommonSupportStatus.COMPARABLE:
+        if crops:
+            raise DomainValidationError(
+                "A non-comparable common support cannot contain ranked crops."
+            )
+        return
+
+    if not crops:
+        raise DomainValidationError(
+            "Comparable common support requires ranked crops."
+        )
+
+    crop_ids = tuple(crop.crop_id for crop in crops)
+
+    if len(crop_ids) != len(set(crop_ids)):
+        raise DomainValidationError(
+            "Comparable crop identifiers must be unique."
+        )
+
+    if set(crop_ids) != set(common_support.eligible_crops):
+        raise DomainValidationError(
+            "Comparable crops must match the common-support eligible crops."
+        )
+
+    previous: ComparableCrop | None = None
+    expected_rank = 0
+
+    for position, crop in enumerate(crops, start=1):
+        if previous is None:
+            expected_rank = 1
+        else:
+            if crop.mean > previous.mean:
+                raise DomainValidationError(
+                    "Comparable crop means must be ordered descending."
+                )
+            if (
+                crop.mean == previous.mean
+                and crop.crop_id < previous.crop_id
+            ):
+                raise DomainValidationError(
+                    "Equal-mean comparable crops must be ordered by crop identifier."
+                )
+
+            if not math.isclose(
+                crop.mean,
+                previous.mean,
+                rel_tol=0.0,
+                abs_tol=1e-9,
+            ):
+                expected_rank = position
+
+        if crop.rank != expected_rank:
+            raise DomainValidationError(
+                "Comparable crop ranks are inconsistent with scientific ordering."
+            )
+
+        previous = crop

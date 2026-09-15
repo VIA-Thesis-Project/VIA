@@ -13,6 +13,9 @@ from ..domain.repositories import EvaluationRepository
 from ..domain.snapshot import ParcelSnapshot, SnapshotGeometry
 from .commands import RequestEvaluation
 from .public import (
+    FinalizedCommonSupport,
+    FinalizedCommonSupportStatus,
+    FinalizedComparableCrop,
     FinalizedCropOutcome,
     FinalizedCropOutcomeStatus,
     FinalizedEvaluationResult,
@@ -105,6 +108,7 @@ class AgroclimaticEvaluationService:
                 f"Evaluation {evaluation.id} does not have a finalized result."
             )
         snapshot = evaluation.parcel_snapshot
+        common_support = evaluation.common_support
         return FinalizedEvaluationResult(
             evaluation_id=evaluation.id,
             requested_crops=evaluation.requested_crops,
@@ -113,7 +117,38 @@ class AgroclimaticEvaluationService:
             parcel_version=snapshot.parcel_version,
             parcel_captured_at=snapshot.captured_at,
             created_at=evaluation.created_at,
-            outcomes=tuple(_to_finalized_crop_outcome(outcome) for outcome in evaluation.outcomes),
+            outcomes=tuple(
+                _to_finalized_crop_outcome(outcome)
+                for outcome in evaluation.outcomes
+            ),
+            common_support=(
+                FinalizedCommonSupport(
+                    status=FinalizedCommonSupportStatus(
+                        common_support.status.value
+                    ),
+                    method=common_support.method,
+                    area_crs=common_support.area_crs,
+                    parcel_area_m2=common_support.parcel_area_m2,
+                    common_valid_area_m2=common_support.common_valid_area_m2,
+                    common_coverage_fraction=(
+                        common_support.common_coverage_fraction
+                    ),
+                    eligible_crops=common_support.eligible_crops,
+                    excluded_without_coverage=(
+                        common_support.excluded_without_coverage
+                    ),
+                )
+                if common_support is not None
+                else None
+            ),
+            comparable_crops=tuple(
+                FinalizedComparableCrop(
+                    crop_id=crop.crop_id,
+                    mean=crop.mean,
+                    rank=crop.rank,
+                )
+                for crop in evaluation.comparable_crops
+            ),
         )
 
     def list_evaluations(

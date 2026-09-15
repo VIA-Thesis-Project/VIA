@@ -194,6 +194,65 @@ class EvaluationCropRecord(Base):
     crop_id: Mapped[str] = mapped_column(String(120), nullable=False, unique=False)
 
 
+class EvaluationComparableCropRecord(Base):
+    __tablename__ = "evaluation_comparable_crops"
+    __table_args__ = (
+        CheckConstraint(
+            "position >= 0",
+            name="comparable_crop_position_nonnegative",
+        ),
+        CheckConstraint(
+            "crop_id <> '' AND crop_id = btrim(crop_id)",
+            name="comparable_crop_id_nonempty_trimmed",
+        ),
+        CheckConstraint(
+            "mean >= 0 AND mean <= 100",
+            name="comparable_crop_mean_valid",
+        ),
+        CheckConstraint(
+            "rank >= 1",
+            name="comparable_crop_rank_positive",
+        ),
+        UniqueConstraint(
+            "evaluation_id",
+            "position",
+            name="uq_evaluation_comparable_crops_position",
+        ),
+        ForeignKeyConstraint(
+            ["evaluation_id", "crop_id"],
+            [
+                f"{AGROCLIMATIC_EVALUATION_SCHEMA}.evaluation_crops.evaluation_id",
+                f"{AGROCLIMATIC_EVALUATION_SCHEMA}.evaluation_crops.crop_id",
+            ],
+            name="fk_evaluation_comparable_crops_requested_crop",
+            ondelete="CASCADE",
+        ),
+    )
+
+    evaluation_id: Mapped[UUID] = mapped_column(
+        PostgreSQLUUID(as_uuid=True),
+        primary_key=True,
+        nullable=False,
+    )
+    crop_id: Mapped[str] = mapped_column(
+        String(120),
+        primary_key=True,
+        nullable=False,
+    )
+    position: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+    )
+    mean: Mapped[float] = mapped_column(
+        Float,
+        nullable=False,
+    )
+    rank: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+    )
+
+
 class CropOutcomeRecord(Base):
     __tablename__ = "crop_outcomes"
     __table_args__ = (

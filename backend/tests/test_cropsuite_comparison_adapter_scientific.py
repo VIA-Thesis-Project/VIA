@@ -33,15 +33,27 @@ from via_backend.contexts.agroclimatic_evaluation.infrastructure.scientific_arti
 
 @pytest.mark.scientific
 def test_real_cropsuite_comparison_adapter_smoke() -> None:
-    if os.environ.get("VIA_RUN_CROPSUITE_SMOKE") != "1":
+    if (
+        os.environ.get("VIA_RUN_CROPSUITE_SMOKE")
+        != "1"
+    ):
         pytest.skip(
-            "Set VIA_RUN_CROPSUITE_SMOKE=1 to run the scientific smoke test."
+            "Set VIA_RUN_CROPSUITE_SMOKE=1 "
+            "to run the scientific smoke test."
         )
 
-    engine_root_value = os.environ.get("VIA_CROPSUITE_ROOT")
-    workspace_value = os.environ.get("VIA_CROPSUITE_WORKSPACE")
-    python_value = os.environ.get("VIA_CROPSUITE_PYTHON")
-    artifacts_root_value = os.environ.get("VIA_ARTIFACTS_ROOT")
+    engine_root_value = os.environ.get(
+        "VIA_CROPSUITE_ROOT"
+    )
+    workspace_value = os.environ.get(
+        "VIA_CROPSUITE_WORKSPACE"
+    )
+    python_value = os.environ.get(
+        "VIA_CROPSUITE_PYTHON"
+    )
+    artifacts_root_value = os.environ.get(
+        "VIA_ARTIFACTS_ROOT"
+    )
 
     if (
         not engine_root_value
@@ -50,22 +62,36 @@ def test_real_cropsuite_comparison_adapter_smoke() -> None:
         or not artifacts_root_value
     ):
         pytest.fail(
-            "Set VIA_CROPSUITE_ROOT, VIA_CROPSUITE_WORKSPACE, "
-            "VIA_CROPSUITE_PYTHON and VIA_ARTIFACTS_ROOT."
+            "Set VIA_CROPSUITE_ROOT, "
+            "VIA_CROPSUITE_WORKSPACE, "
+            "VIA_CROPSUITE_PYTHON and "
+            "VIA_ARTIFACTS_ROOT."
         )
 
-    engine_root = Path(engine_root_value)
-    workspace_root = Path(workspace_value)
-    python_executable = Path(python_value)
-    artifacts_root = Path(artifacts_root_value)
+    engine_root = Path(
+        engine_root_value
+    )
+    workspace_root = Path(
+        workspace_value
+    )
+    python_executable = Path(
+        python_value
+    )
+    artifacts_root = Path(
+        artifacts_root_value
+    )
 
-    artifact_store = FilesystemScientificArtifactStore(
-        artifacts_root
+    artifact_store = (
+        FilesystemScientificArtifactStore(
+            artifacts_root
+        )
     )
 
     suitability_adapter = CropSuiteAdapter(
         engine_root=engine_root,
-        workspace_root=workspace_root / "suitability",
+        workspace_root=(
+            workspace_root / "suitability"
+        ),
         python_executable=python_executable,
         max_workers=1,
         artifact_store=artifact_store,
@@ -73,7 +99,9 @@ def test_real_cropsuite_comparison_adapter_smoke() -> None:
 
     comparison_adapter = CropSuiteComparisonAdapter(
         engine_root=engine_root,
-        workspace_root=workspace_root / "comparison",
+        workspace_root=(
+            workspace_root / "comparison"
+        ),
         python_executable=python_executable,
         artifact_store=artifact_store,
     )
@@ -106,7 +134,10 @@ def test_real_cropsuite_comparison_adapter_smoke() -> None:
 
     results = []
 
-    for crop_id in ("maize", "barley"):
+    for crop_id in (
+        "maize",
+        "barley",
+    ):
         result = suitability_adapter.evaluate(
             CropSuitabilityRequest(
                 evaluation_id=evaluation_id,
@@ -119,6 +150,7 @@ def test_real_cropsuite_comparison_adapter_smoke() -> None:
             CropExecutionStatus.SUCCEEDED,
             CropExecutionStatus.NO_COVERAGE,
         }
+
         assert len(result.artifacts) == 1
 
         results.append(result)
@@ -137,32 +169,94 @@ def test_real_cropsuite_comparison_adapter_smoke() -> None:
         )
     )
 
-    assert comparison.status in {
+    common_support = comparison.common_support
+
+    assert common_support.status in {
         CommonSupportStatus.COMPARABLE,
         CommonSupportStatus.NO_COMMON_COVERAGE,
     }
 
-    assert comparison.parcel_area_m2 > 0
-    assert comparison.common_valid_area_m2 >= 0
-    assert 0 <= comparison.common_coverage_fraction <= 1
+    assert common_support.parcel_area_m2 > 0
+    assert common_support.common_valid_area_m2 >= 0
+    assert (
+        0
+        <= common_support.common_coverage_fraction
+        <= 1
+    )
 
-    assert comparison.method == (
+    assert common_support.method == (
         "area_weighted_mean_on_common_valid_cells"
     )
-    assert comparison.area_crs == "EPSG:6933"
+    assert (
+        common_support.area_crs
+        == "EPSG:6933"
+    )
 
-    requested = {"maize", "barley"}
-    eligible = set(comparison.eligible_crops)
-    excluded = set(comparison.excluded_without_coverage)
+    requested = {
+        "maize",
+        "barley",
+    }
 
-    assert eligible.isdisjoint(excluded)
-    assert eligible | excluded == requested
+    eligible = set(
+        common_support.eligible_crops
+    )
+    excluded = set(
+        common_support.excluded_without_coverage
+    )
 
-    if comparison.status is CommonSupportStatus.COMPARABLE:
-        assert comparison.common_valid_area_m2 > 0
-        assert comparison.common_coverage_fraction > 0
+    assert eligible.isdisjoint(
+        excluded
+    )
+    assert (
+        eligible | excluded
+        == requested
+    )
+
+    if (
+        common_support.status
+        is CommonSupportStatus.COMPARABLE
+    ):
+        assert (
+            common_support.common_valid_area_m2
+            > 0
+        )
+        assert (
+            common_support.common_coverage_fraction
+            > 0
+        )
         assert eligible
 
-    if comparison.status is CommonSupportStatus.NO_COMMON_COVERAGE:
-        assert comparison.common_valid_area_m2 == 0
-        assert comparison.common_coverage_fraction == 0
+        assert comparison.comparable_crops
+
+        assert (
+            len(comparison.comparable_crops)
+            == len(
+                common_support.eligible_crops
+            )
+        )
+
+        assert {
+            crop.crop_id
+            for crop in comparison.comparable_crops
+        } == eligible
+
+        for crop in comparison.comparable_crops:
+            assert 0.0 <= crop.mean <= 100.0
+            assert crop.rank >= 1
+
+    if (
+        common_support.status
+        is CommonSupportStatus.NO_COMMON_COVERAGE
+    ):
+        assert (
+            common_support.common_valid_area_m2
+            == 0
+        )
+        assert (
+            common_support.common_coverage_fraction
+            == 0
+        )
+        assert (
+            comparison.comparable_crops
+            == ()
+        )

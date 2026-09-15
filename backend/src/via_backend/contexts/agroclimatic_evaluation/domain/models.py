@@ -7,7 +7,12 @@ from datetime import datetime
 from enum import StrEnum
 from uuid import UUID
 
-from .comparison import CommonSupport, CommonSupportStatus
+from .comparison import (
+    CommonSupport,
+    CommonSupportStatus,
+    ComparableCrop,
+    validate_comparable_crops,
+)
 from .errors import DomainValidationError, InvalidEvaluationTransitionError
 from .outcomes import CropOutcome, CropOutcomeStatus
 from .snapshot import ParcelSnapshot
@@ -36,6 +41,7 @@ class Evaluation:
     created_at: datetime
     outcomes: tuple[CropOutcome, ...] = ()
     common_support: CommonSupport | None = None
+    comparable_crops: tuple[ComparableCrop, ...] = ()
     failure_reason: str | None = None
 
     def __post_init__(self) -> None:
@@ -78,6 +84,24 @@ class Evaluation:
             raise DomainValidationError(
                 "Only a failed evaluation may retain an orchestration failure reason."
             )
+
+        comparable_crops = tuple(self.comparable_crops)
+
+        if comparable_crops:
+            if self.common_support is None:
+                raise DomainValidationError(
+                    "Comparable crop results require common support."
+                )
+
+            validate_comparable_crops(
+                self.common_support,
+                comparable_crops,
+            )
+        object.__setattr__(
+            self,
+            "comparable_crops",
+            comparable_crops,
+        )
         object.__setattr__(self, "requested_crops", crops)
         object.__setattr__(self, "outcomes", outcomes)
         if self.status in {
@@ -166,6 +190,37 @@ class Evaluation:
         return replace(
             self,
             common_support=common_support,
+        )
+
+    def record_comparison(
+        self,
+        common_support: CommonSupport,
+        comparable_crops: tuple[ComparableCrop, ...],
+    ) -> Evaluation:
+        if self.status is not EvaluationStatus.SUMMARIZING:
+            raise InvalidEvaluationTransitionError(
+                "Scientific comparison can only be recorded while summarizing."
+            )
+
+        if self.common_support is not None:
+            raise InvalidEvaluationTransitionError(
+                "Scientific comparison has already been recorded."
+            )
+
+        crops = tuple(comparable_crops)
+
+        validate_comparable_crops(
+            common_support,
+            crops,
+        )
+
+        with_support = self.record_common_support(
+            common_support
+        )
+
+        return replace(
+            with_support,
+            comparable_crops=crops,
         )
     
     def succeed(self) -> Evaluation:

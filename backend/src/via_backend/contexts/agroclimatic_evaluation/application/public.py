@@ -62,6 +62,8 @@ class FinalizedEvaluationResult:
     parcel_captured_at: datetime
     created_at: datetime
     outcomes: tuple[FinalizedCropOutcome, ...]
+    common_support: FinalizedCommonSupport | None
+    comparable_crops: tuple[FinalizedComparableCrop, ...]
 
 
 @runtime_checkable
@@ -71,3 +73,27 @@ class FinalizedEvaluationResultReader(Protocol):
     def get_finalized_evaluation_result(
         self, query: GetFinalizedEvaluationResult
     ) -> FinalizedEvaluationResult: ...
+
+class FinalizedCommonSupportStatus(StrEnum):
+    COMPARABLE = "comparable"
+    NO_COMMON_COVERAGE = "no_common_coverage"
+    NO_SUCCESSFUL_CROPS = "no_successful_crops"
+
+
+@dataclass(frozen=True, slots=True)
+class FinalizedCommonSupport:
+    status: FinalizedCommonSupportStatus
+    method: str | None
+    area_crs: str | None
+    parcel_area_m2: float
+    common_valid_area_m2: float
+    common_coverage_fraction: float
+    eligible_crops: tuple[str, ...]
+    excluded_without_coverage: tuple[str, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class FinalizedComparableCrop:
+    crop_id: str
+    mean: float
+    rank: int

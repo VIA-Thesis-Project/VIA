@@ -11,8 +11,10 @@ from via_backend.contexts.agroclimatic_evaluation.application import (
     AgroclimaticEvaluationExecutionService,
     CommonSupportResult,
     CommonSupportStatus,
+    ComparableCropResult,
     CropComparisonExecutionError,
     CropComparisonRequest,
+    CropComparisonResult,
     CropExecutionStatus,
     CropSuitabilityExecutionError,
     CropSuitabilityRequest,
@@ -173,7 +175,7 @@ class FakeComparisonEngine:
     def compare(
         self,
         request: CropComparisonRequest,
-    ) -> CommonSupportResult:
+    ) -> CropComparisonResult:
         self.requests.append(request)
 
         if self.error is not None:
@@ -185,26 +187,39 @@ class FakeComparisonEngine:
         )
 
         if not crop_ids:
-            return CommonSupportResult(
-                status=CommonSupportStatus.NO_SUCCESSFUL_CROPS,
-                method=None,
-                area_crs=None,
-                parcel_area_m2=100.0,
-                common_valid_area_m2=0.0,
-                common_coverage_fraction=0.0,
-                eligible_crops=(),
-                excluded_without_coverage=(),
+            return CropComparisonResult(
+                common_support=CommonSupportResult(
+                    status=CommonSupportStatus.NO_SUCCESSFUL_CROPS,
+                    method=None,
+                    area_crs=None,
+                    parcel_area_m2=100.0,
+                    common_valid_area_m2=0.0,
+                    common_coverage_fraction=0.0,
+                    eligible_crops=(),
+                    excluded_without_coverage=(),
+                ),
+                comparable_crops=(),
             )
 
-        return CommonSupportResult(
-            status=CommonSupportStatus.COMPARABLE,
-            method="area_weighted_mean_on_common_valid_cells",
-            area_crs="EPSG:6933",
-            parcel_area_m2=100.0,
-            common_valid_area_m2=80.0,
-            common_coverage_fraction=0.8,
-            eligible_crops=crop_ids,
-            excluded_without_coverage=(),
+        return CropComparisonResult(
+            common_support=CommonSupportResult(
+                status=CommonSupportStatus.COMPARABLE,
+                method="area_weighted_mean_on_common_valid_cells",
+                area_crs="EPSG:6933",
+                parcel_area_m2=100.0,
+                common_valid_area_m2=80.0,
+                common_coverage_fraction=0.8,
+                eligible_crops=crop_ids,
+                excluded_without_coverage=(),
+            ),
+            comparable_crops=tuple(
+                ComparableCropResult(
+                    crop_id=crop_id,
+                    mean=70.0 - index,
+                    rank=index + 1,
+                )
+                for index, crop_id in enumerate(crop_ids)
+            ),
         )
 
 class RecordingRepository(InMemoryEvaluationRepository):

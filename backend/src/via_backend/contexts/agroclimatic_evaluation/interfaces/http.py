@@ -23,6 +23,7 @@ from ..application.service import (
     ResourceConflictError,
     ResourceNotFoundError,
 )
+from ..domain.comparison import CommonSupportStatus
 from ..domain.models import EvaluationStatus
 from ..domain.outcomes import CropOutcomeStatus
 
@@ -111,6 +112,25 @@ class CropOutcomeResponse(BaseModel):
     status: CropOutcomeStatus
     suitability: SuitabilitySummaryResponse | None
 
+class CommonSupportResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    status: CommonSupportStatus
+    method: str | None
+    area_crs: str | None
+    parcel_area_m2: float
+    common_valid_area_m2: float
+    common_coverage_fraction: float
+    eligible_crops: list[str]
+    excluded_without_coverage: list[str]
+
+
+class ComparableCropResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    crop_id: str
+    mean: float
+    rank: int
 
 class EvaluationResultResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -122,6 +142,8 @@ class EvaluationResultResponse(BaseModel):
     requested_crop_count: int
     completed_crop_count: int
     outcomes: list[CropOutcomeResponse]
+    common_support: CommonSupportResponse | None
+    comparable_crops: list[ComparableCropResponse]
 
 
 class ScientificTraceResponse(BaseModel):

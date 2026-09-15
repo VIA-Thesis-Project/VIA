@@ -16,6 +16,7 @@ from via_backend.infrastructure.database import SessionFactory
 from ..domain.comparison import (
     CommonSupport,
     CommonSupportStatus,
+    ComparableCrop,
 )
 from ..domain.errors import EvaluationConflictError
 from ..domain.models import Evaluation, EvaluationStatus
@@ -32,6 +33,7 @@ from ..domain.snapshot import ParcelSnapshot, SnapshotGeometry
 from .orm import (
     CropOutcomeRecord,
     EvaluationCommonSupportRecord,
+    EvaluationComparableCropRecord,
     EvaluationCropRecord,
     EvaluationRecord,
     ScientificArtifactRecord,
@@ -111,10 +113,14 @@ class PostgreSQLEvaluationRepository:
                     session,
                     evaluation,
                 )
+                _persist_comparable_crops(
+                    session,
+                    evaluation,
+                )
         except IntegrityError as error:
             raise EvaluationConflictError(
                 f"Evaluation {evaluation.id} conflicts with persisted "
-                "common-support data."
+                "comparison data."
             ) from error
 
     def add_outcome(self, evaluation_id: UUID, outcome: CropOutcome) -> None:
@@ -172,6 +178,10 @@ class PostgreSQLEvaluationRepository:
                     session,
                     evaluation_id,
                 ),
+                _load_comparable_crops(
+                    session,
+                    evaluation_id,
+                ),
             )
 
     def list_queued_ids(self, *, limit: int) -> tuple[UUID, ...]:
@@ -208,6 +218,7 @@ class PostgreSQLEvaluationRepository:
                         crops,
                         _load_outcomes(session, record.id),
                         _load_common_support(session, record.id),
+                        _load_comparable_crops(session, record.id),
                     )
                 )
             return tuple(evaluations)
@@ -226,6 +237,7 @@ def _evaluation_from_row(
     crops: tuple[str, ...],
     outcomes: tuple[CropOutcome, ...],
     common_support: CommonSupport | None,
+    comparable_crops: tuple[ComparableCrop, ...],
 ) -> Evaluation:
     stored_geometry = json.loads(geometry_json)
     if record.snapshot_geometry_kind == "Polygon":
@@ -250,6 +262,7 @@ def _evaluation_from_row(
         created_at=record.created_at,
         outcomes=outcomes,
         common_support=common_support,
+        comparable_crops=comparable_crops,
         failure_reason=record.failure_reason,
     )
 
@@ -332,6 +345,97 @@ def _common_support_from_record(
             record.excluded_without_coverage
         ),
     )
+
+
+def _persist_comparable_crops(
+    session: Session,
+    evaluation: Evaluation,
+) -> None:
+    comparable_crops = evaluation.comparable_crops
+
+    existing = tuple(
+        session.scalars(
+            select(EvaluationComparableCropRecord)
+            .where(
+                EvaluationComparableCropRecord.evaluation_id
+                == evaluation.id
+            )
+            .order_by(EvaluationComparableCropRecord.position)
+        )
+    )
+
+    if not comparable_crops:
+        if existing:
+            raise EvaluationConflictError(
+                f"Evaluation {evaluation.id} already has comparable-crop data."
+            )
+        return
+
+    if not existing:
+        session.add_all(
+            _comparable_crop_record(
+                evaluation.id,
+                position,
+                crop,
+            )
+            for position, crop in enumerate(comparable_crops)
+        )
+        return
+
+    restored = tuple(
+        _comparable_crop_from_record(record)
+        for record in existing
+    )
+
+    if restored != comparable_crops:
+        raise EvaluationConflictError(
+            f"Evaluation {evaluation.id} already has different "
+            "comparable-crop data."
+        )
+
+
+def _load_comparable_crops(
+    session: Session,
+    evaluation_id: UUID,
+) -> tuple[ComparableCrop, ...]:
+    records = session.scalars(
+        select(EvaluationComparableCropRecord)
+        .where(
+            EvaluationComparableCropRecord.evaluation_id
+            == evaluation_id
+        )
+        .order_by(EvaluationComparableCropRecord.position)
+    )
+
+    return tuple(
+        _comparable_crop_from_record(record)
+        for record in records
+    )
+
+
+def _comparable_crop_record(
+    evaluation_id: UUID,
+    position: int,
+    crop: ComparableCrop,
+) -> EvaluationComparableCropRecord:
+    return EvaluationComparableCropRecord(
+        evaluation_id=evaluation_id,
+        crop_id=crop.crop_id,
+        position=position,
+        mean=crop.mean,
+        rank=crop.rank,
+    )
+
+
+def _comparable_crop_from_record(
+    record: EvaluationComparableCropRecord,
+) -> ComparableCrop:
+    return ComparableCrop(
+        crop_id=record.crop_id,
+        mean=record.mean,
+        rank=record.rank,
+    )
+
 
 def _load_outcomes(
     session: Session,

@@ -140,6 +140,21 @@ class CommonSupportResult:
     eligible_crops: tuple[str, ...]
     excluded_without_coverage: tuple[str, ...]
 
+@dataclass(frozen=True, slots=True)
+class ComparableCropResult:
+    """One crop summarized on the exact common spatial support."""
+
+    crop_id: str
+    mean: float
+    rank: int
+
+
+@dataclass(frozen=True, slots=True)
+class CropComparisonResult:
+    """Checked multicrop comparison returned by the scientific boundary."""
+
+    common_support: CommonSupportResult
+    comparable_crops: tuple[ComparableCropResult, ...]
 
 class CropComparisonEngineError(RuntimeError):
     """Base error for the scientific crop-comparison boundary."""
@@ -160,7 +175,7 @@ class ICropComparisonEngine(Protocol):
     def compare(
         self,
         request: CropComparisonRequest,
-    ) -> CommonSupportResult: ...
+    ) -> CropComparisonResult: ...
 
 class CropSuitabilityEngineError(RuntimeError):
     """Base error for failures to invoke or understand the engine boundary."""

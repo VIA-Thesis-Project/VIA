@@ -9,10 +9,13 @@ import pytest
 
 from via_backend.contexts.agroclimatic_evaluation.application import (
     CommonSupportStatus,
+    ComparableCropResult,
     CropComparisonExecutionError,
     CropComparisonInput,
     CropComparisonRequest,
+    CropComparisonResult,
     ICropComparisonEngine,
+    InvalidComparisonOutputError,
     ScientificArtifactDescriptor,
     ScientificArtifactGrid,
     ScientificArtifactRole,
@@ -135,13 +138,23 @@ def _report() -> dict[str, Any]:
         "eligible_crops": ["maize", "potato"],
         "excluded_without_coverage": [],
         "ranking": [
-            {"crop_id": "maize", "mean": 80.0, "rank": 1},
-            {"crop_id": "potato", "mean": 70.0, "rank": 2},
+            {
+                "crop_id": "maize",
+                "mean": 80.0,
+                "rank": 1,
+            },
+            {
+                "crop_id": "potato",
+                "mean": 70.0,
+                "rank": 2,
+            },
         ],
     }
 
 
-def test_adapter_implements_comparison_port(tmp_path: Path) -> None:
+def test_adapter_implements_comparison_port(
+    tmp_path: Path,
+) -> None:
     store = FilesystemScientificArtifactStore(
         tmp_path / "artifacts"
     )
@@ -156,7 +169,7 @@ def test_adapter_implements_comparison_port(tmp_path: Path) -> None:
     assert isinstance(adapter, ICropComparisonEngine)
 
 
-def test_adapter_maps_common_support_without_exposing_ranking(
+def test_adapter_maps_common_support_and_comparable_ranking(
     tmp_path: Path,
 ) -> None:
     store = FilesystemScientificArtifactStore(
@@ -175,18 +188,45 @@ def test_adapter_maps_common_support_without_exposing_ranking(
         _request(tmp_path, store)
     )
 
-    assert result.status is CommonSupportStatus.COMPARABLE
-    assert result.parcel_area_m2 == 100.0
-    assert result.common_valid_area_m2 == 80.0
-    assert result.common_coverage_fraction == 0.8
-    assert result.eligible_crops == ("maize", "potato")
-    assert result.excluded_without_coverage == ()
+    assert isinstance(result, CropComparisonResult)
+
+    assert (
+        result.common_support.status
+        is CommonSupportStatus.COMPARABLE
+    )
+    assert result.common_support.parcel_area_m2 == 100.0
+    assert result.common_support.common_valid_area_m2 == 80.0
+    assert result.common_support.common_coverage_fraction == 0.8
+    assert result.common_support.eligible_crops == (
+        "maize",
+        "potato",
+    )
+    assert (
+        result.common_support.excluded_without_coverage
+        == ()
+    )
+
+    assert result.comparable_crops == (
+        ComparableCropResult(
+            crop_id="maize",
+            mean=80.0,
+            rank=1,
+        ),
+        ComparableCropResult(
+            crop_id="potato",
+            mean=70.0,
+            rank=2,
+        ),
+    )
 
     assert len(runner.calls) == 1
     assert tuple(
         crop["crop_id"]
         for crop in runner.calls[0]["crops"]
-    ) == ("maize", "potato")
+    ) == (
+        "maize",
+        "potato",
+    )
 
 
 def test_no_common_coverage_remains_distinct(
@@ -204,6 +244,7 @@ def test_no_common_coverage_remains_distinct(
         "common_valid_area_m2": 0.0,
         "common_coverage_fraction": 0.0,
         "excluded_without_coverage": [],
+        "ranking": [],
     }
 
     adapter = CropSuiteComparisonAdapter(
@@ -217,16 +258,148 @@ def test_no_common_coverage_remains_distinct(
         _request(tmp_path, store)
     )
 
-    assert result.status is CommonSupportStatus.NO_COMMON_COVERAGE
-    assert result.common_valid_area_m2 == 0.0
-    assert result.eligible_crops == ("maize", "potato")
+    assert (
+        result.common_support.status
+        is CommonSupportStatus.NO_COMMON_COVERAGE
+    )
+    assert result.common_support.common_valid_area_m2 == 0.0
+    assert result.common_support.eligible_crops == (
+        "maize",
+        "potato",
+    )
+    assert result.comparable_crops == ()
+
+
+def test_adapter_rejects_ranking_with_unknown_crop(
+    tmp_path: Path,
+) -> None:
+    store = FilesystemScientificArtifactStore(
+        tmp_path / "artifacts"
+    )
+
+    report = _report()
+    report["ranking"] = [
+        {
+            "crop_id": "unknown",
+            "mean": 80.0,
+            "rank": 1,
+        },
+        {
+            "crop_id": "potato",
+            "mean": 70.0,
+            "rank": 2,
+        },
+    ]
+
+    adapter = CropSuiteComparisonAdapter(
+        engine_root=tmp_path / "engine",
+        workspace_root=tmp_path / "workspace",
+        artifact_store=store,
+        runner=StubComparisonRunner(report),
+    )
+
+    with pytest.raises(
+        InvalidComparisonOutputError,
+        match="non-eligible crop",
+    ):
+        adapter.compare(
+            _request(tmp_path, store)
+        )
+
+
+def test_adapter_rejects_ranking_for_no_common_coverage(
+    tmp_path: Path,
+) -> None:
+    store = FilesystemScientificArtifactStore(
+        tmp_path / "artifacts"
+    )
+
+    report = {
+        "status": "no_common_coverage",
+        "method": "area_weighted_mean_on_common_valid_cells",
+        "area_crs": "EPSG:6933",
+        "parcel_area_m2": 100.0,
+        "common_valid_area_m2": 0.0,
+        "common_coverage_fraction": 0.0,
+        "excluded_without_coverage": [],
+        "ranking": [
+            {
+                "crop_id": "maize",
+                "mean": 50.0,
+                "rank": 1,
+            },
+        ],
+    }
+
+    adapter = CropSuiteComparisonAdapter(
+        engine_root=tmp_path / "engine",
+        workspace_root=tmp_path / "workspace",
+        artifact_store=store,
+        runner=StubComparisonRunner(report),
+    )
+
+    with pytest.raises(
+        InvalidComparisonOutputError,
+        match="non-comparable result cannot contain ranked crops",
+    ):
+        adapter.compare(
+            _request(tmp_path, store)
+        )
+
+
+def test_adapter_accepts_deterministic_tied_ranking(
+    tmp_path: Path,
+) -> None:
+    store = FilesystemScientificArtifactStore(
+        tmp_path / "artifacts"
+    )
+
+    report = _report()
+    report["ranking"] = [
+        {
+            "crop_id": "maize",
+            "mean": 80.0,
+            "rank": 1,
+        },
+        {
+            "crop_id": "potato",
+            "mean": 80.0,
+            "rank": 1,
+        },
+    ]
+
+    adapter = CropSuiteComparisonAdapter(
+        engine_root=tmp_path / "engine",
+        workspace_root=tmp_path / "workspace",
+        artifact_store=store,
+        runner=StubComparisonRunner(report),
+    )
+
+    result = adapter.compare(
+        _request(tmp_path, store)
+    )
+
+    assert result.comparable_crops == (
+        ComparableCropResult(
+            crop_id="maize",
+            mean=80.0,
+            rank=1,
+        ),
+        ComparableCropResult(
+            crop_id="potato",
+            mean=80.0,
+            rank=1,
+        ),
+    )
 
 
 def test_modified_durable_artifact_fails_before_scientific_runner(
     tmp_path: Path,
 ) -> None:
     artifact_root = tmp_path / "artifacts"
-    store = FilesystemScientificArtifactStore(artifact_root)
+    store = FilesystemScientificArtifactStore(
+        artifact_root
+    )
     runner = StubComparisonRunner(_report())
 
     request = _request(tmp_path, store)

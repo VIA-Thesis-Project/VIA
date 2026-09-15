@@ -2,6 +2,7 @@
 
 import asyncio
 import json
+from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 from typing import Any
 from uuid import uuid4
@@ -15,6 +16,9 @@ from via_backend.contexts.agroclimatic_evaluation.application import (
     AgroclimaticEvaluationService,
 )
 from via_backend.contexts.agroclimatic_evaluation.domain import (
+    CommonSupport,
+    CommonSupportStatus,
+    ComparableCrop,
     CropOutcome,
     CropOutcomeStatus,
     Evaluation,
@@ -154,6 +158,68 @@ def _completed_outcomes() -> tuple[CropOutcome, ...]:
         _outcome("rice", CropOutcomeStatus.FAILED),
     )
 
+def _evaluation_with_comparison() -> Evaluation:
+    evaluation = _evaluation(
+        status=EvaluationStatus.SUCCEEDED,
+        outcomes=_completed_outcomes(),
+    )
+
+    return replace(
+        evaluation,
+        common_support=CommonSupport(
+            status=CommonSupportStatus.COMPARABLE,
+            method="area_weighted_mean_on_common_valid_cells",
+            area_crs="EPSG:6933",
+            parcel_area_m2=100.0,
+            common_valid_area_m2=80.0,
+            common_coverage_fraction=0.8,
+            eligible_crops=("maize",),
+            excluded_without_coverage=("potato",),
+        ),
+        comparable_crops=(
+            ComparableCrop(
+                crop_id="maize",
+                mean=0.0,
+                rank=1,
+            ),
+        ),
+    )
+
+def test_final_result_exposes_common_support_and_comparable_crops() -> None:
+    evaluation = _evaluation_with_comparison()
+
+    response = asyncio.run(
+        _request(
+            _app_with(evaluation),
+            "GET",
+            f"/api/v1/evaluations/{evaluation.id}/result",
+        )
+    )
+
+    assert response.status_code == 200
+
+    body = response.json()
+
+    assert body["common_support"] == {
+        "status": "comparable",
+        "method": "area_weighted_mean_on_common_valid_cells",
+        "area_crs": "EPSG:6933",
+        "parcel_area_m2": 100.0,
+        "common_valid_area_m2": 80.0,
+        "common_coverage_fraction": 0.8,
+        "eligible_crops": ["maize"],
+        "excluded_without_coverage": ["potato"],
+    }
+
+    assert body["comparable_crops"] == [
+        {
+            "crop_id": "maize",
+            "mean": 0.0,
+            "rank": 1,
+        }
+    ]
+
+    assert "ranking" not in body
 
 async def _request(app: FastAPI, method: str, path: str, **kwargs: Any) -> Response:
     transport = ASGITransport(app=app)
@@ -277,6 +343,8 @@ def test_final_result_preserves_order_and_scientific_outcome_distinctions() -> N
     assert body["outcomes"][1]["suitability"]["mean"] is None
     assert body["outcomes"][1]["suitability"]["valid_cells"] == 0
     assert body["outcomes"][2]["suitability"] is None
+    assert body["common_support"] is None
+    assert body["comparable_crops"] == []
 
 
 def test_active_result_is_explicitly_partial() -> None:
@@ -299,6 +367,8 @@ def test_active_result_is_explicitly_partial() -> None:
     assert body["evaluation_status"] == "running"
     assert body["completed_crop_count"] == 1
     assert [item["crop_id"] for item in body["outcomes"]] == ["maize"]
+    assert body["common_support"] is None
+    assert body["comparable_crops"] == []
 
 
 def test_queued_result_is_explicitly_pending() -> None:
@@ -313,8 +383,13 @@ def test_queued_result_is_explicitly_pending() -> None:
     )
 
     assert response.status_code == 200
-    assert response.json()["availability"] == "pending"
-    assert response.json()["outcomes"] == []
+
+    body = response.json()
+
+    assert body["availability"] == "pending"
+    assert body["outcomes"] == []
+    assert body["common_support"] is None
+    assert body["comparable_crops"] == []
 
 
 def test_failed_evaluation_has_sanitized_public_semantics() -> None:

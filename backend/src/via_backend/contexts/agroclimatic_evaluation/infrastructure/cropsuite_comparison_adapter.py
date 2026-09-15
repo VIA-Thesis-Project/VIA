@@ -14,8 +14,10 @@ from typing import Any, cast
 from ..application.ports import (
     CommonSupportResult,
     CommonSupportStatus,
+    ComparableCropResult,
     CropComparisonExecutionError,
     CropComparisonRequest,
+    CropComparisonResult,
     ICropComparisonEngine,
     InvalidComparisonOutputError,
     ScientificArtifactRole,
@@ -216,7 +218,7 @@ class CropSuiteComparisonAdapter(ICropComparisonEngine):
     def compare(
         self,
         request: CropComparisonRequest,
-    ) -> CommonSupportResult:
+    ) -> CropComparisonResult:
         crop_ids = tuple(entry.crop_id for entry in request.crops)
 
         if len(crop_ids) != len(set(crop_ids)):
@@ -407,7 +409,7 @@ def _map_comparison_report(
     report: Mapping[str, Any],
     *,
     requested_crop_ids: tuple[str, ...],
-) -> CommonSupportResult:
+) -> CropComparisonResult:
     raw_status = report.get("status")
 
     try:
@@ -518,7 +520,13 @@ def _map_comparison_report(
                 "No-common-coverage result must have zero common support."
             )
 
-    return CommonSupportResult(
+    comparable_crops = _map_comparable_crops(
+        report,
+        status=status,
+        eligible_crops=eligible,
+    )
+
+    common_support = CommonSupportResult(
         status=status,
         method=method,
         area_crs=area_crs,
@@ -529,6 +537,132 @@ def _map_comparison_report(
         excluded_without_coverage=excluded,
     )
 
+    return CropComparisonResult(
+        common_support=common_support,
+        comparable_crops=comparable_crops,
+    )
+
+def _map_comparable_crops(
+    report: Mapping[str, Any],
+    *,
+    status: CommonSupportStatus,
+    eligible_crops: tuple[str, ...],
+) -> tuple[ComparableCropResult, ...]:
+    raw_ranking = report.get("ranking")
+
+    if not isinstance(raw_ranking, list):
+        raise InvalidComparisonOutputError(
+            "Crop comparison ranking must be an array."
+        )
+
+    if status is not CommonSupportStatus.COMPARABLE:
+        if raw_ranking:
+            raise InvalidComparisonOutputError(
+                "A non-comparable result cannot contain ranked crops."
+            )
+        return ()
+
+    if len(raw_ranking) != len(eligible_crops):
+        raise InvalidComparisonOutputError(
+            "Comparable ranking must contain every eligible crop exactly once."
+        )
+
+    results: list[ComparableCropResult] = []
+    seen: set[str] = set()
+
+    for item in raw_ranking:
+        if not isinstance(item, Mapping):
+            raise InvalidComparisonOutputError(
+                "Each crop comparison ranking entry must be an object."
+            )
+
+        crop_id = item.get("crop_id")
+        if not isinstance(crop_id, str) or not crop_id:
+            raise InvalidComparisonOutputError(
+                "Comparable crop identifier must be a non-empty string."
+            )
+
+        if crop_id not in eligible_crops:
+            raise InvalidComparisonOutputError(
+                "Crop comparison ranking contains a non-eligible crop."
+            )
+
+        if crop_id in seen:
+            raise InvalidComparisonOutputError(
+                "Crop comparison ranking contains duplicate crop identifiers."
+            )
+
+        mean = _number(item, "mean")
+        if not 0.0 <= mean <= 100.0:
+            raise InvalidComparisonOutputError(
+                "Comparable crop mean must be between 0 and 100."
+            )
+
+        raw_rank = item.get("rank")
+        if (
+            isinstance(raw_rank, bool)
+            or not isinstance(raw_rank, int)
+            or raw_rank < 1
+        ):
+            raise InvalidComparisonOutputError(
+                "Comparable crop rank must be a positive integer."
+            )
+
+        seen.add(crop_id)
+        results.append(
+            ComparableCropResult(
+                crop_id=crop_id,
+                mean=mean,
+                rank=raw_rank,
+            )
+        )
+
+    if seen != set(eligible_crops):
+        raise InvalidComparisonOutputError(
+            "Crop comparison ranking does not match eligible crops."
+        )
+
+    _validate_comparable_ranking(results)
+
+    return tuple(results)
+
+def _validate_comparable_ranking(
+    crops: list[ComparableCropResult],
+) -> None:
+    previous: ComparableCropResult | None = None
+    expected_rank = 0
+
+    for position, crop in enumerate(crops, start=1):
+        if previous is None:
+            expected_rank = 1
+        else:
+            if crop.mean > previous.mean:
+                raise InvalidComparisonOutputError(
+                    "Comparable crop means are not ordered descending."
+                )
+
+            if (
+                crop.mean == previous.mean
+                and crop.crop_id < previous.crop_id
+            ):
+                raise InvalidComparisonOutputError(
+                    "Equal-mean comparable crops are not ordered deterministically."
+                )
+
+            if not math.isclose(
+                crop.mean,
+                previous.mean,
+                rel_tol=0.0,
+                abs_tol=1e-9,
+            ):
+                expected_rank = position
+
+        if crop.rank != expected_rank:
+            raise InvalidComparisonOutputError(
+                "Crop comparison contains an inconsistent scientific rank."
+            )
+
+        previous = crop
 
 def _positive_number(
     mapping: Mapping[str, Any],
