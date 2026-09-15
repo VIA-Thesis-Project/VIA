@@ -306,3 +306,31 @@ def test_decision_support_does_not_read_evaluation_internals() -> None:
     ]
 
     assert not violations, "\n".join(violations)
+
+
+def test_decision_support_domain_does_not_depend_on_agroclimatic_evaluation() -> None:
+    decision_support_domain = CONTEXTS_ROOT / "decision_support" / "domain"
+    violations = [
+        f"{path.relative_to(SOURCE_ROOT)} imports {module}"
+        for path in decision_support_domain.rglob("*.py")
+        for module in _imported_modules(path)
+        if "agroclimatic_evaluation" in module.casefold().split(".")
+    ]
+
+    assert not violations, "\n".join(violations)
+
+
+def test_decision_support_application_uses_only_evaluation_public_contract() -> None:
+    decision_support_application = CONTEXTS_ROOT / "decision_support" / "application"
+    allowed_module = (
+        "via_backend.contexts.agroclimatic_evaluation.application.public"
+    )
+    violations = [
+        f"{path.relative_to(SOURCE_ROOT)} imports {module}"
+        for path in decision_support_application.rglob("*.py")
+        for module in _imported_modules(path)
+        if "agroclimatic_evaluation" in module.casefold().split(".")
+        and module != allowed_module
+    ]
+
+    assert not violations, "\n".join(violations)

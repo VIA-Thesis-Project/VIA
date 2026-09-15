@@ -48,3 +48,21 @@ forbidden_modules =
     via_backend.contexts.environmental_information.infrastructure
     via_backend.contexts.agroclimatic_evaluation.infrastructure
     via_backend.contexts.decision_support.infrastructure
+
+[importlinter:contract:decision-support-domain-isolation]
+name = Decision Support Domain must not depend on Agroclimatic Evaluation
+type = forbidden
+source_modules =
+    via_backend.contexts.decision_support.domain
+forbidden_modules =
+    via_backend.contexts.agroclimatic_evaluation
+
+[importlinter:contract:decision-support-application-provider-boundary]
+name = Decision Support Application must not depend on provider internals
+type = forbidden
+source_modules =
+    via_backend.contexts.decision_support.application
+forbidden_modules =
+    via_backend.contexts.agroclimatic_evaluation.domain
+    via_backend.contexts.agroclimatic_evaluation.infrastructure
+    via_backend.contexts.agroclimatic_evaluation.interfaces
