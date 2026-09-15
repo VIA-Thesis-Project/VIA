@@ -28,6 +28,14 @@ class EvidenceAvailability(StrEnum):
     COMMON_SUPPORT_NOT_RECORDED = "common_support_not_recorded"
 
 
+class Viability(StrEnum):
+    """Business classification assigned to available comparable evidence."""
+
+    NON_VIABLE = "non_viable"
+    CONDITIONAL = "conditional"
+    VIABLE = "viable"
+
+
 @dataclass(frozen=True, slots=True)
 class PolicyReference:
     """Stable identity of the deterministic policy selected for an evaluation."""
@@ -41,6 +49,30 @@ class PolicyReference:
 
 
 @dataclass(frozen=True, slots=True)
+class ViabilityPolicyConfiguration:
+    """Thresholds used by one deterministic viability-policy execution."""
+
+    conditional_from: float
+    viable_from: float
+
+    def __post_init__(self) -> None:
+        _require_score(self.conditional_from, "Conditional threshold")
+        _require_score(self.viable_from, "Viable threshold")
+        if self.conditional_from >= self.viable_from:
+            raise DomainValidationError(
+                "Conditional threshold must be lower than viable threshold."
+            )
+
+
+@dataclass(frozen=True, slots=True)
+class ViabilityPolicySnapshot:
+    """Immutable identity and exact thresholds used for a policy execution."""
+
+    reference: PolicyReference
+    configuration: ViabilityPolicyConfiguration
+
+
+@dataclass(frozen=True, slots=True)
 class ComparableCropEvidence:
     """A provider-produced crop mean and rank over common valid support."""
 
@@ -50,18 +82,46 @@ class ComparableCropEvidence:
 
     def __post_init__(self) -> None:
         _require_trimmed_identifier(self.crop_id, "Comparable crop identifier")
-        if isinstance(self.mean, bool) or not isinstance(self.mean, (int, float)):
-            raise DomainValidationError("Comparable crop mean must be numeric.")
-        if not isfinite(self.mean) or not 0 <= self.mean <= 100:
+        _require_score(self.mean, "Comparable crop mean")
+        _require_positive_rank(self.rank, "Comparable crop rank")
+
+
+@dataclass(frozen=True, slots=True)
+class CropViabilityAssessment:
+    """Classification of one crop without altering its scientific evidence."""
+
+    crop_id: str
+    comparable_mean: float
+    scientific_rank: int
+    viability: Viability
+    policy: ViabilityPolicySnapshot
+
+    def __post_init__(self) -> None:
+        _require_trimmed_identifier(self.crop_id, "Assessed crop identifier")
+        _require_score(self.comparable_mean, "Comparable crop mean")
+        _require_positive_rank(self.scientific_rank, "Scientific rank")
+        if not isinstance(self.viability, Viability):
+            raise DomainValidationError("Viability must be a recognized classification.")
+
+
+@dataclass(frozen=True, slots=True)
+class ViabilityPolicyEvaluation:
+    """Deterministic assessments produced from one immutable policy snapshot."""
+
+    evaluation_id: UUID
+    policy: ViabilityPolicySnapshot
+    assessments: tuple[CropViabilityAssessment, ...]
+
+    def __post_init__(self) -> None:
+        crop_ids = tuple(assessment.crop_id for assessment in self.assessments)
+        if len(crop_ids) != len(set(crop_ids)):
             raise DomainValidationError(
-                "Comparable crop mean must be finite and between zero and 100."
+                "Crop viability assessments must contain unique crop identifiers."
             )
-        if (
-            isinstance(self.rank, bool)
-            or not isinstance(self.rank, int)
-            or self.rank < 1
-        ):
-            raise DomainValidationError("Comparable crop rank must be a positive integer.")
+        if any(assessment.policy != self.policy for assessment in self.assessments):
+            raise DomainValidationError(
+                "Every crop assessment must retain the evaluation policy snapshot."
+            )
 
 
 @dataclass(frozen=True, slots=True)
@@ -191,6 +251,20 @@ def _require_trimmed_identifier(value: object, label: str) -> None:
         raise DomainValidationError(
             f"{label} must be a non-empty, already-trimmed string."
         )
+
+
+def _require_score(value: object, label: str) -> None:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise DomainValidationError(f"{label} must be numeric.")
+    if not isfinite(value) or not 0 <= value <= 100:
+        raise DomainValidationError(
+            f"{label} must be finite and between zero and 100."
+        )
+
+
+def _require_positive_rank(value: object, label: str) -> None:
+    if isinstance(value, bool) or not isinstance(value, int) or value < 1:
+        raise DomainValidationError(f"{label} must be a positive integer.")
 
 
 def _require_unique_identifiers(values: tuple[str, ...], label: str) -> None:
