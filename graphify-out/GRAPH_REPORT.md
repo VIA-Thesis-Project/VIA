@@ -1,16 +1,16 @@
-# Graph Report - poc_via_cslite  (2026-09-14)
+# Graph Report - poc_via_cslite  (2026-09-15)
 
 ## Corpus Check
-- 267 files · ~120,955 words
+- 273 files · ~122,443 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 2206 nodes · 5145 edges · 179 communities (102 shown, 31 thin omitted)
-- Extraction: 89% EXTRACTED · 11% INFERRED · 0% AMBIGUOUS · INFERRED: 586 edges (avg confidence: 0.92)
+- 2280 nodes · 5343 edges · 181 communities (105 shown, 30 thin omitted)
+- Extraction: 88% EXTRACTED · 12% INFERRED · 0% AMBIGUOUS · INFERRED: 618 edges (avg confidence: 0.92)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `399fa97f`
+- Built from commit: `6015f18d`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -25,23 +25,23 @@
 - Crop Membership Functions
 - multicrop.py
 - InMemoryEvaluationRepository
-- data_tools.py
+- CropSuite.py
 - DownloadCMIP6Data
 - agroclimatic_evaluation/application/service.py
 - climate_suitability_main_xarray.py
 - CropSuiteLite
-- CropSuiteAdapter
+- cropsuite_adapter.py
 - climate_suitability_main.py
-- read_plant_params.py
+- process_precday_interp
 - CoverageMeasurement
-- ScientificArtifactStore
+- .__init__
 - test_farm_management_postgresql.py
 - VIA architecture guardrails
 - Farm Management persistence
-- CropSuite.py
+- test_decision_support.py
 - Architecture and Backend for CropSuiteLite Huaura v2
 - Huaura Environmental Correction
-- FilesystemScientificArtifactStore
+- scientific_artifact_store.py
 - test_architecture.py
 - Farm Management schema ownership
 - Bounded-context layered structure
@@ -51,7 +51,7 @@
 - Application commands and queries
 - Farm Management minimum vertical slice
 - Python and FastAPI backend decision
-- write_to_netcdf
+- PrecipitationCoastTest
 - execution.py
 - Project
 - VIA architecture implementation roadmap
@@ -59,7 +59,7 @@
 - agroclimatic_evaluation/interfaces/http.py
 - ADR-012: PostgreSQL/PostGIS persistence for Environmental Information
 - PostGIS service
-- cropsuite_adapter.py
+- environmental_information/interfaces/http.py
 - Optimistic parcel revision transaction
 - Q: Verify that the new VIA backend foundation is discoverable and consistent with the intended architecture.
 - Q: optimistic stale-write handling introduced in the current slice
@@ -75,19 +75,19 @@
 - __main__.py
 - Atlas A Logo
 - read_remote_chunk
-- EvaluationStatus
+- AgroclimaticEvaluationService
 - .from_geojson
 - SpatialExtent
 - agroclimatic_evaluation/__init__.py
 - DomainValidationError
-- decision_support/application/__init__.py
-- decision_support/domain/__init__.py
+- decision_support/application/service.py
+- test_agroclimatic_evaluation_api.py
 - decision_support/infrastructure/__init__.py
 - decision_support/__init__.py
 - decision_support/interfaces/__init__.py
 - EnvironmentalInformationService
-- CropSuitabilityResult
-- environmental_information/infrastructure/postgresql_repositories.py
+- ICropComparisonEngine
+- main.py
 - environmental_information/__init__.py
 - Q: ParcelVersion persistence
 - farm_management/__init__.py
@@ -127,27 +127,29 @@
 - ADR-014: PostgreSQL/PostGIS persistence for Agroclimatic Evaluation
 - create_router
 - test_agroclimatic_evaluation_domain.py
-- test_environmental_information_api.py
+- CropSuiteComparisonAdapter
 - DomainValidationError
 - health.py
 - Evaluation
 - agroclimatic_evaluation/application/__init__.py
-- nc_tools.py
-- environmental_information/application/ports.py
-- test_database_test_support.py
-- test_agroclimatic_evaluation_api.py
+- merge_geotiff.py
+- ComparableCrop
+- test_environmental_information_postgresql.py
+- Settings
 - test_agroclimatic_evaluation_queries.py
 - Agroclimatic Evaluation request, worker, recovery, and read slice
 - Q: Locate VIA_TEST_DATABASE_URL safety, PostgreSQL integration tests, database URL validation, Alembic env, create_database, Settings, repositories, PostGIS, and schema creation
 - Q: Trace the worker executor result protocol and configuration typing relevant to the ten Pyright errors
 - PostgreSQLEvaluationRepository
 - crop_suitability_main.py
-- main.py
+- FilesystemScientificArtifactStore
 - test_crop_comparison_contracts.py
 - agroclimatic_evaluation/application/ports.py
 - Q: Continue the currently uncommitted Agroclimatic Evaluation Query/Read API increment.
-- CropSuitabilityExecutionError
-- CropExecutionStatus
+- ResourceNotFoundError
+- agroclimatic_evaluation/infrastructure/__init__.py
+- cropsuite_comparison_adapter.py
+- test_environmental_information_domain.py
 
 ## God Nodes (most connected - your core abstractions)
 1. `Evaluation` - 75 edges
@@ -190,15 +192,15 @@
 - **Huaura CMIP6 Download Preprocess Simulation Pipeline** — cropsuitelite_yaml_configurations_download_cmip6_huaura_huaura_cmip6_download_configuration, cropsuitelite_yaml_configurations_crop_suite_datasets_huaura_0041667_huaura_high_resolution_preprocessing_configuration, cropsuitelite_yaml_configurations_general_config_huaura_huaura_simulation_configuration [INFERRED 0.95]
 - **Scientific Engine Boundary** — docs_adr_adr_004_cropsuite_port_adapter_cropsuite_port_and_adapter, docs_architecture_cropsuite_integration_icropsuitabilityengine, docs_architecture_cropsuite_integration_cropsuiteadapter, docs_implementation_poc_preservation_cropsuitelite_poc_preservation_contract [INFERRED 0.95]
 
-## Communities (179 total, 31 thin omitted)
+## Communities (181 total, 30 thin omitted)
 
 ### Community 0 - "farm_management/application/service.py"
 Cohesion: 0.10
 Nodes (42): CreateParcel, CreateProject, Commands expressing Farm Management use-case intent., ReviseParcelGeometry, Farm Management application layer., GetParcel, GetProject, ListParcels (+34 more)
 
 ### Community 1 - "run_cropsuitelite.py"
-Cohesion: 0.07
-Nodes (29): change_otherst_parameters(), change_st1_parameter(), create_crop_parameters(), create_crop_suite_configuration_file(), find_solution_type(), main(), modify_extent(), modify_general_files() (+21 more)
+Cohesion: 0.06
+Nodes (33): change_otherst_parameters(), change_st1_parameter(), create_crop_parameters(), create_crop_suite_configuration_file(), find_solution_type(), main(), modify_extent(), modify_general_files() (+25 more)
 
 ### Community 2 - "NexGenPreProcessing"
 Cohesion: 0.07
@@ -210,7 +212,7 @@ Nodes (43): Africa Processing Profile, Soil DEM and Land-Sea Layer Plan, Africa 
 
 ### Community 4 - "check_files.py"
 Cohesion: 0.09
-Nodes (38): calculate_area(), check_all_inputs(), check_climate_data(), check_soil(), check_within_one(), get_geotiff_datatype(), get_geotiff_extent(), get_geotiff_resolution() (+30 more)
+Nodes (40): calculate_area(), check_all_inputs(), check_climate_data(), check_soil(), check_within_one(), get_geotiff_datatype(), get_geotiff_extent(), get_geotiff_resolution() (+32 more)
 
 ### Community 5 - "DomainValidationError"
 Cohesion: 0.09
@@ -229,48 +231,48 @@ Cohesion: 0.10
 Nodes (22): main(), Public CLI for crop catalog discovery and selected-crop parcel evaluations., cell_areas(), compare_crops(), input_fingerprints(), list_crops(), load_geometry(), Isolated, selected-crop evaluations and area-weighted parcel comparisons. The… (+14 more)
 
 ### Community 9 - "InMemoryEvaluationRepository"
-Cohesion: 0.07
-Nodes (57): ExecuteEvaluation, Request synchronous execution of one already-persisted evaluation., AgroclimaticEvaluationExecutionService, Execute requested crops and summarize them through Application-owned ports., AgroclimaticEvaluationWorker, Discover queued IDs and delegate all execution semantics to Application., InMemoryEvaluationRepository, UUID (+49 more)
+Cohesion: 0.06
+Nodes (56): ArgumentParser, Fail one operator-confirmed orphaned active evaluation., RecoverEvaluation, AgroclimaticEvaluationRecoveryService, Mark an operator-confirmed active orphan as failed without retrying it., AgroclimaticEvaluationWorker, Discover queued IDs and delegate all execution semantics to Application., InMemoryEvaluationRepository (+48 more)
 
-### Community 10 - "data_tools.py"
-Cohesion: 0.14
-Nodes (26): Combines climate suitability with soil/terrain data to calculate final crop…, Interpolates or retrieves downscaled climate data (precipitation and…, extract_domain_from_global_3draster(), extract_domain_from_global_raster(), get_cpu_ram(), get_resolution_array(), get_shape_of_raster(), interpolate_nanmask() (+18 more)
+### Community 10 - "CropSuite.py"
+Cohesion: 0.13
+Nodes (30): # NOTE: self.extent is modified here to align with grid, Combines climate suitability with soil/terrain data to calculate final crop…, Interpolates or retrieves downscaled climate data (precipitation and…, extract_domain_from_global_3draster(), extract_domain_from_global_raster(), fill_nan_nearest(), get_cpu_ram(), get_resolution_array() (+22 more)
 
 ### Community 11 - "DownloadCMIP6Data"
 Cohesion: 0.09
 Nodes (17): DownloadCMIP6Data, get_individual_file(), main(), ProcessTools, Path, Save a dataset to a NetCDF file with appropriate encoding. Parameters…, Downloader for CMIP6 daily GCM data., List of all (gcm, ssp, var, year) combinations. (+9 more)
 
 ### Community 12 - "agroclimatic_evaluation/application/service.py"
-Cohesion: 0.14
-Nodes (22): FinalizedCommonSupport, FinalizedCommonSupportStatus, FinalizedComparableCrop, FinalizedCropOutcome, FinalizedCropOutcomeStatus, FinalizedEvaluationResult, FinalizedEvaluationResultReader, FinalizedScientificTrace (+14 more)
+Cohesion: 0.19
+Nodes (13): Commands expressing Agroclimatic Evaluation use-case intent., FinalizedCropOutcome, FinalizedCropOutcomeStatus, FinalizedScientificTrace, FinalizedSuitabilitySummary, StrEnum, Stable contracts deliberately published to other bounded contexts., Explicit fail-only recovery for abandoned evaluation executions. (+5 more)
 
 ### Community 13 - "climate_suitability_main_xarray.py"
 Cohesion: 0.10
 Nodes (31): climate_suitability_xarray(), compute_suitability(), process_index(), find_max_sum_new(), get_id_list_start(), get_lethal_max_precipitation(), get_lethal_min_precipitation_duration(), get_photoperiod_params() (+23 more)
 
 ### Community 14 - "CropSuiteLite"
-Cohesion: 0.13
-Nodes (11): CropSuiteLite, Loads crop parameterization files and interpolation formulas., Calculates climate suitability based on temperature and precipitation.…, Merges tiled outputs into a single raster for the entire region. Parameters…, Executes the full CropSuiteLite pipeline. Steps: 1. Downscale climate data. 2.…, Main controller for the CropSuiteLite crop suitability modeling framework. This…, Calculates grid tiling based on available RAM to prevent memory overflow.…, Private subprocess entry point; each invocation has its own working directory. (+3 more)
+Cohesion: 0.14
+Nodes (10): CropSuiteLite, Loads crop parameterization files and interpolation formulas., Merges tiled outputs into a single raster for the entire region. Parameters…, Executes the full CropSuiteLite pipeline. Steps: 1. Downscale climate data. 2.…, Main controller for the CropSuiteLite crop suitability modeling framework. This…, Calculates grid tiling based on available RAM to prevent memory overflow.…, Private subprocess entry point; each invocation has its own working directory., counts() (+2 more)
 
-### Community 15 - "CropSuiteAdapter"
-Cohesion: 0.21
-Nodes (26): CropSuiteAdapter, Map a VIA snapshot to the preserved blocking CropSuiteLite capability., _adapter(), Any, parametrize, Path, Fast contract tests for the CropSuiteLite infrastructure boundary., _report() (+18 more)
+### Community 15 - "cropsuite_adapter.py"
+Cohesion: 0.05
+Nodes (94): ExecuteEvaluation, Request synchronous execution of one already-persisted evaluation., AgroclimaticEvaluationExecutionService, Exception, Execute requested crops and summarize them through Application-owned ports., CropExecutionStatus, CropSuitabilityExecutionError, CropSuitabilityRequest (+86 more)
 
 ### Community 16 - "climate_suitability_main.py"
 Cohesion: 0.09
-Nodes (31): calculate_average_sunshine(), calculate_day_length(), climate_suitability(), climsuit_new(), process_index(), find_max_sum_new(), get_lethal_max_precipitation(), get_lethal_min_precipitation_duration() (+23 more)
+Nodes (32): Calculates climate suitability based on temperature and precipitation.…, calculate_average_sunshine(), calculate_day_length(), climate_suitability(), climsuit_new(), process_index(), find_max_sum_new(), get_lethal_max_precipitation() (+24 more)
 
-### Community 17 - "read_plant_params.py"
-Cohesion: 0.15
-Nodes (10): get_formula(), get_id_list_start(), get_plant_param_interp_forms_dict(), print_crop_param_output(), print_sections(), Prints the keys of a given dictionary as a list of sections or items. Args:…, Given two arrays of numerical values x_vals and y_vals representing data…, Prints the number of crop parameterizations found and the keys of a given… (+2 more)
+### Community 17 - "process_precday_interp"
+Cohesion: 0.22
+Nodes (4): process_precday_interp(), Resample mm/day without mixing missing coverage into coastal rainfall. Missing…, Missing source coverage must neither dilute rainfall nor gain rainfall., PrecipitationUnitsTest
 
 ### Community 18 - "CoverageMeasurement"
-Cohesion: 0.17
-Nodes (22): CheckDatasetVersionCoverage, CoverageClassification, CoverageCompatibilityFailure, CoverageMeasurement, StrEnum, Structural metadata prevented a meaningful spatial measurement., Extent-based relationship between a dataset version and a parcel., Successful, CRS-aware area measurement returned by a spatial port. (+14 more)
+Cohesion: 0.14
+Nodes (23): CheckDatasetVersionCoverage, CoverageClassification, CoverageCompatibilityFailure, CoverageMeasurement, StrEnum, Structural metadata prevented a meaningful spatial measurement., Extent-based relationship between a dataset version and a parcel., Successful, CRS-aware area measurement returned by a spatial port. (+15 more)
 
-### Community 19 - "ScientificArtifactStore"
-Cohesion: 0.33
-Nodes (6): _is_within(), Path, Protocol, Publish immutable scientific files behind opaque logical references., ScientificArtifactStore, ComparisonRunner
+### Community 19 - ".__init__"
+Cohesion: 0.67
+Nodes (3): _is_within(), Path, ComparisonRunner
 
 ### Community 20 - "test_farm_management_postgresql.py"
 Cohesion: 0.21
@@ -284,9 +286,9 @@ Nodes (15): VIA architecture guardrails, ICropSuitabilityEngine application port
 Cohesion: 0.15
 Nodes (15): Durable Farm Management persistence, Polygon and MultiPolygon round-trip preservation, Infrastructure-only persistence mapping, PostGIS MULTIPOLYGON SRID 4326 storage, PostgreSQL/PostGIS Farm Management persistence decision, Database configuration and Alembic migrations, Farm Management persistence, PostGIS geometry storage contract (+7 more)
 
-### Community 23 - "CropSuite.py"
-Cohesion: 0.15
-Nodes (20): # NOTE: self.extent is modified here to align with grid, calculate_suitabilities(), compute_combinations(), crop_rotation(), njit, get_geotiff_extent(), ndarray, Get the spatial extent (bounding box) of a GeoTIFF file. Args: file_path (str):… (+12 more)
+### Community 23 - "test_decision_support.py"
+Cohesion: 0.19
+Nodes (19): FinalizedCommonSupport, FinalizedCommonSupportStatus, FinalizedComparableCrop, FinalizedEvaluationResult, GetFinalizedEvaluationResult, _common_support(), _evaluate(), _FailIfAppliedPolicy (+11 more)
 
 ### Community 24 - "Architecture and Backend for CropSuiteLite Huaura v2"
 Cohesion: 0.18
@@ -296,13 +298,13 @@ Nodes (11): Common-Support Ranking, ADR-002 Layered Bounded Contexts, ADR-003 Co
 Cohesion: 0.18
 Nodes (12): Huaura Environmental Correction, Nodata Preservation, Huaura Precipitation Validation, process_precday_interp, compute_climate_suitability, Existing Output Cache Reuse, Huaura Precipitation Unit Contract, Tenths-of-mm Precipitation Encoding (+4 more)
 
-### Community 26 - "FilesystemScientificArtifactStore"
-Cohesion: 0.05
-Nodes (73): ArgumentParser, _environment_float(), _environment_integer(), _optional_path(), Path, Environment-backed configuration for the VIA application host., Settings for the PostgreSQL polling worker process., WorkerSettings (+65 more)
+### Community 26 - "scientific_artifact_store.py"
+Cohesion: 0.14
+Nodes (20): _file_identity(), _is_within(), PublishedScientificArtifact, Path, Protocol, RuntimeError, Durable filesystem storage for scientific artifacts., Base error for durable scientific artifact storage failures. (+12 more)
 
 ### Community 27 - "test_architecture.py"
-Cohesion: 0.18
-Nodes (11): _imported_modules(), Path, Lightweight dependency checks for the modular-monolith foundation., test_agroclimatic_evaluation_does_not_import_other_contexts(), test_application_packages_do_not_import_outward_layers(), test_context_interfaces_do_not_import_infrastructure(), test_domain_packages_do_not_import_outward_layers(), test_environmental_information_does_not_import_other_contexts() (+3 more)
+Cohesion: 0.15
+Nodes (14): _imported_modules(), Path, Lightweight dependency checks for the modular-monolith foundation., test_agroclimatic_evaluation_does_not_import_other_contexts(), test_application_packages_do_not_import_outward_layers(), test_context_interfaces_do_not_import_infrastructure(), test_decision_support_application_uses_only_evaluation_public_contract(), test_decision_support_domain_does_not_depend_on_agroclimatic_evaluation() (+6 more)
 
 ### Community 28 - "Farm Management schema ownership"
 Cohesion: 0.20
@@ -317,8 +319,8 @@ Cohesion: 0.46
 Nodes (8): Multicrop Parcel Evaluation, run_evaluation Service, ADR-004 CropSuiteLite Port and Adapter, CropSuiteLite isolation boundary, CropSuiteAdapter, CropSuiteLite Integration Boundary, ICropSuitabilityEngine, On-demand execution increment
 
 ### Community 31 - "test_environmental_coverage.py"
-Cohesion: 0.18
-Nodes (8): calculate_slope(), process_tempday_interp(), covered_gradient(), Spatial operations that preserve missing coverage instead of creating zeros., Central differences inside coverage, one-sided at its boundary. An axis with no…, Temporarily nearest-fill gaps, resample, then restore the coverage mask., resample_valid(), EnvironmentalCoverageTest
+Cohesion: 0.09
+Nodes (24): process_day_climsuit_memopt(), process_day_concfut(), Processes climate suitability data for a specific day and saves the results to…, calculate_slope(), process_tempday_interp(), get_formula(), get_id_list_start(), get_plant_param_interp_forms_dict() (+16 more)
 
 ### Community 32 - "ADR-011: PostgreSQL/PostGIS persistence for Farm Management"
 Cohesion: 0.29
@@ -336,13 +338,9 @@ Nodes (8): Architectural alignment, Slice exclusions and authorization dependenc
 Cohesion: 0.14
 Nodes (14): Domain dependency rule, Background worker execution, FastAPI, Layered modular monolith, Python, Python and FastAPI backend decision, Inward dependency direction, Open backend modeling decisions (+6 more)
 
-### Community 36 - "write_to_netcdf"
-Cohesion: 0.26
-Nodes (5): process_precday_interp(), Resample mm/day without mixing missing coverage into coastal rainfall. Missing…, write_to_netcdf(), PrecipitationCoastTest, Missing source coverage must neither dilute rainfall nor gain rainfall.
-
 ### Community 37 - "execution.py"
-Cohesion: 0.12
-Nodes (33): _comparison_request(), Synchronous application orchestration for persisted evaluations., _to_comparable_crop(), _to_outcome(), CropComparisonInput, One durable crop suitability raster offered to scientific comparison., Scientific artifact roles understood by VIA., ScientificArtifactRole (+25 more)
+Cohesion: 0.13
+Nodes (31): _comparison_request(), Synchronous application orchestration for persisted evaluations., _to_outcome(), Portable grid identity needed to verify comparable scientific rasters., ScientificArtifactGrid, CropOutcomeResult, Transport-neutral Agroclimatic Evaluation results., Agroclimatic Evaluation domain layer. (+23 more)
 
 ### Community 38 - "Project"
 Cohesion: 0.13
@@ -357,8 +355,8 @@ Cohesion: 0.40
 Nodes (4): Answer, Outcome, Q: PostgreSQL Farm Management repositories, Source Nodes
 
 ### Community 41 - "agroclimatic_evaluation/interfaces/http.py"
-Cohesion: 0.19
-Nodes (18): CommonSupportResponse, ComparableCropResponse, CropEvidenceResponse, CropOutcomeResponse, EvaluationEvidenceResponse, EvaluationResponse, EvaluationResultResponse, EvaluationStatusResponse (+10 more)
+Cohesion: 0.17
+Nodes (21): EvaluationStatus, StrEnum, Architecture-approved lifecycle vocabulary., CommonSupportResponse, ComparableCropResponse, CropEvidenceResponse, CropOutcomeResponse, EvaluationEvidenceResponse (+13 more)
 
 ### Community 42 - "ADR-012: PostgreSQL/PostGIS persistence for Environmental Information"
 Cohesion: 0.12
@@ -368,9 +366,9 @@ Nodes (18): ADR-012: PostgreSQL/PostGIS persistence for Environmental Informatio
 Cohesion: 0.40
 Nodes (5): PostGIS PostgreSQL 16-3.5 image, PostGIS service, VIA PostGIS persistent data volume, VIA PostgreSQL environment configuration, PostgreSQL, PostGIS, SQLAlchemy, GeoAlchemy2, psycopg, and Alembic
 
-### Community 44 - "cropsuite_adapter.py"
-Cohesion: 0.18
-Nodes (30): InvalidEngineOutputError, Raised when the engine report does not satisfy the expected PoC contract., Current PoC parcel summary for the crop-suitability output., Portable grid identity needed to verify comparable scientific rasters., Durable opaque reference to one verified scientific artifact., An engine-reported failure, distinct from no coverage and a zero score., Trace metadata the current PoC can supply without invented versions., ScientificArtifactDescriptor (+22 more)
+### Community 44 - "environmental_information/interfaces/http.py"
+Cohesion: 0.12
+Nodes (25): CheckCoverageBody, CoverageGeometryBody, create_router(), check_dataset_version_coverage(), create_dataset(), create_dataset_version(), get_dataset(), get_dataset_version() (+17 more)
 
 ### Community 45 - "Optimistic parcel revision transaction"
 Cohesion: 0.50
@@ -420,33 +418,41 @@ Nodes (3): Graphify, Honest Audit Trail, Knowledge Graph Pipeline
 Cohesion: 0.67
 Nodes (3): Atlas A Logo, Atlas Branding, Stylized Green Letter A
 
-### Community 63 - "EvaluationStatus"
-Cohesion: 0.10
-Nodes (30): Commands expressing Agroclimatic Evaluation use-case intent., Fail one operator-confirmed orphaned active evaluation., RecoverEvaluation, AgroclimaticEvaluationRecoveryService, Explicit fail-only recovery for abandoned evaluation executions., Mark an operator-confirmed active orphan as failed without retrying it., CropOutcomeResult, EvaluationResult (+22 more)
+### Community 63 - "AgroclimaticEvaluationService"
+Cohesion: 0.15
+Nodes (15): RequestEvaluation, ListEvaluations, EvaluationResult, ParcelSnapshotResult, AgroclimaticEvaluationService, RuntimeError, Raised when an evaluation identity already exists., Create and query durable immutable evaluation requests. (+7 more)
 
 ### Community 64 - ".from_geojson"
 Cohesion: 0.17
 Nodes (18): _parse_multi_polygon(), _parse_polygon(), _parse_position(), _parse_ring(), Any, LinearRing, MultiPolygonCoordinates, PolygonCoordinates (+10 more)
 
 ### Community 65 - "SpatialExtent"
-Cohesion: 0.12
-Nodes (25): A rectangular extent expressed in the dataset version's CRS., SpatialExtent, Read and validate the test-only database settings before any DB operation., require_test_database_url(), clean_tables(), database(), _database_url(), _multi_polygon() (+17 more)
+Cohesion: 0.16
+Nodes (19): A rectangular extent expressed in the dataset version's CRS., SpatialExtent, clean_tables(), database(), _database_url(), _multi_polygon(), _polygon(), Engine (+11 more)
 
 ### Community 67 - "DomainValidationError"
-Cohesion: 0.17
-Nodes (18): CoverageGeometry, _parse_multi_polygon(), _parse_polygon(), _parse_position(), _parse_ring(), Any, LinearRing, MultiPolygonCoordinates (+10 more)
+Cohesion: 0.15
+Nodes (22): CoverageComputation, CoverageGeometry, _parse_multi_polygon(), _parse_polygon(), _parse_position(), _parse_ring(), Any, LinearRing (+14 more)
+
+### Community 68 - "decision_support/application/service.py"
+Cohesion: 0.07
+Nodes (42): FinalizedEvaluationResultReader, Protocol, Public local interface for a future Decision Support consumer., Decision Support application layer., IDecisionPolicy, Application ports for deterministic Decision Support policies., Evaluate comparable evidence without changing its scientific values., EvaluateDecisionSupport (+34 more)
+
+### Community 69 - "test_agroclimatic_evaluation_api.py"
+Cohesion: 0.22
+Nodes (24): _app_with(), _body(), _completed_outcomes(), _evaluation(), _evaluation_with_comparison(), _outcome(), Any, FastAPI (+16 more)
 
 ### Community 73 - "EnvironmentalInformationService"
-Cohesion: 0.07
-Nodes (57): CreateDataset, CreateDatasetVersion, Commands expressing Environmental Information use-case intent., Environmental Information application layer., GetDataset, GetDatasetVersion, ListDatasets, ListDatasetVersions (+49 more)
+Cohesion: 0.10
+Nodes (36): CreateDataset, CreateDatasetVersion, Commands expressing Environmental Information use-case intent., Environmental Information application layer., Protocol, Measure an external geometry against a registered dataset extent., SpatialCoveragePort, GetDataset (+28 more)
 
-### Community 74 - "CropSuitabilityResult"
-Cohesion: 0.19
-Nodes (9): CropSuitabilityRequest, CropSuitabilityResult, ICropComparisonEngine, ICropSuitabilityEngine, Protocol, Compare durable crop outputs using the authoritative scientific engine., Evaluate one crop without exposing engine process or filesystem details., Transport-neutral input for evaluating one crop against an exact snapshot. (+1 more)
+### Community 74 - "ICropComparisonEngine"
+Cohesion: 0.33
+Nodes (5): ICropComparisonEngine, ICropSuitabilityEngine, Protocol, Compare durable crop outputs using the authoritative scientific engine., Evaluate one crop without exposing engine process or filesystem details.
 
-### Community 75 - "environmental_information/infrastructure/postgresql_repositories.py"
-Cohesion: 0.12
-Nodes (22): Domain errors raised by Environmental Information invariants., Environmental Information domain model., Framework-neutral spatial metadata value objects., Positive horizontal and vertical source-cell resolution., Validate the first-slice CRS contract and return its EPSG code., SpatialResolution, validate_crs(), _validate_text() (+14 more)
+### Community 75 - "main.py"
+Cohesion: 0.06
+Nodes (40): InvalidSpatialInputError, RuntimeError, ValueError, Application ports for Environmental Information spatial collaboration., Raised when supplied parcel geometry is not topologically usable., Raised when the configured spatial implementation cannot execute., SpatialCoverageUnavailableError, DatasetVersionConflictError (+32 more)
 
 ### Community 77 - "Q: ParcelVersion persistence"
 Cohesion: 0.40
@@ -457,16 +463,16 @@ Cohesion: 0.40
 Nodes (4): Answer, Outcome, Q: Domain-to-Infrastructure dependency violations, Source Nodes
 
 ### Community 135 - "DatasetVersion"
-Cohesion: 0.08
-Nodes (24): datetime, DatasetVersionConflictError, RuntimeError, Raised when a dataset version identifier has already been registered., Environmental Information domain layer., Dataset, DatasetVersion, Stable logical identity for a geoenvironmental dataset. (+16 more)
+Cohesion: 0.11
+Nodes (16): Domain errors raised by Environmental Information invariants., Environmental Information domain layer., Dataset, DatasetVersion, Environmental Information domain model., Stable logical identity for a geoenvironmental dataset., Immutable reproducibility metadata for one dataset release., _validate_text() (+8 more)
 
 ### Community 136 - "FarmManagementService"
 Cohesion: 0.17
 Nodes (11): ParcelResult, ParcelVersionResult, ProjectResult, Transport-neutral results returned by Farm Management use cases., FarmManagementService, InvalidCommandError, datetime, UUID (+3 more)
 
 ### Community 137 - "agroclimatic_evaluation/infrastructure/postgresql_repositories.py"
-Cohesion: 0.12
-Nodes (30): EvaluationConflictError, Raised when an evaluation identity already exists., Base, DeclarativeBase, SQLAlchemy metadata owned by Agroclimatic Evaluation Infrastructure., Declarative base for Agroclimatic Evaluation persistence records., CropOutcomeRecord, EvaluationCommonSupportRecord (+22 more)
+Cohesion: 0.15
+Nodes (28): Base, DeclarativeBase, SQLAlchemy metadata owned by Agroclimatic Evaluation Infrastructure., Declarative base for Agroclimatic Evaluation persistence records., CropOutcomeRecord, EvaluationCommonSupportRecord, EvaluationComparableCropRecord, EvaluationCropRecord (+20 more)
 
 ### Community 138 - "Environmental Information coverage and compatibility"
 Cohesion: 0.29
@@ -513,48 +519,48 @@ Cohesion: 0.20
 Nodes (9): ADR-006 Scientific Traceability, ADR-014: PostgreSQL/PostGIS persistence for Agroclimatic Evaluation, Consequences, Context, Decision, Source, Status, Immutable ParcelSnapshot (+1 more)
 
 ### Community 150 - "create_router"
-Cohesion: 0.15
-Nodes (19): ParcelSnapshotInput, Transport-neutral parcel state supplied by an authorized caller., RequestEvaluation, GetEvaluation, GetEvaluationEvidence, ListEvaluations, Queries supported by Agroclimatic Evaluation., create_router() (+11 more)
+Cohesion: 0.16
+Nodes (17): ParcelSnapshotInput, Transport-neutral parcel state supplied by an authorized caller., GetEvaluation, GetEvaluationEvidence, GetEvaluationResult, Queries supported by Agroclimatic Evaluation., create_router(), get_evaluation() (+9 more)
 
 ### Community 151 - "test_agroclimatic_evaluation_domain.py"
 Cohesion: 0.36
 Nodes (9): _evaluation(), _polygon(), parametrize, Focused domain tests for immutable evaluation requests., _snapshot(), test_empty_or_duplicate_requested_crops_are_rejected(), test_parcel_snapshot_is_deeply_immutable_and_detached_from_input(), test_polygon_and_multipolygon_snapshot_geometry_are_supported() (+1 more)
 
-### Community 152 - "test_environmental_information_api.py"
-Cohesion: 0.27
-Nodes (14): _dataset_body(), Any, Response, End-to-end API tests for Environmental Information., _request(), _test_app(), test_dataset_and_version_lifecycle(), scenario() (+6 more)
+### Community 152 - "CropSuiteComparisonAdapter"
+Cohesion: 0.30
+Nodes (17): CropSuiteComparisonAdapter, Compare persisted CropSuiteLite rasters on common valid support., _artifact(), Any, Path, _report(), _request(), _snapshot() (+9 more)
 
 ### Community 154 - "DomainValidationError"
-Cohesion: 0.10
-Nodes (29): _to_common_support(), CommonSupport, CommonSupportStatus, ComparableCrop, StrEnum, Evaluation-level scientific common-support result., One crop ranked on the exact common valid spatial support., Validate deterministic scientific ranking semantics. (+21 more)
+Cohesion: 0.11
+Nodes (18): _to_common_support(), CommonSupport, CommonSupportStatus, StrEnum, Evaluation-level scientific common-support result., Validate deterministic scientific ranking semantics., Spatial support shared by the usable crop suitability rasters., validate_comparable_crops() (+10 more)
 
 ### Community 155 - "health.py"
 Cohesion: 0.40
 Nodes (4): health(), Host-level health endpoint., Report that the API process is ready to receive requests., get
 
 ### Community 157 - "Evaluation"
-Cohesion: 0.09
-Nodes (12): Exception, InvalidEvaluationTransitionError, RuntimeError, Raised when an Evaluation lifecycle transition is not allowed., Evaluation, An immutable multicrop evaluation and its scientific outcomes., EvaluationRepository, Protocol (+4 more)
+Cohesion: 0.08
+Nodes (12): EvaluationConflictError, RuntimeError, Raised when an evaluation identity already exists., Evaluation, An immutable multicrop evaluation and its scientific outcomes., EvaluationRepository, Protocol, UUID (+4 more)
 
 ### Community 158 - "agroclimatic_evaluation/application/__init__.py"
-Cohesion: 0.23
+Cohesion: 0.21
 Nodes (14): Agroclimatic Evaluation application layer., _availability(), CommonSupportReadResult, ComparableCropReadResult, CropEvidenceResult, EvaluationEvidenceResult, EvaluationReadResult, EvaluationResultAvailability (+6 more)
 
-### Community 159 - "nc_tools.py"
-Cohesion: 0.22
-Nodes (12): create_cog_from_geotiff(), geotiff_to_smallest_datatype(), Convert image to COG., merge_outputs_no_overlap(), get_netcdf_extent(), merge_netcdf_files(), downscaled_files: list of netcdf files overlap: In Degree extent: [North, Left,…, Get the spatial extent (min and max) of the latitude and longitude in a NetCDF… (+4 more)
+### Community 159 - "merge_geotiff.py"
+Cohesion: 0.43
+Nodes (6): create_cog_from_geotiff(), geotiff_to_smallest_datatype(), Convert image to COG., merge_outputs_no_overlap(), merge_netcdf_files(), Merge multiple NetCDF files based on latitude and longitude coordinates…
 
-### Community 160 - "environmental_information/application/ports.py"
-Cohesion: 0.13
-Nodes (13): InvalidSpatialInputError, CoverageComputation, Protocol, RuntimeError, ValueError, Application ports for Environmental Information spatial collaboration., Raised when supplied parcel geometry is not topologically usable., Raised when the configured spatial implementation cannot execute. (+5 more)
+### Community 160 - "ComparableCrop"
+Cohesion: 0.24
+Nodes (15): _to_comparable_crop(), ComparableCrop, One crop ranked on the exact common valid spatial support., _comparable_support(), parametrize, Domain tests for durable comparable crop results., _snapshot(), _summarizing() (+7 more)
 
-### Community 161 - "test_database_test_support.py"
-Cohesion: 0.22
-Nodes (14): ValueError, Safety guard shared by destructive PostgreSQL/PostGIS integration tests., Raised before destructive tests target a database that is not explicitly safe., Return a safe integration-test URL without ever including it in errors., UnsafeTestDatabaseError, validate_test_database_url(), parametrize, Focused tests for destructive integration-database safety. (+6 more)
+### Community 161 - "test_environmental_information_postgresql.py"
+Cohesion: 0.12
+Nodes (28): ValueError, Safety guard shared by destructive PostgreSQL/PostGIS integration tests., Raised before destructive tests target a database that is not explicitly safe., Return a safe integration-test URL without ever including it in errors., Read and validate the test-only database settings before any DB operation., require_test_database_url(), UnsafeTestDatabaseError, validate_test_database_url() (+20 more)
 
-### Community 162 - "test_agroclimatic_evaluation_api.py"
-Cohesion: 0.08
-Nodes (48): Settings needed by the current backend composition root., Settings, _app_with(), _body(), _completed_outcomes(), _evaluation(), _evaluation_with_comparison(), _outcome() (+40 more)
+### Community 162 - "Settings"
+Cohesion: 0.06
+Nodes (47): _environment_float(), _environment_integer(), _optional_path(), Path, Environment-backed configuration for the VIA application host., Settings needed by the current backend composition root., Settings for the PostgreSQL polling worker process., Settings (+39 more)
 
 ### Community 163 - "test_agroclimatic_evaluation_queries.py"
 Cohesion: 0.46
@@ -577,28 +583,36 @@ Cohesion: 0.19
 Nodes (29): PostgreSQLEvaluationRepository, SessionFactory, Durable adapter for immutable Evaluation aggregates., clean_evaluations(), _common_support(), _comparable_crops(), database(), _database_url() (+21 more)
 
 ### Community 170 - "crop_suitability_main.py"
-Cohesion: 0.13
-Nodes (23): aggregate_soil_raster_lst(), calcification_map(), cropsuitability(), get_soil_data(), get_suitability_val_dict(), get_texture_class(), get_valid_dtype(), getTable() (+15 more)
+Cohesion: 0.09
+Nodes (33): calculate_suitabilities(), compute_combinations(), crop_rotation(), njit, aggregate_soil_raster_lst(), calcification_map(), cropsuitability(), get_soil_data() (+25 more)
 
-### Community 171 - "main.py"
-Cohesion: 0.10
-Nodes (28): Environmental Information infrastructure layer., PostGISCoverageCalculator, SessionFactory, Compare a supplied parcel geometry with a stored native-CRS extent., PostgreSQLDatasetRepository, PostgreSQLDatasetVersionRepository, SessionFactory, create_database() (+20 more)
+### Community 171 - "FilesystemScientificArtifactStore"
+Cohesion: 0.30
+Nodes (14): FilesystemScientificArtifactStore, Filesystem-backed immutable artifact store., parametrize, Path, test_publish_creates_durable_artifact_with_opaque_reference(), test_publish_is_idempotent_for_identical_content(), test_publish_rejects_content_that_does_not_match_expected_checksum(), test_publish_rejects_different_content_for_existing_reference() (+6 more)
 
 ### Community 174 - "agroclimatic_evaluation/application/ports.py"
-Cohesion: 0.15
-Nodes (27): CommonSupportResult, CommonSupportStatus, ComparableCropResult, CropComparisonExecutionError, CropComparisonRequest, CropComparisonResult, InvalidComparisonOutputError, Application-owned boundary for one crop suitability evaluation. (+19 more)
+Cohesion: 0.14
+Nodes (16): CommonSupportResult, ComparableCropResult, CropComparisonEngineError, CropComparisonExecutionError, CropComparisonRequest, CropComparisonResult, CropSuitabilityEngineError, RuntimeError (+8 more)
 
 ### Community 175 - "Q: Continue the currently uncommitted Agroclimatic Evaluation Query/Read API increment."
 Cohesion: 0.40
 Nodes (4): Answer, Outcome, Q: Continue the currently uncommitted Agroclimatic Evaluation Query/Read API increment., Source Nodes
 
-### Community 176 - "CropSuitabilityExecutionError"
-Cohesion: 0.19
-Nodes (10): CropComparisonEngineError, CropSuitabilityEngineError, CropSuitabilityExecutionError, RuntimeError, Base error for the scientific crop-comparison boundary., Base error for failures to invoke or understand the engine boundary., Raised when the existing engine service cannot produce a report., _is_within() (+2 more)
+### Community 176 - "ResourceNotFoundError"
+Cohesion: 0.22
+Nodes (6): EvaluationStatusResult, datetime, LookupError, UUID, Raised when a requested evaluation does not exist., ResourceNotFoundError
 
-### Community 178 - "CropExecutionStatus"
-Cohesion: 0.29
-Nodes (6): CropExecutionStatus, StrEnum, Scientific outcomes reported independently of Evaluation lifecycle state., scientific, Opt-in smoke test for the real CropSuiteLite adapter boundary., test_real_cropsuite_adapter_smoke()
+### Community 177 - "agroclimatic_evaluation/infrastructure/__init__.py"
+Cohesion: 0.25
+Nodes (6): CropComparisonInput, One durable crop suitability raster offered to scientific comparison., Agroclimatic Evaluation infrastructure layer., scientific, Opt-in smoke test for the real CropSuiteLite comparison boundary., test_real_cropsuite_comparison_adapter_smoke()
+
+### Community 178 - "cropsuite_comparison_adapter.py"
+Cohesion: 0.26
+Nodes (19): CommonSupportStatus, InvalidComparisonOutputError, StrEnum, Scientific common-support outcome across evaluated crops., Raised when scientific comparison returns an invalid contract., Scientific artifact roles understood by VIA., ScientificArtifactRole, _fraction() (+11 more)
+
+### Community 180 - "test_environmental_information_domain.py"
+Cohesion: 0.36
+Nodes (7): parametrize, Unit tests for Environmental Information invariants., test_dataset_version_is_immutable(), test_extent_must_be_ordered(), test_invalid_dataset_version_metadata_is_rejected(), test_resolution_must_be_finite_and_positive(), _version()
 
 ## Ambiguous Edges - Review These
 - `Crop Code Catalog` → `Undefined Crop Code c32`  [AMBIGUOUS]
@@ -606,34 +620,34 @@ Nodes (6): CropExecutionStatus, StrEnum, Scientific outcomes reported independen
 
 ## Knowledge Gaps
 - **178 isolated node(s):** `via-backend`, `Status`, `Context`, `Decision`, `Consequences` (+173 more)
-  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 782 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
-- **31 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 805 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
+- **30 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Work-memory lessons
 
 **Preferred sources** — corroborated by past sessions; start here.
-- `Domain dependency rule` (5× useful, score=4.812582038)
-- `Application layer` (4× useful, score=3.847146267)
-- `EnvironmentalInformationService` (3× useful, score=2.907490214)
-- `ParcelGeometry` (3× useful, score=2.899897691)
-- `ParcelVersion` (3× useful, score=2.87577866)
-- `InMemoryParcelRepository` (3× useful, score=2.874502774)
-- `ParcelRepository` (3× useful, score=2.874502772)
-- `Settings` (2× useful, score=1.998335383) _(code changed — re-verify)_
-- `Farm Management schema ownership` (2× useful, score=1.958136354)
-- `CoverageGeometry` (2× useful, score=1.942051663)
+- `Domain dependency rule` (5× useful, score=4.693450858)
+- `Application layer` (4× useful, score=3.751913588)
+- `EnvironmentalInformationService` (3× useful, score=2.835517884)
+- `ParcelGeometry` (3× useful, score=2.828113307)
+- `ParcelVersion` (3× useful, score=2.804591321)
+- `InMemoryParcelRepository` (3× useful, score=2.803347018)
+- `ParcelRepository` (3× useful, score=2.803347017)
+- `EvaluationResult` (2× useful, score=1.955274885)
+- `Settings` (2× useful, score=1.948868371)
+- `Farm Management schema ownership` (2× useful, score=1.909664433)
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
 - **What is the exact relationship between `Crop Code Catalog` and `Undefined Crop Code c32`?**
   _Edge tagged AMBIGUOUS (relation: references) - confidence is low._
-- **Why does `create_app()` connect `main.py` to `farm_management/application/service.py`, `test_agroclimatic_evaluation_api.py`, `Parcel`, `PostgreSQLEvaluationRepository`, `DatasetVersion`, `InMemoryEvaluationRepository`, `EnvironmentalInformationService`, `FarmManagementService`, `agroclimatic_evaluation/application/service.py`, `Project`, `test_farm_management_postgresql.py`, `create_router`, `test_environmental_information_api.py`?**
-  _High betweenness centrality (0.047) - this node is a cross-community bridge._
-- **Why does `EnvironmentalInformationService` connect `EnvironmentalInformationService` to `environmental_information/application/ports.py`, `SpatialExtent`, `DomainValidationError`, `DatasetVersion`, `environmental_information/infrastructure/postgresql_repositories.py`, `main.py`, `CoverageMeasurement`?**
-  _High betweenness centrality (0.034) - this node is a cross-community bridge._
-- **Why does `AgroclimaticEvaluationService` connect `agroclimatic_evaluation/application/service.py` to `.from_geojson`, `test_agroclimatic_evaluation_api.py`, `test_agroclimatic_evaluation_queries.py`, `agroclimatic_evaluation/infrastructure/postgresql_repositories.py`, `agroclimatic_evaluation/interfaces/http.py`, `main.py`, `create_router`, `DomainValidationError`, `Evaluation`, `agroclimatic_evaluation/application/__init__.py`, `EvaluationStatus`?**
-  _High betweenness centrality (0.033) - this node is a cross-community bridge._
+- **Why does `create_app()` connect `main.py` to `farm_management/application/service.py`, `Settings`, `test_agroclimatic_evaluation_api.py`, `Parcel`, `PostgreSQLEvaluationRepository`, `DatasetVersion`, `InMemoryEvaluationRepository`, `EnvironmentalInformationService`, `FarmManagementService`, `environmental_information/interfaces/http.py`, `Project`, `test_farm_management_postgresql.py`, `create_router`, `AgroclimaticEvaluationService`?**
+  _High betweenness centrality (0.038) - this node is a cross-community bridge._
+- **Why does `AgroclimaticEvaluationService` connect `AgroclimaticEvaluationService` to `.from_geojson`, `test_agroclimatic_evaluation_queries.py`, `test_agroclimatic_evaluation_api.py`, `agroclimatic_evaluation/interfaces/http.py`, `main.py`, `agroclimatic_evaluation/application/service.py`, `ResourceNotFoundError`, `create_router`, `test_decision_support.py`, `DomainValidationError`, `Evaluation`, `agroclimatic_evaluation/application/__init__.py`?**
+  _High betweenness centrality (0.037) - this node is a cross-community bridge._
+- **Why does `EnvironmentalInformationService` connect `EnvironmentalInformationService` to `SpatialExtent`, `DomainValidationError`, `DatasetVersion`, `main.py`, `environmental_information/interfaces/http.py`, `CoverageMeasurement`?**
+  _High betweenness centrality (0.032) - this node is a cross-community bridge._
 - **Are the 26 inferred relationships involving `Evaluation` (e.g. with `AgroclimaticEvaluationExecutionService` and `_comparison_request()`) actually correct?**
   _`Evaluation` has 26 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 16 inferred relationships involving `DomainValidationError` (e.g. with `AgroclimaticEvaluationRecoveryService` and `AgroclimaticEvaluationService`) actually correct?**
