@@ -20,6 +20,15 @@ from via_backend.contexts.decision_support.application import (
     EvaluateDecisionSupport,
     IDecisionPolicy,
 )
+from via_backend.contexts.decision_support.application.queries import (
+    EvaluateConfiguredDecisionSupport,
+    ViabilityPolicySelection,
+    ViabilityPolicySelectionMode,
+)
+from via_backend.contexts.decision_support.application.workflow import (
+    ConfiguredDecisionSupportResult,
+    DecisionSupportWorkflow,
+)
 from via_backend.contexts.decision_support.domain import (
     CommonSupportEvidence,
     CommonSupportStatus,
@@ -33,6 +42,7 @@ from via_backend.contexts.decision_support.domain import (
     Viability,
     ViabilityPolicyConfiguration,
     ViabilityPolicyEvaluation,
+    ViabilityPolicySnapshot,
 )
 
 NOW = datetime(2026, 9, 14, 12, tzinfo=UTC)
@@ -69,8 +79,17 @@ class _RecordingPolicy:
 
 def _common_support(
     status: FinalizedCommonSupportStatus,
+    *,
+    eligible_crops: tuple[str, ...] | None = None,
 ) -> FinalizedCommonSupport:
     comparable = status is FinalizedCommonSupportStatus.COMPARABLE
+
+    comparable_eligible_crops = (
+        ("maize", "potato", "rice")
+        if eligible_crops is None
+        else eligible_crops
+    )
+
     return FinalizedCommonSupport(
         status=status,
         method="common-valid-cell arithmetic mean" if comparable else None,
@@ -78,7 +97,7 @@ def _common_support(
         parcel_area_m2=100.0,
         common_valid_area_m2=75.0 if comparable else 0.0,
         common_coverage_fraction=0.75 if comparable else 0.0,
-        eligible_crops=("maize", "potato", "rice") if comparable else (),
+        eligible_crops=comparable_eligible_crops if comparable else (),
         excluded_without_coverage=(),
     )
 
@@ -523,3 +542,172 @@ def test_valid_tied_ranking_is_accepted_without_reordering() -> None:
 
     assert evidence.comparable_crops == comparable_crops
     assert [crop.rank for crop in evidence.comparable_crops] == [1, 1, 3]
+
+class _DefaultPolicyProvider:
+    def __init__(self, policy: ViabilityPolicySnapshot) -> None:
+        self.policy = policy
+        self.calls = 0
+
+    def get_default_viability_policy(self) -> ViabilityPolicySnapshot:
+        self.calls += 1
+        return self.policy
+
+
+class _FailDefaultPolicyProvider:
+    def get_default_viability_policy(self) -> ViabilityPolicySnapshot:
+        raise AssertionError(
+            "Default policy provider must not be used for custom selection."
+        )
+
+
+def _policy_snapshot(
+    *,
+    reference: PolicyReference = POLICY,
+    configuration: ViabilityPolicyConfiguration = TEST_CONFIGURATION,
+) -> ViabilityPolicySnapshot:
+    return ViabilityPolicySnapshot(
+        reference=reference,
+        configuration=configuration,
+    )
+
+
+def test_default_policy_selection_rejects_custom_snapshot() -> None:
+    with pytest.raises(
+        ValueError,
+        match="Default policy selection",
+    ):
+        ViabilityPolicySelection(
+            mode=ViabilityPolicySelectionMode.DEFAULT,
+            custom_policy=_policy_snapshot(),
+        )
+
+
+def test_custom_policy_selection_requires_snapshot() -> None:
+    with pytest.raises(
+        ValueError,
+        match="requires an explicit policy snapshot",
+    ):
+        ViabilityPolicySelection(
+            mode=ViabilityPolicySelectionMode.CUSTOM,
+        )
+
+
+def test_default_workflow_uses_provider_policy_snapshot() -> None:
+    finalized = _finalized_result(
+        common_support=_common_support(
+            FinalizedCommonSupportStatus.COMPARABLE,
+            eligible_crops=("maize", "potato"),
+        ),
+        comparable_crops=(
+            FinalizedComparableCrop("maize", 35.0, 1),
+            FinalizedComparableCrop("potato", 75.0, 2),
+        ),
+    )
+    reader = _FinalizedResultReader(finalized)
+    snapshot = _policy_snapshot()
+    provider = _DefaultPolicyProvider(snapshot)
+
+    workflow = DecisionSupportWorkflow(
+        DecisionSupportService(reader),
+        provider,
+    )
+
+    result = workflow.evaluate(
+        EvaluateConfiguredDecisionSupport(
+            evaluation_id=finalized.evaluation_id,
+            policy_selection=ViabilityPolicySelection.default(),
+        )
+    )
+
+    assert isinstance(result, ConfiguredDecisionSupportResult)
+    assert result.selection_mode is ViabilityPolicySelectionMode.DEFAULT
+    assert result.policy == snapshot
+    assert provider.calls == 1
+    assert result.result.policy_applied is True
+    assert isinstance(
+        result.result.policy_evaluation,
+        ViabilityPolicyEvaluation,
+    )
+    assert result.result.policy_evaluation.policy == snapshot
+
+
+def test_custom_workflow_bypasses_default_provider() -> None:
+    finalized = _finalized_result(
+        common_support=_common_support(
+            FinalizedCommonSupportStatus.COMPARABLE,
+            eligible_crops=("maize", "potato"),
+        ),
+        comparable_crops=(
+            FinalizedComparableCrop("maize", 45.0, 1),
+            FinalizedComparableCrop("potato", 80.0, 2),
+        ),
+    )
+    reader = _FinalizedResultReader(finalized)
+
+    custom_snapshot = _policy_snapshot(
+        reference=PolicyReference(
+            identifier="user-custom-policy",
+            version="1",
+        ),
+        configuration=ViabilityPolicyConfiguration(
+            conditional_from=30.0,
+            viable_from=60.0,
+        ),
+    )
+
+    workflow = DecisionSupportWorkflow(
+        DecisionSupportService(reader),
+        _FailDefaultPolicyProvider(),
+    )
+
+    result = workflow.evaluate(
+        EvaluateConfiguredDecisionSupport(
+            evaluation_id=finalized.evaluation_id,
+            policy_selection=ViabilityPolicySelection.custom(
+                custom_snapshot
+            ),
+        )
+    )
+
+    assert result.selection_mode is ViabilityPolicySelectionMode.CUSTOM
+    assert result.policy == custom_snapshot
+    assert result.result.policy_applied is True
+    assert result.result.policy_evaluation is not None
+    assert result.result.policy_evaluation.policy == custom_snapshot
+    assert [
+        assessment.viability
+        for assessment in result.result.policy_evaluation.assessments
+    ] == [
+        Viability.CONDITIONAL,
+        Viability.VIABLE,
+    ]
+
+
+def test_configured_workflow_preserves_unavailable_evidence_semantics() -> None:
+    finalized = _finalized_result(
+        common_support=_common_support(
+            FinalizedCommonSupportStatus.NO_COMMON_COVERAGE
+        )
+    )
+    reader = _FinalizedResultReader(finalized)
+    snapshot = _policy_snapshot()
+
+    workflow = DecisionSupportWorkflow(
+        DecisionSupportService(reader),
+        _DefaultPolicyProvider(snapshot),
+    )
+
+    result = workflow.evaluate(
+        EvaluateConfiguredDecisionSupport(
+            evaluation_id=finalized.evaluation_id,
+            policy_selection=ViabilityPolicySelection.default(),
+        )
+    )
+
+    assert result.policy == snapshot
+    assert result.result.policy_applied is False
+    assert result.result.policy_evaluation is None
+    assert (
+        result.result.evidence.availability
+        is EvidenceAvailability.NO_COMMON_COVERAGE
+    )
