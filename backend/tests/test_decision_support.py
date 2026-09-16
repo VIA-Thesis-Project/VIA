@@ -19,6 +19,16 @@ from via_backend.contexts.decision_support.application import (
     DecisionSupportService,
     EvaluateDecisionSupport,
     IDecisionPolicy,
+    InvalidViabilityPolicyRevisionError,
+    RegisterViabilityPolicyVersion,
+    ReviseViabilityPolicyVersion,
+    ViabilityPolicyLifecycleService,
+)
+from via_backend.contexts.decision_support.application.errors import (
+    ViabilityPolicyVersionNotFoundError,
+)
+from via_backend.contexts.decision_support.application.ports import (
+    IViabilityPolicyRepository,
 )
 from via_backend.contexts.decision_support.application.queries import (
     EvaluateConfiguredDecisionSupport,
@@ -53,6 +63,31 @@ TEST_CONFIGURATION = ViabilityPolicyConfiguration(
 )
 
 
+class _InMemoryViabilityPolicyRepository:
+    def __init__(self) -> None:
+        self._policies: dict[PolicyReference, ViabilityPolicySnapshot] = {}
+
+    def add(self, policy: ViabilityPolicySnapshot) -> None:
+        existing = self._policies.get(policy.reference)
+        if existing is not None and existing != policy:
+            raise AssertionError("Fake repository received a conflicting policy version.")
+        self._policies[policy.reference] = policy
+
+    def get(
+        self,
+        reference: PolicyReference,
+    ) -> ViabilityPolicySnapshot | None:
+        return self._policies.get(reference)
+
+
+def _policy_lifecycle() -> tuple[
+    ViabilityPolicyLifecycleService,
+    IViabilityPolicyRepository,
+]:
+    repository = _InMemoryViabilityPolicyRepository()
+    return ViabilityPolicyLifecycleService(repository), repository
+
+
 class _FinalizedResultReader:
     def __init__(self, result: FinalizedEvaluationResult) -> None:
         self.result = result
@@ -75,6 +110,129 @@ class _RecordingPolicy:
         self.evidence.append(evidence)
         return "policy-output-placeholder"
 
+
+def test_viability_policy_lifecycle_registers_initial_version() -> None:
+    lifecycle, repository = _policy_lifecycle()
+    reference = PolicyReference(identifier="test-policy", version="1")
+    configuration = ViabilityPolicyConfiguration(
+        conditional_from=35.0,
+        viable_from=65.0,
+    )
+
+    registered = lifecycle.register(
+        RegisterViabilityPolicyVersion(
+            reference=reference,
+            configuration=configuration,
+        )
+    )
+
+    assert registered == ViabilityPolicySnapshot(reference, configuration)
+    assert repository.get(reference) == registered
+
+
+def test_viability_policy_revision_preserves_identifier() -> None:
+    lifecycle, _ = _policy_lifecycle()
+    source = lifecycle.register(
+        RegisterViabilityPolicyVersion(
+            reference=PolicyReference(identifier="test-policy", version="1"),
+            configuration=ViabilityPolicyConfiguration(
+                conditional_from=35.0,
+                viable_from=65.0,
+            ),
+        )
+    )
+
+    revised = lifecycle.revise(
+        ReviseViabilityPolicyVersion(
+            source=source.reference,
+            new_version="2",
+            configuration=ViabilityPolicyConfiguration(
+                conditional_from=45.0,
+                viable_from=75.0,
+            ),
+        )
+    )
+
+    assert revised.reference == PolicyReference(
+        identifier=source.reference.identifier,
+        version="2",
+    )
+
+
+def test_viability_policy_revision_preserves_historical_source_snapshot() -> None:
+    lifecycle, repository = _policy_lifecycle()
+    source = lifecycle.register(
+        RegisterViabilityPolicyVersion(
+            reference=PolicyReference(identifier="test-policy", version="1"),
+            configuration=ViabilityPolicyConfiguration(
+                conditional_from=30.0,
+                viable_from=60.0,
+            ),
+        )
+    )
+
+    revised = lifecycle.revise(
+        ReviseViabilityPolicyVersion(
+            source=source.reference,
+            new_version="2",
+            configuration=ViabilityPolicyConfiguration(
+                conditional_from=50.0,
+                viable_from=80.0,
+            ),
+        )
+    )
+
+    assert repository.get(source.reference) == source
+    assert repository.get(revised.reference) == revised
+    assert source.configuration != revised.configuration
+
+
+def test_viability_policy_revision_rejects_missing_source() -> None:
+    lifecycle, _ = _policy_lifecycle()
+    source = PolicyReference(identifier="missing-policy", version="1")
+
+    with pytest.raises(
+        ViabilityPolicyVersionNotFoundError,
+        match="Cannot revise missing viability policy",
+    ):
+        lifecycle.revise(
+            ReviseViabilityPolicyVersion(
+                source=source,
+                new_version="2",
+                configuration=ViabilityPolicyConfiguration(
+                    conditional_from=40.0,
+                    viable_from=70.0,
+                ),
+            )
+        )
+
+
+def test_viability_policy_revision_rejects_same_version() -> None:
+    lifecycle, _ = _policy_lifecycle()
+    source = lifecycle.register(
+        RegisterViabilityPolicyVersion(
+            reference=PolicyReference(identifier="test-policy", version="1"),
+            configuration=ViabilityPolicyConfiguration(
+                conditional_from=35.0,
+                viable_from=65.0,
+            ),
+        )
+    )
+
+    with pytest.raises(
+        InvalidViabilityPolicyRevisionError,
+        match="distinct version",
+    ):
+        lifecycle.revise(
+            ReviseViabilityPolicyVersion(
+                source=source.reference,
+                new_version=source.reference.version,
+                configuration=ViabilityPolicyConfiguration(
+                    conditional_from=45.0,
+                    viable_from=75.0,
+                ),
+            )
+        )
 
 
 def _common_support(

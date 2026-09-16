@@ -16,6 +16,11 @@ from via_backend.contexts.decision_support.application.errors import (
     DefaultViabilityPolicyNotConfiguredError,
     ViabilityPolicyVersionNotFoundError,
 )
+from via_backend.contexts.decision_support.application.policy_lifecycle import (
+    RegisterViabilityPolicyVersion,
+    ReviseViabilityPolicyVersion,
+    ViabilityPolicyLifecycleService,
+)
 from via_backend.contexts.decision_support.domain import (
     PolicyReference,
     PolicyVersionConflictError,
@@ -175,6 +180,40 @@ def test_multiple_versions_of_same_policy_are_preserved(
 
     assert repository.get(first.reference) == first
     assert repository.get(second.reference) == second
+
+
+def test_policy_revision_preserves_source_and_revised_versions(
+    database: tuple[Engine, SessionFactory],
+) -> None:
+    _, sessions = database
+
+    repository = PostgreSQLViabilityPolicyRepository(sessions)
+    lifecycle = ViabilityPolicyLifecycleService(repository)
+    source = lifecycle.register(
+        RegisterViabilityPolicyVersion(
+            reference=PolicyReference(identifier="via-policy", version="1"),
+            configuration=ViabilityPolicyConfiguration(
+                conditional_from=32.0,
+                viable_from=62.0,
+            ),
+        )
+    )
+
+    revised = lifecycle.revise(
+        ReviseViabilityPolicyVersion(
+            source=source.reference,
+            new_version="2",
+            configuration=ViabilityPolicyConfiguration(
+                conditional_from=47.0,
+                viable_from=77.0,
+            ),
+        )
+    )
+
+    assert repository.get(source.reference) == source
+    assert repository.get(revised.reference) == revised
+    assert source.reference.version == "1"
+    assert revised.reference.version == "2"
 
 
 def test_missing_policy_version_returns_none(
