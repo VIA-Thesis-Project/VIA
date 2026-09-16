@@ -4,7 +4,14 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy import CheckConstraint, DateTime, Float, String, func
+from sqlalchemy import (
+    CheckConstraint,
+    DateTime,
+    Float,
+    ForeignKeyConstraint,
+    String,
+    func,
+)
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .database import Base
@@ -56,6 +63,45 @@ class ViabilityPolicyVersionRecord(Base):
         nullable=False,
     )
     created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
+    )
+
+class DefaultViabilityPolicyRecord(Base):
+    """Singleton pointer to the currently selected VIA default policy version."""
+
+    __tablename__ = "default_viability_policy"
+    __table_args__ = (
+        CheckConstraint(
+            "slot = 'default'",
+            name="default_policy_singleton_slot",
+        ),
+        ForeignKeyConstraint(
+            ["policy_identifier", "policy_version"],
+            [
+                "decision_support.viability_policy_versions.identifier",
+                "decision_support.viability_policy_versions.version",
+            ],
+            name="fk_default_policy_version",
+            ondelete="RESTRICT",
+        ),
+    )
+
+    slot: Mapped[str] = mapped_column(
+        String(32),
+        primary_key=True,
+        nullable=False,
+    )
+    policy_identifier: Mapped[str] = mapped_column(
+        String(120),
+        nullable=False,
+    )
+    policy_version: Mapped[str] = mapped_column(
+        String(64),
+        nullable=False,
+    )
+    selected_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
         nullable=False,

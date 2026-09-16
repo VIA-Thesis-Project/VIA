@@ -12,6 +12,10 @@ from alembic.config import Config
 from sqlalchemy import Engine, text
 
 from database_test_support import require_test_database_url
+from via_backend.contexts.decision_support.application.errors import (
+    DefaultViabilityPolicyNotConfiguredError,
+    ViabilityPolicyVersionNotFoundError,
+)
 from via_backend.contexts.decision_support.domain import (
     PolicyReference,
     PolicyVersionConflictError,
@@ -19,6 +23,7 @@ from via_backend.contexts.decision_support.domain import (
     ViabilityPolicySnapshot,
 )
 from via_backend.contexts.decision_support.infrastructure import (
+    PostgreSQLDefaultViabilityPolicyStore,
     PostgreSQLViabilityPolicyRepository,
 )
 from via_backend.infrastructure import SessionFactory, create_database
@@ -65,7 +70,8 @@ def clean_policy_versions(
     with engine.begin() as connection:
         connection.execute(
             text(
-                "TRUNCATE "
+                "TRUNCATE TABLE "
+                "decision_support.default_viability_policy, "
                 "decision_support.viability_policy_versions"
             )
         )
@@ -187,3 +193,99 @@ def test_missing_policy_version_returns_none(
         )
         is None
     )
+
+def test_default_provider_requires_configured_policy(
+    database: tuple[Engine, SessionFactory],
+) -> None:
+    _, sessions = database
+
+    store = PostgreSQLDefaultViabilityPolicyStore(sessions)
+
+    with pytest.raises(
+        DefaultViabilityPolicyNotConfiguredError,
+        match="No default viability policy",
+    ):
+        store.get_default_viability_policy()
+
+
+def test_default_policy_round_trips_exact_snapshot(
+    database: tuple[Engine, SessionFactory],
+) -> None:
+    _, sessions = database
+
+    repository = PostgreSQLViabilityPolicyRepository(sessions)
+    store = PostgreSQLDefaultViabilityPolicyStore(sessions)
+    policy = _snapshot()
+
+    repository.add(policy)
+    store.set_default_viability_policy(policy.reference)
+
+    assert store.get_default_viability_policy() == policy
+
+
+def test_default_pointer_rejects_missing_policy_version(
+    database: tuple[Engine, SessionFactory],
+) -> None:
+    _, sessions = database
+
+    store = PostgreSQLDefaultViabilityPolicyStore(sessions)
+
+    with pytest.raises(
+        ViabilityPolicyVersionNotFoundError,
+        match="Cannot select missing viability policy",
+    ):
+        store.set_default_viability_policy(
+            PolicyReference(
+                identifier="missing-policy",
+                version="1",
+            )
+        )
+
+
+def test_setting_same_default_is_idempotent(
+    database: tuple[Engine, SessionFactory],
+) -> None:
+    _, sessions = database
+
+    repository = PostgreSQLViabilityPolicyRepository(sessions)
+    store = PostgreSQLDefaultViabilityPolicyStore(sessions)
+    policy = _snapshot()
+
+    repository.add(policy)
+
+    store.set_default_viability_policy(policy.reference)
+    store.set_default_viability_policy(policy.reference)
+
+    assert store.get_default_viability_policy() == policy
+
+
+def test_switching_default_preserves_historical_policy_versions(
+    database: tuple[Engine, SessionFactory],
+) -> None:
+    _, sessions = database
+
+    repository = PostgreSQLViabilityPolicyRepository(sessions)
+    store = PostgreSQLDefaultViabilityPolicyStore(sessions)
+
+    first = _snapshot(
+        version="1",
+        conditional_from=40.0,
+        viable_from=70.0,
+    )
+    second = _snapshot(
+        version="2",
+        conditional_from=45.0,
+        viable_from=75.0,
+    )
+
+    repository.add(first)
+    repository.add(second)
+
+    store.set_default_viability_policy(first.reference)
+    assert store.get_default_viability_policy() == first
+
+    store.set_default_viability_policy(second.reference)
+
+    assert store.get_default_viability_policy() == second
+    assert repository.get(first.reference) == first
+    assert repository.get(second.reference) == second

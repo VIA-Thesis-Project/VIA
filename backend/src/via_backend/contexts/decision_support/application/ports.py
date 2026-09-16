@@ -39,3 +39,15 @@ class IViabilityPolicyRepository(Protocol):
         self,
         reference: PolicyReference,
     ) -> ViabilityPolicySnapshot | None: ...
+
+@runtime_checkable
+class IDefaultViabilityPolicyStore(
+    IDefaultViabilityPolicyProvider,
+    Protocol,
+):
+    """Read and change the current default viability-policy pointer."""
+
+    def set_default_viability_policy(
+        self,
+        reference: PolicyReference,
+    ) -> None: ...

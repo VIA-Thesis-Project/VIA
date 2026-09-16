@@ -2,17 +2,26 @@
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
+
 from sqlalchemy.exc import IntegrityError
 
 from via_backend.infrastructure.database import SessionFactory
 
+from ..application.errors import (
+    DefaultViabilityPolicyNotConfiguredError,
+    ViabilityPolicyVersionNotFoundError,
+)
 from ..domain.errors import PolicyVersionConflictError
 from ..domain.models import (
     PolicyReference,
     ViabilityPolicyConfiguration,
     ViabilityPolicySnapshot,
 )
-from .orm import ViabilityPolicyVersionRecord
+from .orm import (
+    DefaultViabilityPolicyRecord,
+    ViabilityPolicyVersionRecord,
+)
 
 
 class PostgreSQLViabilityPolicyRepository:
@@ -95,3 +104,88 @@ def _snapshot_from_record(
             viable_from=record.viable_from,
         ),
     )
+
+_DEFAULT_POLICY_SLOT = "default"
+
+
+class PostgreSQLDefaultViabilityPolicyStore:
+    """Persist and resolve the singleton VIA default-policy pointer."""
+
+    def __init__(self, sessions: SessionFactory) -> None:
+        self._sessions = sessions
+
+    def get_default_viability_policy(
+        self,
+    ) -> ViabilityPolicySnapshot:
+        with self._sessions() as session:
+            pointer = session.get(
+                DefaultViabilityPolicyRecord,
+                _DEFAULT_POLICY_SLOT,
+            )
+
+            if pointer is None:
+                raise DefaultViabilityPolicyNotConfiguredError(
+                    "No default viability policy is configured."
+                )
+
+            policy_record = session.get(
+                ViabilityPolicyVersionRecord,
+                (
+                    pointer.policy_identifier,
+                    pointer.policy_version,
+                ),
+            )
+
+            if policy_record is None:
+                raise RuntimeError(
+                    "Default viability-policy pointer references "
+                    "missing persisted policy data."
+                )
+
+            return _snapshot_from_record(policy_record)
+
+    def set_default_viability_policy(
+        self,
+        reference: PolicyReference,
+    ) -> None:
+        identity = (
+            reference.identifier,
+            reference.version,
+        )
+
+        with self._sessions.begin() as session:
+            policy_record = session.get(
+                ViabilityPolicyVersionRecord,
+                identity,
+            )
+
+            if policy_record is None:
+                raise ViabilityPolicyVersionNotFoundError(
+                    "Cannot select missing viability policy "
+                    f"{reference.identifier}:{reference.version}."
+                )
+
+            pointer = session.get(
+                DefaultViabilityPolicyRecord,
+                _DEFAULT_POLICY_SLOT,
+            )
+
+            if pointer is None:
+                session.add(
+                    DefaultViabilityPolicyRecord(
+                        slot=_DEFAULT_POLICY_SLOT,
+                        policy_identifier=reference.identifier,
+                        policy_version=reference.version,
+                    )
+                )
+                return
+
+            if (
+                pointer.policy_identifier == reference.identifier
+                and pointer.policy_version == reference.version
+            ):
+                return
+
+            pointer.policy_identifier = reference.identifier
+            pointer.policy_version = reference.version
+            pointer.selected_at = datetime.now(UTC)
