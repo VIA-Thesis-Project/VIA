@@ -66,6 +66,7 @@ def test_worker_settings_reuse_scientific_smoke_environment_names(
     monkeypatch.setenv("VIA_CROPSUITE_ROOT", "C:/science/CropSuiteLite")
     monkeypatch.setenv("VIA_CROPSUITE_PYTHON", "C:/science/python.exe")
     monkeypatch.setenv("VIA_CROPSUITE_WORKSPACE", "C:/via/work")
+    monkeypatch.setenv("VIA_CROPSUITE_INPUT_BINDINGS", "C:/via/cropsuite-input-bindings.json")
     monkeypatch.setenv("VIA_WORKER_POLL_INTERVAL_SECONDS", "2.5")
     monkeypatch.setenv("VIA_WORKER_BATCH_SIZE", "3")
     monkeypatch.setenv("VIA_ARTIFACTS_ROOT", "C:/via/artifacts")
@@ -79,6 +80,7 @@ def test_worker_settings_reuse_scientific_smoke_environment_names(
         Path("C:/science/python.exe"),
         Path("C:/via/work"),
         Path("C:/via/artifacts"),
+        Path("C:/via/cropsuite-input-bindings.json"),
     )
 
 
@@ -97,4 +99,17 @@ def test_worker_run_requires_durable_artifact_root() -> None:
     )
 
     with pytest.raises(ValueError, match="VIA_ARTIFACTS_ROOT"):
+        settings.require_scientific_execution()
+
+
+def test_worker_run_requires_scientific_input_bindings() -> None:
+    settings = WorkerSettings(
+        database_url="postgresql+psycopg://example.invalid/via",
+        cropsuite_root=Path("C:/science/CropSuiteLite"),
+        cropsuite_python=Path("C:/science/python.exe"),
+        cropsuite_workspace=Path("C:/via/work"),
+        artifacts_root=Path("C:/via/artifacts"),
+    )
+
+    with pytest.raises(ValueError, match="VIA_CROPSUITE_INPUT_BINDINGS"):
         settings.require_scientific_execution()

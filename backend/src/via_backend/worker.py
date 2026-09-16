@@ -23,6 +23,7 @@ from via_backend.contexts.agroclimatic_evaluation.infrastructure import (
     CropSuiteComparisonAdapter,
     FilesystemScientificArtifactStore,
     PostgreSQLEvaluationRepository,
+    load_configured_environmental_input_integrity_verifier,
 )
 from via_backend.contexts.environmental_information.application import (
     EnvironmentalInformationService,
@@ -47,8 +48,17 @@ class WorkerRuntime:
 
 def create_worker(settings: WorkerSettings) -> WorkerRuntime:
     """Compose the production worker and fail fast on missing scientific settings."""
-    engine_root, python_executable, workspace_root, artifacts_root = (
+    (
+        engine_root,
+        python_executable,
+        workspace_root,
+        artifacts_root,
+        input_bindings_path,
+    ) = (
         settings.require_scientific_execution()
+    )
+    input_integrity_verifier = load_configured_environmental_input_integrity_verifier(
+        input_bindings_path
     )
     database_engine, sessions = create_database(settings.database_url)
     evaluations = PostgreSQLEvaluationRepository(sessions)
@@ -65,6 +75,7 @@ def create_worker(settings: WorkerSettings) -> WorkerRuntime:
         catalog=settings.cropsuite_catalog,
         max_workers=settings.cropsuite_max_workers,
         artifact_store=artifact_store,
+        input_integrity_verifier=input_integrity_verifier,
     )
     comparison_engine = CropSuiteComparisonAdapter(
         engine_root=engine_root,

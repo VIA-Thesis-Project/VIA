@@ -16,9 +16,11 @@ from via_backend.contexts.agroclimatic_evaluation.application.ports import (
     CropExecutionStatus,
     CropSuitabilityExecutionError,
     CropSuitabilityRequest,
+    EnvironmentalInputIntegrityError,
     ICropSuitabilityEngine,
     InvalidEngineOutputError,
     ScientificArtifactRole,
+    ScientificSourceFingerprint,
 )
 from via_backend.contexts.agroclimatic_evaluation.domain import (
     EnvironmentalInputManifest,
@@ -32,6 +34,14 @@ from via_backend.contexts.agroclimatic_evaluation.infrastructure.cropsuite_adapt
 from via_backend.contexts.agroclimatic_evaluation.infrastructure.scientific_artifact_store import (
     FilesystemScientificArtifactStore,
 )
+from via_backend.contexts.agroclimatic_evaluation.infrastructure.scientific_input_integrity import (
+    ConfiguredEnvironmentalInputIntegrityVerifier,
+    CropSuiteEnvironmentalInputBinding,
+)
+
+SOURCE_A = "a" * 64
+SOURCE_B = "b" * 64
+SOURCE_C = "c" * 64
 
 
 class StubRunner:
@@ -137,6 +147,10 @@ def _report(
         "selected_crops": ["maize"],
         "execution": "sequential_isolated_processes",
         "parcel_sha256": "parcel-sha256",
+        "source_sha256": {
+            "/science/z-source.tif": SOURCE_B,
+            "/science/a-source.tif": SOURCE_A,
+        },
         "source_files_unchanged": True,
         "crops": [crop],
     }
@@ -148,6 +162,25 @@ def _adapter(tmp_path: Path, runner: StubRunner) -> CropSuiteAdapter:
         workspace_root=tmp_path / "workspace",
         max_workers=1,
         runner=runner,
+    )
+
+
+def _integrity_verifier(
+    manifest: EnvironmentalInputManifest,
+    *,
+    source_sha256: tuple[str, ...] = (SOURCE_A,),
+) -> ConfiguredEnvironmentalInputIntegrityVerifier:
+    snapshot = manifest.inputs[0]
+    return ConfiguredEnvironmentalInputIntegrityVerifier(
+        (
+            CropSuiteEnvironmentalInputBinding(
+                dataset_id=snapshot.dataset_id,
+                dataset_version_id=snapshot.dataset_version_id,
+                storage_reference=snapshot.storage_reference,
+                checksum=snapshot.checksum,
+                source_sha256=source_sha256,
+            ),
+        )
     )
 
 
@@ -234,6 +267,134 @@ def test_missing_or_invalid_engine_outputs_fail_explicitly(tmp_path: Path) -> No
         _adapter(tmp_path, StubRunner(report)).evaluate(_request())
 
 
+def test_integrity_verifier_receives_manifest_and_sorted_source_fingerprints(
+    tmp_path: Path,
+) -> None:
+    request = _request()
+    received: list[
+        tuple[
+            EnvironmentalInputManifest,
+            tuple[ScientificSourceFingerprint, ...],
+        ]
+    ] = []
+    delegate = _integrity_verifier(request.environmental_input_manifest)
+
+    class RecordingVerifier:
+        def verify(
+            self,
+            manifest: EnvironmentalInputManifest,
+            source_fingerprints: tuple[ScientificSourceFingerprint, ...],
+        ) -> None:
+            received.append((manifest, source_fingerprints))
+            delegate.verify(manifest, source_fingerprints)
+
+    adapter = CropSuiteAdapter(
+        engine_root=tmp_path / "engine",
+        workspace_root=tmp_path / "workspace",
+        runner=StubRunner(_report()),
+        input_integrity_verifier=RecordingVerifier(),
+    )
+
+    adapter.evaluate(request)
+
+    assert received == [
+        (
+            request.environmental_input_manifest,
+            (
+                ScientificSourceFingerprint("/science/a-source.tif", SOURCE_A),
+                ScientificSourceFingerprint("/science/z-source.tif", SOURCE_B),
+            ),
+        )
+    ]
+
+
+@pytest.mark.parametrize(
+    "source_sha256",
+    [
+        None,
+        {},
+        {"": SOURCE_A},
+        {"/science/source.tif": "A" * 64},
+        {"/science/source.tif": "abc"},
+    ],
+)
+def test_integrity_gate_rejects_missing_or_malformed_source_fingerprints(
+    tmp_path: Path,
+    source_sha256: object,
+) -> None:
+    request = _request()
+    report = _report()
+    if source_sha256 is None:
+        report.pop("source_sha256")
+    else:
+        report["source_sha256"] = source_sha256
+    adapter = CropSuiteAdapter(
+        engine_root=tmp_path / "engine",
+        workspace_root=tmp_path / "workspace",
+        runner=StubRunner(report),
+        input_integrity_verifier=_integrity_verifier(request.environmental_input_manifest),
+    )
+
+    with pytest.raises(InvalidEngineOutputError, match="source_sha256"):
+        adapter.evaluate(request)
+
+
+def test_integrity_mismatch_fails_before_result_mapping(tmp_path: Path) -> None:
+    request = _request()
+    report = _report("no_coverage", mean=None, valid_cells=0)
+    report["source_sha256"] = {"/science/unexpected.tif": SOURCE_C}
+    report["crops"] = []
+    adapter = CropSuiteAdapter(
+        engine_root=tmp_path / "engine",
+        workspace_root=tmp_path / "workspace",
+        runner=StubRunner(report),
+        input_integrity_verifier=_integrity_verifier(request.environmental_input_manifest),
+    )
+
+    with pytest.raises(EnvironmentalInputIntegrityError, match="missing expected"):
+        adapter.evaluate(request)
+
+
+def test_integrity_verifier_allows_extra_engine_sources(tmp_path: Path) -> None:
+    request = _request()
+    report = _report()
+    report["source_sha256"] = {
+        "/science/environment.tif": SOURCE_A,
+        "/science/config.ini": SOURCE_B,
+        "/science/maize.inf": SOURCE_C,
+    }
+    adapter = CropSuiteAdapter(
+        engine_root=tmp_path / "engine",
+        workspace_root=tmp_path / "workspace",
+        runner=StubRunner(report),
+        input_integrity_verifier=_integrity_verifier(request.environmental_input_manifest),
+    )
+
+    result = adapter.evaluate(request)
+
+    assert result.status is CropExecutionStatus.SUCCEEDED
+
+
+def test_source_file_mutation_remains_explicit_scientific_failure(tmp_path: Path) -> None:
+    request = _request()
+    report = _report()
+    report["source_files_unchanged"] = False
+    report["error"] = "Scientific source files changed during execution."
+    adapter = CropSuiteAdapter(
+        engine_root=tmp_path / "engine",
+        workspace_root=tmp_path / "workspace",
+        runner=StubRunner(report),
+        input_integrity_verifier=_integrity_verifier(request.environmental_input_manifest),
+    )
+
+    result = adapter.evaluate(request)
+
+    assert result.status is CropExecutionStatus.FAILED
+    assert result.suitability is None
+    assert result.failure is not None
+    assert "changed during execution" in result.failure.message
+
+
 def test_workspace_cannot_be_inside_scientific_source_tree(tmp_path: Path) -> None:
     engine_root = tmp_path / "CropSuiteLite"
 
@@ -266,10 +427,21 @@ def test_adapter_artifacts_do_not_modify_source_crop_parameters(tmp_path: Path) 
     assert runner.calls[0]["catalog"] == catalog.resolve()
 
 def test_real_execution_requires_explicit_scientific_python(tmp_path: Path) -> None:
+    manifest = _environmental_input_manifest()
     with pytest.raises(ValueError, match="python_executable"):
         CropSuiteAdapter(
             engine_root=tmp_path / "engine",
             workspace_root=tmp_path / "workspace",
+            input_integrity_verifier=_integrity_verifier(manifest),
+        )
+
+
+def test_real_execution_requires_integrity_verifier(tmp_path: Path) -> None:
+    with pytest.raises(ValueError, match="input_integrity_verifier"):
+        CropSuiteAdapter(
+            engine_root=tmp_path / "engine",
+            workspace_root=tmp_path / "workspace",
+            python_executable=Path(sys.executable),
         )
 
 
@@ -309,6 +481,11 @@ def run_evaluation(
         "selected_crops": list(crops),
         "execution": "sequential_isolated_processes",
         "parcel_sha256": "parcel-sha256",
+        "source_sha256": {
+            "/science/environment.tif": (
+                "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            )
+        },
         "source_files_unchanged": True,
         "crops": [
             {
@@ -336,14 +513,16 @@ def run_evaluation(
     )
 
     workspace_root = tmp_path / "workspace"
+    request = _request()
     adapter = CropSuiteAdapter(
         engine_root=engine_root,
         workspace_root=workspace_root,
         python_executable=Path(sys.executable),
         max_workers=1,
+        input_integrity_verifier=_integrity_verifier(request.environmental_input_manifest),
     )
 
-    result = adapter.evaluate(_request())
+    result = adapter.evaluate(request)
 
     marker = next(workspace_root.rglob("scientific-python.txt"))
 

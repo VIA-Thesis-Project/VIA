@@ -27,6 +27,10 @@ from via_backend.contexts.agroclimatic_evaluation.infrastructure.cropsuite_adapt
 from via_backend.contexts.agroclimatic_evaluation.infrastructure.scientific_artifact_store import (
     FilesystemScientificArtifactStore,
 )
+from via_backend.contexts.agroclimatic_evaluation.infrastructure.scientific_input_integrity import (
+    ConfiguredEnvironmentalInputIntegrityVerifier,
+    load_cropsuite_environmental_input_bindings,
+)
 
 
 @pytest.mark.scientific
@@ -37,25 +41,31 @@ def test_real_cropsuite_adapter_smoke() -> None:
     workspace_value = os.environ.get("VIA_CROPSUITE_WORKSPACE")
     python_value = os.environ.get("VIA_CROPSUITE_PYTHON")
     artifacts_root_value = os.environ.get("VIA_ARTIFACTS_ROOT")
+    bindings_value = os.environ.get("VIA_CROPSUITE_INPUT_BINDINGS")
     if (
         not engine_root_value
         or not workspace_value
         or not python_value
         or not artifacts_root_value
+        or not bindings_value
     ):
         pytest.fail(
             "Set VIA_CROPSUITE_ROOT, VIA_CROPSUITE_WORKSPACE, "
-            "VIA_CROPSUITE_PYTHON and VIA_ARTIFACTS_ROOT."
+            "VIA_CROPSUITE_PYTHON, VIA_ARTIFACTS_ROOT and "
+            "VIA_CROPSUITE_INPUT_BINDINGS."
         )
 
     engine_root = Path(engine_root_value)
     artifacts_root = Path(artifacts_root_value)
+    bindings = load_cropsuite_environmental_input_bindings(Path(bindings_value))
+    input_integrity_verifier = ConfiguredEnvironmentalInputIntegrityVerifier(bindings)
     adapter = CropSuiteAdapter(
         engine_root=engine_root,
         workspace_root=Path(workspace_value),
         python_executable=Path(python_value),
         max_workers=1,
         artifact_store=FilesystemScientificArtifactStore(artifacts_root),
+        input_integrity_verifier=input_integrity_verifier,
     )
     geometry = SnapshotGeometry.from_geojson(
         {
@@ -85,18 +95,18 @@ def test_real_cropsuite_adapter_smoke() -> None:
         crop_id="maize",
         environmental_input_manifest=EnvironmentalInputManifest(
             resolved_at=resolved_at,
-            inputs=(
+            inputs=tuple(
                 EnvironmentalInputSnapshot(
-                    input_key="smoke.input",
-                    dataset_id=uuid4(),
-                    dataset_name="Smoke input",
+                    input_key=f"smoke.input.{index}",
+                    dataset_id=binding.dataset_id,
+                    dataset_name=f"Configured smoke input {index}",
                     source="smoke-test",
-                    variable="smoke",
+                    variable=f"configured_{index}",
                     unit="unit",
-                    dataset_version_id=uuid4(),
-                    version_identifier="smoke-v1",
-                    checksum="sha256:smoke",
-                    storage_reference="smoke://input",
+                    dataset_version_id=binding.dataset_version_id,
+                    version_identifier=f"configured-{index}",
+                    checksum=binding.checksum,
+                    storage_reference=binding.storage_reference,
                     crs="EPSG:4326",
                     resolution_x=0.01,
                     resolution_y=0.01,
@@ -109,7 +119,8 @@ def test_real_cropsuite_adapter_smoke() -> None:
                     valid_to=None,
                     scenario=None,
                     registered_at=resolved_at,
-                ),
+                )
+                for index, binding in enumerate(bindings)
             ),
         ),
     )

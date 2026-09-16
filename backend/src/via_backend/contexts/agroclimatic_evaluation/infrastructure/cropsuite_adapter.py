@@ -16,12 +16,14 @@ from ..application.ports import (
     CropSuitabilityExecutionError,
     CropSuitabilityRequest,
     CropSuitabilityResult,
+    IEnvironmentalInputIntegrityVerifier,
     InvalidEngineOutputError,
     ScientificArtifactDescriptor,
     ScientificArtifactGrid,
     ScientificArtifactRole,
     ScientificExecutionFailure,
     ScientificExecutionTrace,
+    ScientificSourceFingerprint,
     SuitabilityScoreSummary,
 )
 from .scientific_artifact_store import (
@@ -138,6 +140,7 @@ class CropSuiteAdapter:
         python_executable: Path | None = None,
         runner: EngineRunner | None = None,
         artifact_store: ScientificArtifactStore | None = None,
+        input_integrity_verifier: IEnvironmentalInputIntegrityVerifier | None = None,
     ) -> None:
         if isinstance(max_workers, bool) or max_workers < 1:
             raise ValueError("max_workers must be a positive integer.")
@@ -157,8 +160,13 @@ class CropSuiteAdapter:
         self._max_workers = max_workers
         self._artifact_store = artifact_store
         self._runner = runner
+        self._input_integrity_verifier = input_integrity_verifier
 
         if self._runner is None:
+            if self._input_integrity_verifier is None:
+                raise ValueError(
+                    "input_integrity_verifier is required for real scientific execution."
+                )
             if self._python_executable is None:
                 raise ValueError(
                     "python_executable is required for real scientific execution."
@@ -221,6 +229,13 @@ class CropSuiteAdapter:
                 f"{type(error).__name__}: {error}"
             )
             raise CropSuitabilityExecutionError(message) from error
+
+        if self._input_integrity_verifier is not None:
+            source_fingerprints = _parse_source_fingerprints(report)
+            self._input_integrity_verifier.verify(
+                request.environmental_input_manifest,
+                source_fingerprints,
+            )
 
         result = _map_report(report, request.crop_id)
 
@@ -336,6 +351,31 @@ class CropSuiteAdapter:
             )
 
         return cast(Mapping[str, Any], report)
+
+
+def _parse_source_fingerprints(
+    report: Mapping[str, Any],
+) -> tuple[ScientificSourceFingerprint, ...]:
+    raw = report.get("source_sha256")
+    if not isinstance(raw, Mapping) or not raw:
+        raise InvalidEngineOutputError(
+            "Engine report field 'source_sha256' must be a non-empty object."
+        )
+
+    fingerprints: list[ScientificSourceFingerprint] = []
+    for source_reference, sha256 in raw.items():
+        if not isinstance(source_reference, str) or not source_reference:
+            raise InvalidEngineOutputError(
+                "Engine source_sha256 keys must be non-empty strings."
+            )
+        if not isinstance(sha256, str) or _SHA256.fullmatch(sha256) is None:
+            raise InvalidEngineOutputError(
+                "Engine source_sha256 values must be lowercase hexadecimal SHA-256."
+            )
+        fingerprints.append(ScientificSourceFingerprint(source_reference, sha256))
+
+    return tuple(sorted(fingerprints, key=lambda item: item.source_reference))
+
 
 def _map_report(report: Mapping[str, Any], crop_id: str) -> CropSuitabilityResult:
     selected = _sequence(report, "selected_crops")

@@ -63,6 +63,7 @@ class WorkerSettings:
     cropsuite_python: Path | None = None
     cropsuite_workspace: Path | None = None
     artifacts_root: Path | None = None
+    cropsuite_input_bindings: Path | None = None
     cropsuite_source_config: Path | None = None
     cropsuite_catalog: Path | None = None
     poll_interval_seconds: float = 5.0
@@ -79,7 +80,7 @@ class WorkerSettings:
         if isinstance(self.cropsuite_max_workers, bool) or self.cropsuite_max_workers < 1:
             raise ValueError("VIA_CROPSUITE_MAX_WORKERS must be a positive integer.")
 
-    def require_scientific_execution(self) -> tuple[Path, Path, Path, Path]:
+    def require_scientific_execution(self) -> tuple[Path, Path, Path, Path, Path]:
         missing = [
             name
             for name, value in (
@@ -87,6 +88,7 @@ class WorkerSettings:
                 ("VIA_CROPSUITE_PYTHON", self.cropsuite_python),
                 ("VIA_CROPSUITE_WORKSPACE", self.cropsuite_workspace),
                 ("VIA_ARTIFACTS_ROOT", self.artifacts_root),
+                ("VIA_CROPSUITE_INPUT_BINDINGS", self.cropsuite_input_bindings),
             )
             if value is None
         ]
@@ -96,11 +98,13 @@ class WorkerSettings:
         assert self.cropsuite_python is not None
         assert self.cropsuite_workspace is not None
         assert self.artifacts_root is not None
+        assert self.cropsuite_input_bindings is not None
         return (
             self.cropsuite_root,
             self.cropsuite_python,
             self.cropsuite_workspace,
             self.artifacts_root,
+            self.cropsuite_input_bindings,
         )
 
     @classmethod
@@ -111,6 +115,7 @@ class WorkerSettings:
             cropsuite_python=_optional_path("VIA_CROPSUITE_PYTHON"),
             cropsuite_workspace=_optional_path("VIA_CROPSUITE_WORKSPACE"),
             artifacts_root=_optional_path("VIA_ARTIFACTS_ROOT"),
+            cropsuite_input_bindings=_optional_path("VIA_CROPSUITE_INPUT_BINDINGS"),
             cropsuite_source_config=_optional_path("VIA_CROPSUITE_SOURCE_CONFIG"),
             cropsuite_catalog=_optional_path("VIA_CROPSUITE_CATALOG"),
             poll_interval_seconds=_environment_float("VIA_WORKER_POLL_INTERVAL_SECONDS", 5.0),

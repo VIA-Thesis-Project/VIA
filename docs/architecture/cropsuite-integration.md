@@ -44,9 +44,9 @@ The current implementation evaluates crops sequentially, creates an isolated dir
 `application/ports.py` owns immutable `CropSuitabilityRequest`,
 `CropSuitabilityResult`, status, summary, failure, and trace contracts together
 with `ICropSuitabilityEngine`. A request contains only evaluation identity, one
-server-approved crop identifier, and the immutable `ParcelSnapshot`; it contains
-no engine paths, ORM types, HTTP types, process handles, or final
-`EnvironmentalInputManifest`.
+server-approved crop identifier, the immutable `ParcelSnapshot`, and the exact
+persisted `EnvironmentalInputManifest`; it contains no engine paths, ORM types,
+HTTP types, or process handles.
 
 `infrastructure/cropsuite_adapter.py` implements the port. Infrastructure receives
 the CropSuiteLite source root, a dedicated execution-workspace root, an explicit
@@ -70,12 +70,53 @@ of zero remains `succeeded`; `no_coverage` retains a summary with no valid cells
 and no mean. Missing or malformed engine output raises an explicit boundary
 error rather than becoming a scientific score.
 
-Current trace output includes the CropSuiteLite identifier, opaque PoC execution
+## Environmental input integrity gate
+
+A5.4 adds an execution-time provenance gate between the persisted environmental
+manifest and the concrete files selected by CropSuiteLite. The manifest keeps
+`storage_reference` as opaque Environmental Information metadata; the adapter
+must never reinterpret it as a local filesystem path. The DatasetVersion
+`checksum` is also opaque unless the producing system defines stronger semantics,
+so VIA does not assume it is the checksum of one physical file.
+
+Deployment configuration supplies an exact `CropSuiteEnvironmentalInputBinding`
+for each DatasetVersion used in scientific execution. A binding matches the
+DatasetVersion identity (`dataset_id`, `dataset_version_id`, opaque
+`storage_reference`, and opaque `checksum`) and maps it to one or more expected
+concrete source-file SHA-256 values. The JSON binding file is integration
+configuration owned by Infrastructure; it is not an Environmental Information
+repository and does not add cross-context database access.
+
+CropSuiteLite remains the authority for selecting and hashing scientific files.
+Its `source_sha256` report field is parsed as a non-empty mapping from opaque
+engine-reported source references to lowercase SHA-256 values. VIA sorts those
+references deterministically, then verifies the complete persisted manifest
+before accepting or mapping the per-crop result. Every hash configured for every
+manifest DatasetVersion must be present in the engine-reported hashes. Extra
+CropSuite hashes are allowed because the engine also fingerprints configuration,
+crop parameters, masks, DEM and other scientific inputs outside a particular
+environmental DatasetVersion.
+
+Missing bindings, identity mismatches, or absent expected hashes raise an
+`EnvironmentalInputIntegrityError` at the engine boundary. They are not converted
+to `no_coverage`, suitability zero, or a normal per-crop `failed` outcome. After
+the initial integrity gate, the existing `source_files_unchanged=False` guard
+retains its explicit scientific-failure behavior, covering mutation during the
+engine run.
+
+The worker requires `VIA_CROPSUITE_INPUT_BINDINGS`, loads and validates the JSON
+at startup, builds `ConfiguredEnvironmentalInputIntegrityVerifier`, and injects
+it into the real `CropSuiteAdapter`. Real scientific execution cannot start
+without this verifier. A5.4 does not persist the complete `source_sha256` map;
+durable full fingerprint evidence remains deferred to A6.
+
+Current durable trace output includes the CropSuiteLite identifier, opaque PoC execution
 reference, timestamps, elapsed time, preserved execution mode, parcel checksum,
 available crop-parameter and effective-configuration checksums, and the
-source-files-unchanged result. A durable engine commit/version, dependency
-versions, dataset manifest, full evidence/artifact model, and retention policy
-are not reliably available at this boundary and are explicitly deferred.
+source-files-unchanged result. The environmental manifest is persisted separately
+by the evaluation aggregate. A durable engine commit/version, dependency
+versions, persisted full source-fingerprint evidence, broader evidence model, and
+retention policy remain deferred.
 
 ## Application orchestration and worker responsibilities
 

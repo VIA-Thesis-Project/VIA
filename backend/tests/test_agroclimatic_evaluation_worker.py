@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
+import json
 from dataclasses import replace
 from datetime import UTC, datetime, timedelta
+from pathlib import Path
 from uuid import UUID, uuid4
 
 import pytest
 
+from via_backend.config import WorkerSettings
 from via_backend.contexts.agroclimatic_evaluation.application import (
     AgroclimaticEvaluationExecutionService,
     AgroclimaticEvaluationRecoveryService,
@@ -52,12 +55,30 @@ from via_backend.contexts.environmental_information.application.public import (
     GetPublishedDatasetVersion,
     PublishedDatasetVersion,
 )
-from via_backend.worker import run_forever
+from via_backend.worker import create_worker, run_forever
 
 NOW = datetime(2026, 9, 13, 12, 0, tzinfo=UTC)
 RESOLVED_AT = NOW + timedelta(minutes=1)
 DATASET_ID = UUID("10000000-0000-0000-0000-000000000001")
 DATASET_VERSION_ID = UUID("20000000-0000-0000-0000-000000000001")
+
+
+def test_create_worker_fails_fast_on_invalid_scientific_input_bindings(
+    tmp_path: Path,
+) -> None:
+    bindings = tmp_path / "bindings.json"
+    bindings.write_text(json.dumps({"bindings": []}), encoding="utf-8")
+    settings = WorkerSettings(
+        database_url="postgresql+psycopg://example.invalid/via",
+        cropsuite_root=tmp_path / "CropSuiteLite",
+        cropsuite_python=tmp_path / "python.exe",
+        cropsuite_workspace=tmp_path / "workspace",
+        artifacts_root=tmp_path / "artifacts",
+        cropsuite_input_bindings=bindings,
+    )
+
+    with pytest.raises(ValueError, match="non-empty 'bindings'"):
+        create_worker(settings)
 
 
 def _snapshot() -> ParcelSnapshot:

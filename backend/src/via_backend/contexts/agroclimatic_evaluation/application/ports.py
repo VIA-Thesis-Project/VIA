@@ -31,6 +31,14 @@ class CropSuitabilityRequest:
 
 
 @dataclass(frozen=True, slots=True)
+class ScientificSourceFingerprint:
+    """Opaque scientific source identity and its engine-reported SHA-256."""
+
+    source_reference: str
+    sha256: str
+
+
+@dataclass(frozen=True, slots=True)
 class SuitabilityScoreSummary:
     """Current PoC parcel summary for the crop-suitability output."""
 
@@ -189,6 +197,21 @@ class CropSuitabilityExecutionError(CropSuitabilityEngineError):
 
 class InvalidEngineOutputError(CropSuitabilityEngineError):
     """Raised when the engine report does not satisfy the expected PoC contract."""
+
+
+class EnvironmentalInputIntegrityError(CropSuitabilityEngineError):
+    """Raised when resolved environmental provenance does not match scientific inputs."""
+
+
+@runtime_checkable
+class IEnvironmentalInputIntegrityVerifier(Protocol):
+    """Verify resolved environmental provenance against scientific source fingerprints."""
+
+    def verify(
+        self,
+        manifest: EnvironmentalInputManifest,
+        source_fingerprints: tuple[ScientificSourceFingerprint, ...],
+    ) -> None: ...
 
 
 @runtime_checkable
