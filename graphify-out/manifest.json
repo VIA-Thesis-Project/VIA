@@ -804,9 +804,9 @@
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/decision_support/infrastructure/__init__.py": {
-    "mtime": 1789493734.5730178,
-    "seen": 1789571047.1257138,
-    "ast_hash": "bb39691ae5c918b615aa71e5f194fc1e",
+    "mtime": 1789577951.7917683,
+    "seen": 1789579823.4626966,
+    "ast_hash": "730df284f0f418e481b9aa8350a81166",
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/decision_support/interfaces/__init__.py": {
@@ -1710,9 +1710,9 @@
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/decision_support/application/ports.py": {
-    "mtime": 1789493626.6077359,
-    "seen": 1789571047.1257048,
-    "ast_hash": "2415e3f96a0d00782a9ef9bb67842adf",
+    "mtime": 1789577749.284004,
+    "seen": 1789579823.4626899,
+    "ast_hash": "1982c7bb7ea64248fa9d9b0781b12c83",
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/decision_support/application/queries.py": {
@@ -1776,21 +1776,33 @@
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/decision_support/infrastructure/orm.py": {
-    "mtime": 1789493678.7418385,
-    "seen": 1789571047.1257164,
-    "ast_hash": "9db35e4955c988df2abea87cf43814d3",
+    "mtime": 1789577837.3137262,
+    "seen": 1789579823.462698,
+    "ast_hash": "36187de55b11b1770c8afdb0da5d8209",
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/decision_support/infrastructure/postgresql_repositories.py": {
-    "mtime": 1789493704.987625,
-    "seen": 1789571047.1257174,
-    "ast_hash": "0a27366d75a4537e2cd021da16fc26ac",
+    "mtime": 1789578075.9609334,
+    "seen": 1789579823.462699,
+    "ast_hash": "70f4fc5dd4bb5ba41b036c8e915ed28e",
     "semantic_hash": ""
   },
   "backend/tests/test_decision_support_postgresql.py": {
-    "mtime": 1789493768.4567778,
-    "seen": 1789571047.1257985,
-    "ast_hash": "e8425383bd742bcdefb4413a48faaf5e",
+    "mtime": 1789578075.9609334,
+    "seen": 1789579823.4627576,
+    "ast_hash": "09a85ae08b057148c0c614502fb5fde9",
+    "semantic_hash": ""
+  },
+  "backend/migrations/versions/20260916_0010_default_viability_policy_pointer.py": {
+    "mtime": 1789578075.9609334,
+    "seen": 1789579823.4626532,
+    "ast_hash": "b62e842431ecd740001c9befa02c95e3",
+    "semantic_hash": ""
+  },
+  "backend/src/via_backend/contexts/decision_support/application/errors.py": {
+    "mtime": 1789577729.4709172,
+    "seen": 1789579823.4626884,
+    "ast_hash": "35607a6969e5c98628061bf2f53b0e5c",
     "semantic_hash": ""
   }
 }
