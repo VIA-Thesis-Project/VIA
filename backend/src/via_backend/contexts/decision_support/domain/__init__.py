@@ -1,6 +1,6 @@
 """Decision Support domain layer."""
 
-from .errors import DomainValidationError
+from .errors import DomainValidationError, PolicyVersionConflictError
 from .models import (
     CommonSupportEvidence,
     CommonSupportStatus,
@@ -30,4 +30,5 @@ __all__ = [
     "ViabilityPolicyConfiguration",
     "ViabilityPolicyEvaluation",
     "ViabilityPolicySnapshot",
+    "PolicyVersionConflictError",
 ]

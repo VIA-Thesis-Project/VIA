@@ -28,3 +28,14 @@ class IDefaultViabilityPolicyProvider(Protocol):
     """Provide the current VIA default viability policy without owning its storage."""
 
     def get_default_viability_policy(self) -> ViabilityPolicySnapshot: ...
+
+@runtime_checkable
+class IViabilityPolicyRepository(Protocol):
+    """Store and restore immutable viability-policy versions."""
+
+    def add(self, policy: ViabilityPolicySnapshot) -> None: ...
+
+    def get(
+        self,
+        reference: PolicyReference,
+    ) -> ViabilityPolicySnapshot | None: ...
