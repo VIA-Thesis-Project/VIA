@@ -4,11 +4,13 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy import update
+from sqlalchemy.dialects.postgresql import insert as postgresql_insert
 
 from via_backend.infrastructure.database import SessionFactory
 
 from ..application.errors import (
+    DefaultViabilityPolicyConflictError,
     DefaultViabilityPolicyNotConfiguredError,
     ViabilityPolicyVersionNotFoundError,
 )
@@ -37,29 +39,44 @@ class PostgreSQLViabilityPolicyRepository:
             reference.version,
         )
 
-        try:
-            with self._sessions.begin() as session:
-                existing = session.get(
-                    ViabilityPolicyVersionRecord,
-                    identity,
+        with self._sessions.begin() as session:
+            statement = (
+                postgresql_insert(ViabilityPolicyVersionRecord)
+                .values(
+                    identifier=reference.identifier,
+                    version=reference.version,
+                    conditional_from=policy.configuration.conditional_from,
+                    viable_from=policy.configuration.viable_from,
+                )
+                .on_conflict_do_nothing(
+                    index_elements=[
+                        ViabilityPolicyVersionRecord.identifier,
+                        ViabilityPolicyVersionRecord.version,
+                    ]
+                )
+                .returning(ViabilityPolicyVersionRecord.identifier)
+            )
+            inserted_identifier = session.execute(statement).scalar_one_or_none()
+
+            if inserted_identifier is not None:
+                return
+
+            existing = session.get(
+                ViabilityPolicyVersionRecord,
+                identity,
+            )
+            if existing is None:
+                raise RuntimeError(
+                    "Policy registration conflicted, but the persisted policy "
+                    f"{reference.identifier}:{reference.version} could not be restored."
                 )
 
-                if existing is None:
-                    session.add(_record_from_snapshot(policy))
-                    return
-
-                if _snapshot_from_record(existing) != policy:
-                    raise PolicyVersionConflictError(
-                        "Policy reference "
-                        f"{reference.identifier}:{reference.version} "
-                        "already exists with different thresholds."
-                    )
-        except IntegrityError as error:
-            raise PolicyVersionConflictError(
-                "Policy reference "
-                f"{reference.identifier}:{reference.version} "
-                "conflicts with persisted policy data."
-            ) from error
+            if _snapshot_from_record(existing) != policy:
+                raise PolicyVersionConflictError(
+                    "Policy reference "
+                    f"{reference.identifier}:{reference.version} "
+                    "already exists with different thresholds."
+                )
 
     def get(
         self,
@@ -80,17 +97,6 @@ class PostgreSQLViabilityPolicyRepository:
             return _snapshot_from_record(record)
 
 
-def _record_from_snapshot(
-    policy: ViabilityPolicySnapshot,
-) -> ViabilityPolicyVersionRecord:
-    return ViabilityPolicyVersionRecord(
-        identifier=policy.reference.identifier,
-        version=policy.reference.version,
-        conditional_from=policy.configuration.conditional_from,
-        viable_from=policy.configuration.viable_from,
-    )
-
-
 def _snapshot_from_record(
     record: ViabilityPolicyVersionRecord,
 ) -> ViabilityPolicySnapshot:
@@ -104,6 +110,7 @@ def _snapshot_from_record(
             viable_from=record.viable_from,
         ),
     )
+
 
 _DEFAULT_POLICY_SLOT = "default"
 
@@ -147,6 +154,8 @@ class PostgreSQLDefaultViabilityPolicyStore:
     def set_default_viability_policy(
         self,
         reference: PolicyReference,
+        *,
+        expected_current: PolicyReference | None,
     ) -> None:
         identity = (
             reference.identifier,
@@ -165,27 +174,51 @@ class PostgreSQLDefaultViabilityPolicyStore:
                     f"{reference.identifier}:{reference.version}."
                 )
 
-            pointer = session.get(
-                DefaultViabilityPolicyRecord,
-                _DEFAULT_POLICY_SLOT,
-            )
-
-            if pointer is None:
-                session.add(
-                    DefaultViabilityPolicyRecord(
+            if expected_current is None:
+                statement = (
+                    postgresql_insert(DefaultViabilityPolicyRecord)
+                    .values(
                         slot=_DEFAULT_POLICY_SLOT,
                         policy_identifier=reference.identifier,
                         policy_version=reference.version,
                     )
+                    .on_conflict_do_nothing(
+                        index_elements=[DefaultViabilityPolicyRecord.slot]
+                    )
+                    .returning(DefaultViabilityPolicyRecord.slot)
                 )
+            else:
+                statement = (
+                    update(DefaultViabilityPolicyRecord)
+                    .where(
+                        DefaultViabilityPolicyRecord.slot == _DEFAULT_POLICY_SLOT,
+                        DefaultViabilityPolicyRecord.policy_identifier
+                        == expected_current.identifier,
+                        DefaultViabilityPolicyRecord.policy_version
+                        == expected_current.version,
+                    )
+                    .values(
+                        policy_identifier=reference.identifier,
+                        policy_version=reference.version,
+                        selected_at=datetime.now(UTC),
+                    )
+                    .returning(DefaultViabilityPolicyRecord.slot)
+                )
+
+            changed_slot = session.execute(statement).scalar_one_or_none()
+            if changed_slot is not None:
                 return
 
-            if (
+            pointer = session.get(
+                DefaultViabilityPolicyRecord,
+                _DEFAULT_POLICY_SLOT,
+            )
+            if pointer is not None and (
                 pointer.policy_identifier == reference.identifier
                 and pointer.policy_version == reference.version
             ):
                 return
 
-            pointer.policy_identifier = reference.identifier
-            pointer.policy_version = reference.version
-            pointer.selected_at = datetime.now(UTC)
+            raise DefaultViabilityPolicyConflictError(
+                "Default viability-policy pointer changed before the expected update."
+            )

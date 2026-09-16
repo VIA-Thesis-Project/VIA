@@ -5,6 +5,10 @@ class DefaultViabilityPolicyNotConfiguredError(LookupError):
     """Raised when VIA has no default viability policy configured."""
 
 
+class DefaultViabilityPolicyConflictError(RuntimeError):
+    """Raised when the default policy changed before an expected update."""
+
+
 class ViabilityPolicyVersionNotFoundError(LookupError):
     """Raised when a requested persisted policy version does not exist."""
 

@@ -29,6 +29,7 @@ class IDefaultViabilityPolicyProvider(Protocol):
 
     def get_default_viability_policy(self) -> ViabilityPolicySnapshot: ...
 
+
 @runtime_checkable
 class IViabilityPolicyRepository(Protocol):
     """Store and restore immutable viability-policy versions."""
@@ -40,6 +41,7 @@ class IViabilityPolicyRepository(Protocol):
         reference: PolicyReference,
     ) -> ViabilityPolicySnapshot | None: ...
 
+
 @runtime_checkable
 class IDefaultViabilityPolicyStore(
     IDefaultViabilityPolicyProvider,
@@ -50,4 +52,6 @@ class IDefaultViabilityPolicyStore(
     def set_default_viability_policy(
         self,
         reference: PolicyReference,
+        *,
+        expected_current: PolicyReference | None,
     ) -> None: ...

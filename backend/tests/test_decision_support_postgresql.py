@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import os
 from collections.abc import Iterator
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
+from threading import Barrier
 
 import pytest
 from alembic import command
@@ -13,6 +15,7 @@ from sqlalchemy import Engine, text
 
 from database_test_support import require_test_database_url
 from via_backend.contexts.decision_support.application.errors import (
+    DefaultViabilityPolicyConflictError,
     DefaultViabilityPolicyNotConfiguredError,
     ViabilityPolicyVersionNotFoundError,
 )
@@ -130,6 +133,41 @@ def test_same_immutable_policy_can_be_added_idempotently(
     assert repository.get(policy.reference) == policy
 
 
+def test_concurrent_identical_policy_registration_is_idempotent(
+    database: tuple[Engine, SessionFactory],
+) -> None:
+    engine, sessions = database
+    policy = _snapshot()
+    barrier = Barrier(2)
+
+    def add_policy() -> None:
+        repository = PostgreSQLViabilityPolicyRepository(sessions)
+        barrier.wait()
+        repository.add(policy)
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        futures = [executor.submit(add_policy) for _ in range(2)]
+        for future in futures:
+            future.result()
+
+    repository = PostgreSQLViabilityPolicyRepository(sessions)
+    assert repository.get(policy.reference) == policy
+
+    with engine.connect() as connection:
+        row_count = connection.execute(
+            text(
+                "SELECT count(*) FROM decision_support.viability_policy_versions "
+                "WHERE identifier = :identifier AND version = :version"
+            ),
+            {
+                "identifier": policy.reference.identifier,
+                "version": policy.reference.version,
+            },
+        ).scalar_one()
+
+    assert row_count == 1
+
+
 def test_same_reference_cannot_change_thresholds(
     database: tuple[Engine, SessionFactory],
 ) -> None:
@@ -155,6 +193,40 @@ def test_same_reference_cannot_change_thresholds(
         repository.add(conflicting)
 
     assert repository.get(original.reference) == original
+
+
+def test_concurrent_conflicting_policy_registration_has_single_winner(
+    database: tuple[Engine, SessionFactory],
+) -> None:
+    _, sessions = database
+    first = _snapshot(
+        conditional_from=40.0,
+        viable_from=70.0,
+    )
+    second = _snapshot(
+        conditional_from=45.0,
+        viable_from=75.0,
+    )
+    barrier = Barrier(2)
+
+    def add_policy(policy: ViabilityPolicySnapshot) -> str:
+        repository = PostgreSQLViabilityPolicyRepository(sessions)
+        barrier.wait()
+        try:
+            repository.add(policy)
+        except PolicyVersionConflictError:
+            return "conflict"
+        return "success"
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        results = list(executor.map(add_policy, (first, second)))
+
+    assert results.count("success") == 1
+    assert results.count("conflict") == 1
+
+    repository = PostgreSQLViabilityPolicyRepository(sessions)
+    persisted = repository.get(first.reference)
+    assert persisted in (first, second)
 
 
 def test_multiple_versions_of_same_policy_are_preserved(
@@ -233,6 +305,7 @@ def test_missing_policy_version_returns_none(
         is None
     )
 
+
 def test_default_provider_requires_configured_policy(
     database: tuple[Engine, SessionFactory],
 ) -> None:
@@ -257,7 +330,10 @@ def test_default_policy_round_trips_exact_snapshot(
     policy = _snapshot()
 
     repository.add(policy)
-    store.set_default_viability_policy(policy.reference)
+    store.set_default_viability_policy(
+        policy.reference,
+        expected_current=None,
+    )
 
     assert store.get_default_viability_policy() == policy
 
@@ -277,7 +353,8 @@ def test_default_pointer_rejects_missing_policy_version(
             PolicyReference(
                 identifier="missing-policy",
                 version="1",
-            )
+            ),
+            expected_current=None,
         )
 
 
@@ -292,8 +369,14 @@ def test_setting_same_default_is_idempotent(
 
     repository.add(policy)
 
-    store.set_default_viability_policy(policy.reference)
-    store.set_default_viability_policy(policy.reference)
+    store.set_default_viability_policy(
+        policy.reference,
+        expected_current=None,
+    )
+    store.set_default_viability_policy(
+        policy.reference,
+        expected_current=None,
+    )
 
     assert store.get_default_viability_policy() == policy
 
@@ -320,11 +403,62 @@ def test_switching_default_preserves_historical_policy_versions(
     repository.add(first)
     repository.add(second)
 
-    store.set_default_viability_policy(first.reference)
+    store.set_default_viability_policy(
+        first.reference,
+        expected_current=None,
+    )
     assert store.get_default_viability_policy() == first
 
-    store.set_default_viability_policy(second.reference)
+    store.set_default_viability_policy(
+        second.reference,
+        expected_current=first.reference,
+    )
 
     assert store.get_default_viability_policy() == second
     assert repository.get(first.reference) == first
     assert repository.get(second.reference) == second
+
+
+def test_concurrent_default_changes_detect_stale_writer(
+    database: tuple[Engine, SessionFactory],
+) -> None:
+    _, sessions = database
+    repository = PostgreSQLViabilityPolicyRepository(sessions)
+    store = PostgreSQLDefaultViabilityPolicyStore(sessions)
+    first = _snapshot(version="1", conditional_from=40.0, viable_from=70.0)
+    second = _snapshot(version="2", conditional_from=45.0, viable_from=75.0)
+    third = _snapshot(version="3", conditional_from=50.0, viable_from=80.0)
+
+    repository.add(first)
+    repository.add(second)
+    repository.add(third)
+    store.set_default_viability_policy(
+        first.reference,
+        expected_current=None,
+    )
+
+    barrier = Barrier(2)
+
+    def change_default(target: PolicyReference) -> str:
+        worker_store = PostgreSQLDefaultViabilityPolicyStore(sessions)
+        barrier.wait()
+        try:
+            worker_store.set_default_viability_policy(
+                target,
+                expected_current=first.reference,
+            )
+        except DefaultViabilityPolicyConflictError:
+            return "conflict"
+        return "success"
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        results = list(
+            executor.map(
+                change_default,
+                (second.reference, third.reference),
+            )
+        )
+
+    assert results.count("success") == 1
+    assert results.count("conflict") == 1
+    assert store.get_default_viability_policy() in (second, third)

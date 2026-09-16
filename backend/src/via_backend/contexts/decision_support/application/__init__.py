@@ -1,6 +1,9 @@
 """Decision Support application layer."""
 
-from .errors import InvalidViabilityPolicyRevisionError
+from .errors import (
+    DefaultViabilityPolicyConflictError,
+    InvalidViabilityPolicyRevisionError,
+)
 from .policy_lifecycle import (
     RegisterViabilityPolicyVersion,
     ReviseViabilityPolicyVersion,
@@ -17,6 +20,7 @@ from .service import (
 __all__ = [
     "DecisionSupportResult",
     "DecisionSupportService",
+    "DefaultViabilityPolicyConflictError",
     "EvaluateDecisionSupport",
     "IDecisionPolicy",
     "InvalidViabilityPolicyRevisionError",
