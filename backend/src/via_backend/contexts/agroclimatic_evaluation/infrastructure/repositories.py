@@ -28,6 +28,13 @@ class InMemoryEvaluationRepository:
                 or current.parcel_snapshot != evaluation.parcel_snapshot
                 or current.requested_crops != evaluation.requested_crops
                 or current.created_at != evaluation.created_at
+                or current.environmental_input_references
+                != evaluation.environmental_input_references
+                or (
+                    current.environmental_input_manifest is not None
+                    and current.environmental_input_manifest
+                    != evaluation.environmental_input_manifest
+                )
                 or current.outcomes != evaluation.outcomes
             ):
                 raise EvaluationConflictError(

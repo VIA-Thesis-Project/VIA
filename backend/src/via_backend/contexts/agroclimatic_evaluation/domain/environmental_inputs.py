@@ -14,6 +14,18 @@ _EPSG_PATTERN = re.compile(r"EPSG:([1-9][0-9]*)")
 
 
 @dataclass(frozen=True, slots=True)
+class EnvironmentalInputReference:
+    """Caller-selected exact environmental dataset version."""
+
+    input_key: str
+    dataset_id: UUID
+    dataset_version_id: UUID
+
+    def __post_init__(self) -> None:
+        _validate_text(self.input_key, "Environmental input key", 120)
+
+
+@dataclass(frozen=True, slots=True)
 class EnvironmentalInputSnapshot:
     """Historical environmental input metadata captured for one evaluation input."""
 

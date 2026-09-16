@@ -35,6 +35,9 @@ from via_backend.contexts.agroclimatic_evaluation.application import (
 from via_backend.contexts.agroclimatic_evaluation.domain import (
     CropOutcome,
     CropOutcomeStatus,
+    EnvironmentalInputManifest,
+    EnvironmentalInputReference,
+    EnvironmentalInputSnapshot,
     Evaluation,
     EvaluationStatus,
     ParcelSnapshot,
@@ -45,9 +48,16 @@ from via_backend.contexts.agroclimatic_evaluation.domain import (
 from via_backend.contexts.agroclimatic_evaluation.infrastructure import (
     InMemoryEvaluationRepository,
 )
+from via_backend.contexts.environmental_information.application.public import (
+    GetPublishedDatasetVersion,
+    PublishedDatasetVersion,
+)
 from via_backend.worker import run_forever
 
 NOW = datetime(2026, 9, 13, 12, 0, tzinfo=UTC)
+RESOLVED_AT = NOW + timedelta(minutes=1)
+DATASET_ID = UUID("10000000-0000-0000-0000-000000000001")
+DATASET_VERSION_ID = UUID("20000000-0000-0000-0000-000000000001")
 
 
 def _snapshot() -> ParcelSnapshot:
@@ -73,6 +83,83 @@ def _snapshot() -> ParcelSnapshot:
     )
 
 
+def _reference() -> EnvironmentalInputReference:
+    return EnvironmentalInputReference(
+        input_key="soil.ph",
+        dataset_id=DATASET_ID,
+        dataset_version_id=DATASET_VERSION_ID,
+    )
+
+
+def _published() -> PublishedDatasetVersion:
+    return PublishedDatasetVersion(
+        dataset_id=DATASET_ID,
+        dataset_name="Soil pH",
+        source="Open catalog",
+        variable="phh2o",
+        unit="pH",
+        dataset_version_id=DATASET_VERSION_ID,
+        version_identifier="2026-09",
+        checksum="sha256:abc",
+        storage_reference="catalog://soil/ph/2026-09",
+        crs="EPSG:4326",
+        resolution_x=0.01,
+        resolution_y=0.01,
+        resolution_unit="degree",
+        extent_west=-77.8,
+        extent_south=-12.7,
+        extent_east=-76.2,
+        extent_north=-10.4,
+        valid_from=None,
+        valid_to=None,
+        scenario=None,
+        registered_at=NOW,
+    )
+
+
+def _manifest() -> EnvironmentalInputManifest:
+    published = _published()
+    return EnvironmentalInputManifest(
+        resolved_at=RESOLVED_AT,
+        inputs=(
+            EnvironmentalInputSnapshot(
+                input_key="soil.ph",
+                dataset_id=published.dataset_id,
+                dataset_name=published.dataset_name,
+                source=published.source,
+                variable=published.variable,
+                unit=published.unit,
+                dataset_version_id=published.dataset_version_id,
+                version_identifier=published.version_identifier,
+                checksum=published.checksum,
+                storage_reference=published.storage_reference,
+                crs=published.crs,
+                resolution_x=published.resolution_x,
+                resolution_y=published.resolution_y,
+                resolution_unit=published.resolution_unit,
+                extent_west=published.extent_west,
+                extent_south=published.extent_south,
+                extent_east=published.extent_east,
+                extent_north=published.extent_north,
+                valid_from=published.valid_from,
+                valid_to=published.valid_to,
+                scenario=published.scenario,
+                registered_at=published.registered_at,
+            ),
+        ),
+    )
+
+
+class FakeEnvironmentalInformation:
+    def get_published_dataset_version(
+        self,
+        query: GetPublishedDatasetVersion,
+    ) -> PublishedDatasetVersion | None:
+        if query == GetPublishedDatasetVersion(DATASET_ID, DATASET_VERSION_ID):
+            return _published()
+        return None
+
+
 def _evaluation(
     *,
     evaluation_id: UUID | None = None,
@@ -85,6 +172,7 @@ def _evaluation(
         requested_crops=crops,
         status=EvaluationStatus.QUEUED,
         created_at=created_at,
+        environmental_input_references=(_reference(),),
     )
 
 
@@ -537,6 +625,7 @@ def _evaluation_in_status(
     running = (
         evaluation
         .prepare()
+        .attach_environmental_input_manifest(_manifest())
         .start_running()
     )
 
@@ -696,6 +785,7 @@ def test_explicit_recovery_uses_expected_status() -> None:
     evaluation = (
         _evaluation()
         .prepare()
+        .attach_environmental_input_manifest(_manifest())
         .start_running()
     )
     repository.add(evaluation)
@@ -746,6 +836,7 @@ def test_concurrent_recovery_reports_conflict_without_overwrite() -> None:
     evaluation = (
         _evaluation()
         .prepare()
+        .attach_environmental_input_manifest(_manifest())
         .start_running()
     )
     repository.add(evaluation)
@@ -813,4 +904,6 @@ def _executor(
         repository,
         engine,
         FakeComparisonEngine(),
+        FakeEnvironmentalInformation(),
+        clock=lambda: RESOLVED_AT,
     )

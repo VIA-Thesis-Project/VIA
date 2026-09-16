@@ -6,6 +6,7 @@ from collections.abc import Callable
 from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
+from ..domain.environmental_inputs import EnvironmentalInputReference
 from ..domain.errors import DomainValidationError, EvaluationConflictError
 from ..domain.models import Evaluation, EvaluationStatus
 from ..domain.outcomes import CropOutcome
@@ -66,6 +67,10 @@ class AgroclimaticEvaluationService:
     def request_evaluation(self, command: RequestEvaluation) -> EvaluationResult:
         supplied = command.parcel_snapshot
         try:
+            if not command.environmental_inputs:
+                raise DomainValidationError(
+                    "At least one environmental input must be requested."
+                )
             snapshot = ParcelSnapshot(
                 project_id=supplied.project_id,
                 parcel_id=supplied.parcel_id,
@@ -80,6 +85,14 @@ class AgroclimaticEvaluationService:
                 requested_crops=command.requested_crops,
                 status=EvaluationStatus.QUEUED,
                 created_at=self._clock(),
+                environmental_input_references=tuple(
+                    EnvironmentalInputReference(
+                        input_key=item.input_key,
+                        dataset_id=item.dataset_id,
+                        dataset_version_id=item.dataset_version_id,
+                    )
+                    for item in command.environmental_inputs
+                ),
             )
         except DomainValidationError as error:
             raise InvalidCommandError(str(error)) from error

@@ -8,6 +8,7 @@ from enum import StrEnum
 from typing import Protocol, runtime_checkable
 from uuid import UUID
 
+from ..domain.environmental_inputs import EnvironmentalInputManifest
 from ..domain.snapshot import ParcelSnapshot
 
 
@@ -26,6 +27,7 @@ class CropSuitabilityRequest:
     evaluation_id: UUID
     parcel_snapshot: ParcelSnapshot
     crop_id: str
+    environmental_input_manifest: EnvironmentalInputManifest
 
 
 @dataclass(frozen=True, slots=True)

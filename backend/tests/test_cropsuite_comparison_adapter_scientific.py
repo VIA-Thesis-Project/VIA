@@ -19,6 +19,8 @@ from via_backend.contexts.agroclimatic_evaluation.application.ports import (
     CropSuitabilityRequest,
 )
 from via_backend.contexts.agroclimatic_evaluation.domain import (
+    EnvironmentalInputManifest,
+    EnvironmentalInputSnapshot,
     ParcelSnapshot,
     SnapshotGeometry,
 )
@@ -131,6 +133,36 @@ def test_real_cropsuite_comparison_adapter_smoke() -> None:
         crs="EPSG:4326",
         captured_at=datetime.now(UTC),
     )
+    resolved_at = datetime.now(UTC)
+    environmental_input_manifest = EnvironmentalInputManifest(
+        resolved_at=resolved_at,
+        inputs=(
+            EnvironmentalInputSnapshot(
+                input_key="smoke.input",
+                dataset_id=uuid4(),
+                dataset_name="Smoke input",
+                source="smoke-test",
+                variable="smoke",
+                unit="unit",
+                dataset_version_id=uuid4(),
+                version_identifier="smoke-v1",
+                checksum="sha256:smoke",
+                storage_reference="smoke://input",
+                crs="EPSG:4326",
+                resolution_x=0.01,
+                resolution_y=0.01,
+                resolution_unit="degree",
+                extent_west=-78.0,
+                extent_south=-13.0,
+                extent_east=-76.0,
+                extent_north=-10.0,
+                valid_from=None,
+                valid_to=None,
+                scenario=None,
+                registered_at=resolved_at,
+            ),
+        ),
+    )
 
     results = []
 
@@ -143,6 +175,7 @@ def test_real_cropsuite_comparison_adapter_smoke() -> None:
                 evaluation_id=evaluation_id,
                 parcel_snapshot=snapshot,
                 crop_id=crop_id,
+                environmental_input_manifest=environmental_input_manifest,
             )
         )
 

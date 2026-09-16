@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 from uuid import UUID
 
 from geoalchemy2 import Geometry
@@ -10,6 +10,7 @@ from sqlalchemy import (
     BigInteger,
     Boolean,
     CheckConstraint,
+    Date,
     DateTime,
     Float,
     ForeignKey,
@@ -68,6 +69,193 @@ class EvaluationRecord(Base):
     status: Mapped[str] = mapped_column(String(32), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     failure_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+
+class EvaluationEnvironmentalInputRequestRecord(Base):
+    __tablename__ = "evaluation_environmental_input_requests"
+    __table_args__ = (
+        CheckConstraint(
+            "position >= 0",
+            name="env_input_request_position_nonnegative",
+        ),
+        CheckConstraint(
+            "input_key <> '' AND input_key = btrim(input_key)",
+            name="env_input_request_key_nonempty_trimmed",
+        ),
+        UniqueConstraint(
+            "evaluation_id",
+            "input_key",
+            name="uq_env_input_request_key",
+        ),
+        UniqueConstraint(
+            "evaluation_id",
+            "input_key",
+            "dataset_id",
+            "dataset_version_id",
+            name="uq_env_input_request_exact_reference",
+        ),
+    )
+
+    evaluation_id: Mapped[UUID] = mapped_column(
+        PostgreSQLUUID(as_uuid=True),
+        ForeignKey(
+            f"{AGROCLIMATIC_EVALUATION_SCHEMA}.evaluations.id",
+            ondelete="CASCADE",
+        ),
+        primary_key=True,
+        nullable=False,
+    )
+    position: Mapped[int] = mapped_column(Integer, primary_key=True, nullable=False)
+    input_key: Mapped[str] = mapped_column(String(120), nullable=False)
+    dataset_id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), nullable=False)
+    dataset_version_id: Mapped[UUID] = mapped_column(
+        PostgreSQLUUID(as_uuid=True),
+        nullable=False,
+    )
+
+
+class EvaluationEnvironmentalInputManifestRecord(Base):
+    __tablename__ = "evaluation_environmental_input_manifests"
+
+    evaluation_id: Mapped[UUID] = mapped_column(
+        PostgreSQLUUID(as_uuid=True),
+        ForeignKey(
+            f"{AGROCLIMATIC_EVALUATION_SCHEMA}.evaluations.id",
+            ondelete="CASCADE",
+        ),
+        primary_key=True,
+        nullable=False,
+    )
+    resolved_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class EvaluationEnvironmentalInputRecord(Base):
+    __tablename__ = "evaluation_environmental_inputs"
+    __table_args__ = (
+        CheckConstraint("position >= 0", name="env_input_position_nonnegative"),
+        CheckConstraint(
+            "input_key <> '' AND input_key = btrim(input_key)",
+            name="env_input_key_nonempty_trimmed",
+        ),
+        CheckConstraint(
+            "dataset_name <> '' AND dataset_name = btrim(dataset_name)",
+            name="env_input_dataset_name_nonempty_trimmed",
+        ),
+        CheckConstraint(
+            "source <> '' AND source = btrim(source)",
+            name="env_input_source_nonempty_trimmed",
+        ),
+        CheckConstraint(
+            "variable <> '' AND variable = btrim(variable)",
+            name="env_input_variable_nonempty_trimmed",
+        ),
+        CheckConstraint(
+            "unit <> '' AND unit = btrim(unit)",
+            name="env_input_unit_nonempty_trimmed",
+        ),
+        CheckConstraint(
+            "version_identifier <> '' AND version_identifier = btrim(version_identifier)",
+            name="env_input_version_identifier_nonempty_trimmed",
+        ),
+        CheckConstraint(
+            "checksum <> '' AND checksum = btrim(checksum)",
+            name="env_input_checksum_nonempty_trimmed",
+        ),
+        CheckConstraint(
+            "storage_reference <> '' AND storage_reference = btrim(storage_reference)",
+            name="env_input_storage_reference_nonempty_trimmed",
+        ),
+        CheckConstraint(
+            "resolution_unit <> '' AND resolution_unit = btrim(resolution_unit)",
+            name="env_input_resolution_unit_nonempty_trimmed",
+        ),
+        CheckConstraint("resolution_x > 0", name="env_input_resolution_x_positive"),
+        CheckConstraint("resolution_y > 0", name="env_input_resolution_y_positive"),
+        CheckConstraint("extent_west < extent_east", name="env_input_west_before_east"),
+        CheckConstraint(
+            "extent_south < extent_north",
+            name="env_input_south_before_north",
+        ),
+        CheckConstraint(
+            "valid_from IS NULL OR valid_to IS NULL OR valid_from <= valid_to",
+            name="env_input_validity_window_ordered",
+        ),
+        CheckConstraint(
+            "scenario IS NULL OR (scenario <> '' AND scenario = btrim(scenario))",
+            name="env_input_scenario_nonempty_trimmed",
+        ),
+        CheckConstraint(
+            "crs ~ '^EPSG:[1-9][0-9]*$'",
+            name="env_input_crs_epsg_positive",
+        ),
+        CheckConstraint(
+            "crs <> 'EPSG:4326' OR ("
+            "extent_west >= -180 AND extent_east <= 180 AND "
+            "extent_south >= -90 AND extent_north <= 90)",
+            name="env_input_epsg4326_extent_bounds",
+        ),
+        ForeignKeyConstraint(
+            ["evaluation_id"],
+            [
+                f"{AGROCLIMATIC_EVALUATION_SCHEMA}."
+                "evaluation_environmental_input_manifests.evaluation_id"
+            ],
+            name="fk_env_input_manifest",
+            ondelete="CASCADE",
+        ),
+        ForeignKeyConstraint(
+            ["evaluation_id", "input_key", "dataset_id", "dataset_version_id"],
+            [
+                f"{AGROCLIMATIC_EVALUATION_SCHEMA}."
+                "evaluation_environmental_input_requests.evaluation_id",
+                f"{AGROCLIMATIC_EVALUATION_SCHEMA}."
+                "evaluation_environmental_input_requests.input_key",
+                f"{AGROCLIMATIC_EVALUATION_SCHEMA}."
+                "evaluation_environmental_input_requests.dataset_id",
+                f"{AGROCLIMATIC_EVALUATION_SCHEMA}."
+                "evaluation_environmental_input_requests.dataset_version_id",
+            ],
+            name="fk_env_input_exact_requested_reference",
+            ondelete="CASCADE",
+        ),
+        UniqueConstraint(
+            "evaluation_id",
+            "input_key",
+            name="uq_evaluation_environmental_inputs_key",
+        ),
+    )
+
+    evaluation_id: Mapped[UUID] = mapped_column(
+        PostgreSQLUUID(as_uuid=True),
+        primary_key=True,
+        nullable=False,
+    )
+    position: Mapped[int] = mapped_column(Integer, primary_key=True, nullable=False)
+    input_key: Mapped[str] = mapped_column(String(120), nullable=False)
+    dataset_id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), nullable=False)
+    dataset_name: Mapped[str] = mapped_column(String(120), nullable=False)
+    source: Mapped[str] = mapped_column(String(255), nullable=False)
+    variable: Mapped[str] = mapped_column(String(120), nullable=False)
+    unit: Mapped[str] = mapped_column(String(64), nullable=False)
+    dataset_version_id: Mapped[UUID] = mapped_column(
+        PostgreSQLUUID(as_uuid=True),
+        nullable=False,
+    )
+    version_identifier: Mapped[str] = mapped_column(String(120), nullable=False)
+    checksum: Mapped[str] = mapped_column(String(256), nullable=False)
+    storage_reference: Mapped[str] = mapped_column(Text, nullable=False)
+    crs: Mapped[str] = mapped_column(String(32), nullable=False)
+    resolution_x: Mapped[float] = mapped_column(Float, nullable=False)
+    resolution_y: Mapped[float] = mapped_column(Float, nullable=False)
+    resolution_unit: Mapped[str] = mapped_column(String(32), nullable=False)
+    extent_west: Mapped[float] = mapped_column(Float, nullable=False)
+    extent_south: Mapped[float] = mapped_column(Float, nullable=False)
+    extent_east: Mapped[float] = mapped_column(Float, nullable=False)
+    extent_north: Mapped[float] = mapped_column(Float, nullable=False)
+    valid_from: Mapped[date | None] = mapped_column(Date, nullable=True)
+    valid_to: Mapped[date | None] = mapped_column(Date, nullable=True)
+    scenario: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    registered_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
 class EvaluationCommonSupportRecord(Base):
     __tablename__ = "evaluation_common_support"

@@ -21,6 +21,8 @@ from via_backend.contexts.agroclimatic_evaluation.application.ports import (
     ScientificArtifactRole,
 )
 from via_backend.contexts.agroclimatic_evaluation.domain import (
+    EnvironmentalInputManifest,
+    EnvironmentalInputSnapshot,
     ParcelSnapshot,
     SnapshotGeometry,
 )
@@ -50,6 +52,39 @@ def _geometry(kind: str = "Polygon") -> SnapshotGeometry:
     return SnapshotGeometry.from_geojson({"type": kind, "coordinates": coordinates})
 
 
+def _environmental_input_manifest() -> EnvironmentalInputManifest:
+    now = datetime(2026, 9, 12, 12, tzinfo=UTC)
+    return EnvironmentalInputManifest(
+        resolved_at=now,
+        inputs=(
+            EnvironmentalInputSnapshot(
+                input_key="soil.ph",
+                dataset_id=uuid4(),
+                dataset_name="Soil pH",
+                source="test",
+                variable="ph",
+                unit="pH",
+                dataset_version_id=uuid4(),
+                version_identifier="test-v1",
+                checksum="sha256:test",
+                storage_reference="test://soil-ph",
+                crs="EPSG:4326",
+                resolution_x=0.01,
+                resolution_y=0.01,
+                resolution_unit="degree",
+                extent_west=-78.0,
+                extent_south=-13.0,
+                extent_east=-76.0,
+                extent_north=-10.0,
+                valid_from=None,
+                valid_to=None,
+                scenario=None,
+                registered_at=now,
+            ),
+        ),
+    )
+
+
 def _request(kind: str = "Polygon", crop_id: str = "maize") -> CropSuitabilityRequest:
     return CropSuitabilityRequest(
         evaluation_id=uuid4(),
@@ -62,6 +97,7 @@ def _request(kind: str = "Polygon", crop_id: str = "maize") -> CropSuitabilityRe
             captured_at=datetime(2026, 9, 12, 12, tzinfo=UTC),
         ),
         crop_id=crop_id,
+        environmental_input_manifest=_environmental_input_manifest(),
     )
 
 

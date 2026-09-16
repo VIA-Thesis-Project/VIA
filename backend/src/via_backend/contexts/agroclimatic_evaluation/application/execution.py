@@ -2,6 +2,14 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
+from datetime import UTC, datetime
+
+from via_backend.contexts.environmental_information.application.public import (
+    GetPublishedDatasetVersion,
+    PublishedDatasetVersionReader,
+)
+
 from ..domain.comparison import (
     CommonSupport,
     ComparableCrop,
@@ -9,6 +17,7 @@ from ..domain.comparison import (
 from ..domain.comparison import (
     CommonSupportStatus as DomainCommonSupportStatus,
 )
+from ..domain.environmental_inputs import EnvironmentalInputManifest, EnvironmentalInputSnapshot
 from ..domain.errors import EvaluationConflictError
 from ..domain.models import Evaluation, EvaluationStatus
 from ..domain.outcomes import (
@@ -45,6 +54,10 @@ from .results import EvaluationResult
 from .service import ResourceConflictError, ResourceNotFoundError
 
 
+class EnvironmentalInputResolutionError(RuntimeError):
+    """Raised when an exact caller-selected environmental version cannot be resolved."""
+
+
 class AgroclimaticEvaluationExecutionService:
     """Execute requested crops and summarize them through Application-owned ports."""
 
@@ -53,10 +66,15 @@ class AgroclimaticEvaluationExecutionService:
         evaluations: EvaluationRepository,
         engine: ICropSuitabilityEngine,
         comparison_engine: ICropComparisonEngine,
+        environmental_information: PublishedDatasetVersionReader,
+        *,
+        clock: Callable[[], datetime] | None = None,
     ) -> None:
         self._evaluations = evaluations
         self._engine = engine
         self._comparison_engine = comparison_engine
+        self._environmental_information = environmental_information
+        self._clock = clock or (lambda: datetime.now(UTC))
 
     def execute_evaluation(
         self,
@@ -88,7 +106,8 @@ class AgroclimaticEvaluationExecutionService:
         current = preparing
 
         try:
-            running = current.start_running()
+            manifest = self._resolve_environmental_inputs(current)
+            running = current.attach_environmental_input_manifest(manifest).start_running()
 
             self._evaluations.save(
                 running,
@@ -103,6 +122,7 @@ class AgroclimaticEvaluationExecutionService:
                         evaluation_id=current.id,
                         parcel_snapshot=current.parcel_snapshot,
                         crop_id=crop_id,
+                        environmental_input_manifest=manifest,
                     )
                 )
 
@@ -157,6 +177,60 @@ class AgroclimaticEvaluationExecutionService:
         except Exception as error:
             self._persist_failure(current, error)
             raise
+
+    def _resolve_environmental_inputs(
+        self,
+        evaluation: Evaluation,
+    ) -> EnvironmentalInputManifest:
+        if not evaluation.environmental_input_references:
+            raise EnvironmentalInputResolutionError(
+                "Queued evaluation has no environmental input references."
+            )
+
+        snapshots: list[EnvironmentalInputSnapshot] = []
+        for reference in evaluation.environmental_input_references:
+            published = self._environmental_information.get_published_dataset_version(
+                GetPublishedDatasetVersion(
+                    dataset_id=reference.dataset_id,
+                    dataset_version_id=reference.dataset_version_id,
+                )
+            )
+            if published is None:
+                raise EnvironmentalInputResolutionError(
+                    "Exact environmental dataset version could not be resolved: "
+                    f"dataset_id={reference.dataset_id}, "
+                    f"dataset_version_id={reference.dataset_version_id}."
+                )
+            snapshots.append(
+                EnvironmentalInputSnapshot(
+                    input_key=reference.input_key,
+                    dataset_id=published.dataset_id,
+                    dataset_name=published.dataset_name,
+                    source=published.source,
+                    variable=published.variable,
+                    unit=published.unit,
+                    dataset_version_id=published.dataset_version_id,
+                    version_identifier=published.version_identifier,
+                    checksum=published.checksum,
+                    storage_reference=published.storage_reference,
+                    crs=published.crs,
+                    resolution_x=published.resolution_x,
+                    resolution_y=published.resolution_y,
+                    resolution_unit=published.resolution_unit,
+                    extent_west=published.extent_west,
+                    extent_south=published.extent_south,
+                    extent_east=published.extent_east,
+                    extent_north=published.extent_north,
+                    valid_from=published.valid_from,
+                    valid_to=published.valid_to,
+                    scenario=published.scenario,
+                    registered_at=published.registered_at,
+                )
+            )
+        return EnvironmentalInputManifest(
+            resolved_at=self._clock(),
+            inputs=tuple(snapshots),
+        )
 
     def _persist_failure(
         self,

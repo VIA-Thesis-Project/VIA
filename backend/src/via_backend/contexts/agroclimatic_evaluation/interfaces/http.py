@@ -9,7 +9,11 @@ from uuid import UUID
 from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel, ConfigDict, Field
 
-from ..application.commands import ParcelSnapshotInput, RequestEvaluation
+from ..application.commands import (
+    EnvironmentalInputReferenceInput,
+    ParcelSnapshotInput,
+    RequestEvaluation,
+)
 from ..application.queries import (
     GetEvaluation,
     GetEvaluationEvidence,
@@ -46,9 +50,16 @@ class ParcelSnapshotBody(_RequestModel):
     captured_at: datetime
 
 
+class EnvironmentalInputReferenceBody(_RequestModel):
+    input_key: str
+    dataset_id: UUID
+    dataset_version_id: UUID
+
+
 class RequestEvaluationBody(_RequestModel):
     parcel_snapshot: ParcelSnapshotBody
     requested_crops: list[str] = Field(min_length=1)
+    environmental_inputs: list[EnvironmentalInputReferenceBody] = Field(min_length=1)
 
 
 class SnapshotGeometryResponse(BaseModel):
@@ -200,6 +211,14 @@ def create_router(service: AgroclimaticEvaluationService) -> APIRouter:
                     captured_at=snapshot.captured_at,
                 ),
                 requested_crops=tuple(body.requested_crops),
+                environmental_inputs=tuple(
+                    EnvironmentalInputReferenceInput(
+                        input_key=item.input_key,
+                        dataset_id=item.dataset_id,
+                        dataset_version_id=item.dataset_version_id,
+                    )
+                    for item in body.environmental_inputs
+                ),
             ),
         )
         return EvaluationResponse.model_validate(result)

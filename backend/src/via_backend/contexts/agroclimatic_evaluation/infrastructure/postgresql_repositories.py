@@ -18,6 +18,11 @@ from ..domain.comparison import (
     CommonSupportStatus,
     ComparableCrop,
 )
+from ..domain.environmental_inputs import (
+    EnvironmentalInputManifest,
+    EnvironmentalInputReference,
+    EnvironmentalInputSnapshot,
+)
 from ..domain.errors import EvaluationConflictError
 from ..domain.models import Evaluation, EvaluationStatus
 from ..domain.outcomes import (
@@ -35,6 +40,9 @@ from .orm import (
     EvaluationCommonSupportRecord,
     EvaluationComparableCropRecord,
     EvaluationCropRecord,
+    EvaluationEnvironmentalInputManifestRecord,
+    EvaluationEnvironmentalInputRecord,
+    EvaluationEnvironmentalInputRequestRecord,
     EvaluationRecord,
     ScientificArtifactRecord,
 )
@@ -78,6 +86,19 @@ class PostgreSQLEvaluationRepository:
                     )
                     for position, crop_id in enumerate(evaluation.requested_crops)
                 )
+                session.add_all(
+                    EvaluationEnvironmentalInputRequestRecord(
+                        evaluation_id=evaluation.id,
+                        position=position,
+                        input_key=reference.input_key,
+                        dataset_id=reference.dataset_id,
+                        dataset_version_id=reference.dataset_version_id,
+                    )
+                    for position, reference in enumerate(
+                        evaluation.environmental_input_references
+                    )
+                )
+                _persist_environmental_input_manifest(session, evaluation)
         except IntegrityError as error:
             raise EvaluationConflictError(
                 f"Evaluation {evaluation.id} conflicts with persisted evaluation data."
@@ -109,6 +130,7 @@ class PostgreSQLEvaluationRepository:
                         f"Evaluation {evaluation.id} changed before it could be saved."
                     )
 
+                _persist_environmental_input_manifest(session, evaluation)
                 _persist_common_support(
                     session,
                     evaluation,
@@ -119,8 +141,7 @@ class PostgreSQLEvaluationRepository:
                 )
         except IntegrityError as error:
             raise EvaluationConflictError(
-                f"Evaluation {evaluation.id} conflicts with persisted "
-                "comparison data."
+                f"Evaluation {evaluation.id} conflicts with persisted evaluation data."
             ) from error
 
     def add_outcome(self, evaluation_id: UUID, outcome: CropOutcome) -> None:
@@ -168,11 +189,21 @@ class PostgreSQLEvaluationRepository:
                 )
             )
             outcomes = _load_outcomes(session, evaluation_id)
+            environmental_input_references = _load_environmental_input_references(
+                session,
+                evaluation_id,
+            )
+            environmental_input_manifest = _load_environmental_input_manifest(
+                session,
+                evaluation_id,
+            )
             record, geometry_json = row
             return _evaluation_from_row(
                 record,
                 geometry_json,
                 crops,
+                environmental_input_references,
+                environmental_input_manifest,
                 outcomes,
                 _load_common_support(
                     session,
@@ -216,6 +247,8 @@ class PostgreSQLEvaluationRepository:
                         record,
                         geometry_json,
                         crops,
+                        _load_environmental_input_references(session, record.id),
+                        _load_environmental_input_manifest(session, record.id),
                         _load_outcomes(session, record.id),
                         _load_common_support(session, record.id),
                         _load_comparable_crops(session, record.id),
@@ -235,6 +268,8 @@ def _evaluation_from_row(
     record: EvaluationRecord,
     geometry_json: str,
     crops: tuple[str, ...],
+    environmental_input_references: tuple[EnvironmentalInputReference, ...],
+    environmental_input_manifest: EnvironmentalInputManifest | None,
     outcomes: tuple[CropOutcome, ...],
     common_support: CommonSupport | None,
     comparable_crops: tuple[ComparableCrop, ...],
@@ -260,10 +295,133 @@ def _evaluation_from_row(
         requested_crops=crops,
         status=EvaluationStatus(record.status),
         created_at=record.created_at,
+        environmental_input_references=environmental_input_references,
+        environmental_input_manifest=environmental_input_manifest,
         outcomes=outcomes,
         common_support=common_support,
         comparable_crops=comparable_crops,
         failure_reason=record.failure_reason,
+    )
+
+
+def _load_environmental_input_references(
+    session: Session,
+    evaluation_id: UUID,
+) -> tuple[EnvironmentalInputReference, ...]:
+    records = session.scalars(
+        select(EvaluationEnvironmentalInputRequestRecord)
+        .where(EvaluationEnvironmentalInputRequestRecord.evaluation_id == evaluation_id)
+        .order_by(EvaluationEnvironmentalInputRequestRecord.position)
+    )
+    return tuple(
+        EnvironmentalInputReference(
+            input_key=record.input_key,
+            dataset_id=record.dataset_id,
+            dataset_version_id=record.dataset_version_id,
+        )
+        for record in records
+    )
+
+
+def _load_environmental_input_manifest(
+    session: Session,
+    evaluation_id: UUID,
+) -> EnvironmentalInputManifest | None:
+    manifest_record = session.get(
+        EvaluationEnvironmentalInputManifestRecord,
+        evaluation_id,
+    )
+    if manifest_record is None:
+        return None
+
+    input_records = session.scalars(
+        select(EvaluationEnvironmentalInputRecord)
+        .where(EvaluationEnvironmentalInputRecord.evaluation_id == evaluation_id)
+        .order_by(EvaluationEnvironmentalInputRecord.position)
+    )
+    return EnvironmentalInputManifest(
+        resolved_at=manifest_record.resolved_at,
+        inputs=tuple(
+            EnvironmentalInputSnapshot(
+                input_key=record.input_key,
+                dataset_id=record.dataset_id,
+                dataset_name=record.dataset_name,
+                source=record.source,
+                variable=record.variable,
+                unit=record.unit,
+                dataset_version_id=record.dataset_version_id,
+                version_identifier=record.version_identifier,
+                checksum=record.checksum,
+                storage_reference=record.storage_reference,
+                crs=record.crs,
+                resolution_x=record.resolution_x,
+                resolution_y=record.resolution_y,
+                resolution_unit=record.resolution_unit,
+                extent_west=record.extent_west,
+                extent_south=record.extent_south,
+                extent_east=record.extent_east,
+                extent_north=record.extent_north,
+                valid_from=record.valid_from,
+                valid_to=record.valid_to,
+                scenario=record.scenario,
+                registered_at=record.registered_at,
+            )
+            for record in input_records
+        ),
+    )
+
+
+def _persist_environmental_input_manifest(
+    session: Session,
+    evaluation: Evaluation,
+) -> None:
+    manifest = evaluation.environmental_input_manifest
+    if manifest is None:
+        return
+
+    persisted = _load_environmental_input_manifest(session, evaluation.id)
+    if persisted is not None:
+        if persisted != manifest:
+            raise EvaluationConflictError(
+                f"Evaluation {evaluation.id} already has a different environmental input manifest."
+            )
+        return
+
+    session.add(
+        EvaluationEnvironmentalInputManifestRecord(
+            evaluation_id=evaluation.id,
+            resolved_at=manifest.resolved_at,
+        )
+    )
+    session.flush()
+    session.add_all(
+        EvaluationEnvironmentalInputRecord(
+            evaluation_id=evaluation.id,
+            position=position,
+            input_key=item.input_key,
+            dataset_id=item.dataset_id,
+            dataset_name=item.dataset_name,
+            source=item.source,
+            variable=item.variable,
+            unit=item.unit,
+            dataset_version_id=item.dataset_version_id,
+            version_identifier=item.version_identifier,
+            checksum=item.checksum,
+            storage_reference=item.storage_reference,
+            crs=item.crs,
+            resolution_x=item.resolution_x,
+            resolution_y=item.resolution_y,
+            resolution_unit=item.resolution_unit,
+            extent_west=item.extent_west,
+            extent_south=item.extent_south,
+            extent_east=item.extent_east,
+            extent_north=item.extent_north,
+            valid_from=item.valid_from,
+            valid_to=item.valid_to,
+            scenario=item.scenario,
+            registered_at=item.registered_at,
+        )
+        for position, item in enumerate(manifest.inputs)
     )
 
 def _persist_common_support(

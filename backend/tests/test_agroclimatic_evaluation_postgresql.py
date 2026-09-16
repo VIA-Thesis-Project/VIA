@@ -5,7 +5,7 @@ from __future__ import annotations
 import os
 from collections.abc import Iterator
 from dataclasses import replace
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 from uuid import UUID, uuid4
 
@@ -26,6 +26,9 @@ from via_backend.contexts.agroclimatic_evaluation.domain import (
     ComparableCrop,
     CropOutcome,
     CropOutcomeStatus,
+    EnvironmentalInputManifest,
+    EnvironmentalInputReference,
+    EnvironmentalInputSnapshot,
     Evaluation,
     EvaluationConflictError,
     EvaluationStatus,
@@ -51,6 +54,7 @@ from via_backend.infrastructure import SessionFactory, create_database
 pytestmark = pytest.mark.integration
 BACKEND_ROOT = Path(__file__).parents[1]
 NOW = datetime(2026, 9, 12, 15, 0, tzinfo=UTC)
+RESOLVED_AT = NOW + timedelta(minutes=30)
 
 
 def _database_url() -> str:
@@ -97,7 +101,78 @@ def _multipolygon() -> dict:
     return {"type": "MultiPolygon", "coordinates": [_polygon()["coordinates"]]}
 
 
-def _evaluation(geometry: dict | None = None) -> Evaluation:
+def _references() -> tuple[EnvironmentalInputReference, ...]:
+    return (
+        EnvironmentalInputReference(
+            input_key="soil.ph",
+            dataset_id=uuid4(),
+            dataset_version_id=uuid4(),
+        ),
+        EnvironmentalInputReference(
+            input_key="climate.precipitation",
+            dataset_id=uuid4(),
+            dataset_version_id=uuid4(),
+        ),
+    )
+
+
+def _snapshot_for_reference(
+    reference: EnvironmentalInputReference,
+    *,
+    position: int,
+) -> EnvironmentalInputSnapshot:
+    resolution_x = (0.01, 0.011)[position]
+    resolution_y = (0.02, 0.021)[position]
+
+    extent_west = (-77.8, -77.79)[position]
+    extent_south = (-12.7, -12.69)[position]
+    extent_east = (-76.2, -76.19)[position]
+    extent_north = (-10.4, -10.39)[position]
+
+    return EnvironmentalInputSnapshot(
+        input_key=reference.input_key,
+        dataset_id=reference.dataset_id,
+        dataset_name=f"Dataset {position}",
+        source=f"Source {position}",
+        variable=f"variable_{position}",
+        unit="unit",
+        dataset_version_id=reference.dataset_version_id,
+        version_identifier=f"2026-09-{position}",
+        checksum=f"sha256:{reference.dataset_version_id.hex}",
+        storage_reference=f"catalog://{reference.dataset_version_id}",
+        crs="EPSG:4326",
+        resolution_x=resolution_x,
+        resolution_y=resolution_y,
+        resolution_unit="degree",
+        extent_west=extent_west,
+        extent_south=extent_south,
+        extent_east=extent_east,
+        extent_north=extent_north,
+        valid_from=date(2026, 1, 1) if position == 0 else None,
+        valid_to=date(2026, 12, 31) if position == 0 else None,
+        scenario="baseline" if position == 0 else None,
+        registered_at=NOW - timedelta(days=position),
+    )
+
+
+def _manifest(
+    references: tuple[EnvironmentalInputReference, ...],
+) -> EnvironmentalInputManifest:
+    return EnvironmentalInputManifest(
+        resolved_at=RESOLVED_AT,
+        inputs=tuple(
+            _snapshot_for_reference(reference, position=position)
+            for position, reference in enumerate(references)
+        ),
+    )
+
+
+def _evaluation(
+    geometry: dict | None = None,
+    *,
+    references: tuple[EnvironmentalInputReference, ...] | None = None,
+) -> Evaluation:
+    references = _references() if references is None else references
     return Evaluation(
         id=uuid4(),
         parcel_snapshot=ParcelSnapshot(
@@ -111,7 +186,21 @@ def _evaluation(geometry: dict | None = None) -> Evaluation:
         requested_crops=("rice", "maize", "potato"),
         status=EvaluationStatus.QUEUED,
         created_at=NOW,
+        environmental_input_references=references,
     )
+
+
+def _start_running(
+    repository: PostgreSQLEvaluationRepository,
+    preparing: Evaluation,
+) -> Evaluation:
+    running = (
+        preparing.attach_environmental_input_manifest(
+            _manifest(preparing.environmental_input_references)
+        ).start_running()
+    )
+    repository.save(running, expected_status=EvaluationStatus.PREPARING)
+    return running
 
 
 @pytest.mark.parametrize("geometry", [_polygon(), _multipolygon()])
@@ -134,6 +223,58 @@ def test_evaluation_snapshot_round_trips_as_postgis_multipolygon(
         ).one()
     assert geometry_type == "ST_MultiPolygon"
     assert srid == 4326
+
+
+def test_exact_environmental_input_references_round_trip_in_order_without_manifest(
+    database: tuple[Engine, SessionFactory],
+) -> None:
+    _, sessions = database
+    references = _references()
+    evaluation = _evaluation(references=references)
+    repository = PostgreSQLEvaluationRepository(sessions)
+
+    repository.add(evaluation)
+    restored = repository.get(evaluation.id)
+
+    assert restored is not None
+    assert restored.environmental_input_references == references
+    assert restored.environmental_input_manifest is None
+
+
+def test_same_exact_dataset_version_can_serve_distinct_input_keys(
+    database: tuple[Engine, SessionFactory],
+) -> None:
+    _, sessions = database
+    dataset_id = uuid4()
+    dataset_version_id = uuid4()
+    references = (
+        EnvironmentalInputReference("soil.ph", dataset_id, dataset_version_id),
+        EnvironmentalInputReference("soil.texture", dataset_id, dataset_version_id),
+    )
+    evaluation = _evaluation(references=references)
+    repository = PostgreSQLEvaluationRepository(sessions)
+
+    repository.add(evaluation)
+    restored = repository.get(evaluation.id)
+
+    assert restored is not None
+    assert restored.environmental_input_references == references
+
+
+def test_historical_evaluation_without_environmental_rows_still_loads(
+    database: tuple[Engine, SessionFactory],
+) -> None:
+    _, sessions = database
+    evaluation = _evaluation(references=())
+    repository = PostgreSQLEvaluationRepository(sessions)
+
+    repository.add(evaluation)
+    restored = repository.get(evaluation.id)
+
+    assert restored == evaluation
+    assert restored is not None
+    assert restored.environmental_input_references == ()
+    assert restored.environmental_input_manifest is None
 
 
 def test_snapshot_is_independent_of_later_source_changes(
@@ -254,8 +395,7 @@ def test_crop_outcome_and_trace_fields_round_trip(
     repository.add(evaluation)
     preparing = evaluation.prepare()
     repository.save(preparing, expected_status=EvaluationStatus.QUEUED)
-    running = preparing.start_running()
-    repository.save(running, expected_status=EvaluationStatus.PREPARING)
+    _start_running(repository, preparing)
     outcome = _succeeded_outcome()
     repository.add_outcome(evaluation.id, outcome)
 
@@ -277,8 +417,7 @@ def test_duplicate_crop_outcome_is_rejected_by_database(
     repository.add(evaluation)
     preparing = evaluation.prepare()
     repository.save(preparing, expected_status=EvaluationStatus.QUEUED)
-    running = preparing.start_running()
-    repository.save(running, expected_status=EvaluationStatus.PREPARING)
+    _start_running(repository, preparing)
     outcome = _succeeded_outcome()
     repository.add_outcome(evaluation.id, outcome)
 
@@ -308,6 +447,88 @@ def test_queued_discovery_filters_orders_and_limits(
     )
 
 
+def test_preparing_to_running_persists_complete_manifest_atomically(
+    database: tuple[Engine, SessionFactory],
+) -> None:
+    _, sessions = database
+    references = _references()
+    evaluation = _evaluation(references=references)
+    repository = PostgreSQLEvaluationRepository(sessions)
+    repository.add(evaluation)
+    preparing = evaluation.prepare()
+    repository.save(preparing, expected_status=EvaluationStatus.QUEUED)
+    manifest = _manifest(references)
+    running = preparing.attach_environmental_input_manifest(manifest).start_running()
+
+    repository.save(running, expected_status=EvaluationStatus.PREPARING)
+    restored = repository.get(evaluation.id)
+
+    assert restored is not None
+    assert restored.status is EvaluationStatus.RUNNING
+    assert restored.environmental_input_references == references
+    restored_manifest = restored.environmental_input_manifest
+    assert restored_manifest is not None
+    assert restored_manifest == manifest
+    assert restored_manifest.inputs == manifest.inputs
+
+
+def test_manifest_persistence_is_idempotent_and_cannot_be_overwritten(
+    database: tuple[Engine, SessionFactory],
+) -> None:
+    _, sessions = database
+    evaluation = _evaluation()
+    repository = PostgreSQLEvaluationRepository(sessions)
+    repository.add(evaluation)
+    preparing = evaluation.prepare()
+    repository.save(preparing, expected_status=EvaluationStatus.QUEUED)
+    running = _start_running(repository, preparing)
+
+    repository.save(running, expected_status=EvaluationStatus.RUNNING)
+
+    original_manifest = running.environmental_input_manifest
+    assert original_manifest is not None
+    changed_first_input = replace(
+        original_manifest.inputs[0],
+        checksum="sha256:different-but-still-valid",
+    )
+    different_manifest = EnvironmentalInputManifest(
+        resolved_at=original_manifest.resolved_at,
+        inputs=(changed_first_input, *original_manifest.inputs[1:]),
+    )
+    conflicting = replace(
+        running,
+        environmental_input_manifest=different_manifest,
+    )
+
+    with pytest.raises(EvaluationConflictError, match="different environmental input manifest"):
+        repository.save(conflicting, expected_status=EvaluationStatus.RUNNING)
+
+    restored = repository.get(evaluation.id)
+    assert restored is not None
+    assert restored.status is EvaluationStatus.RUNNING
+    assert restored.environmental_input_manifest == original_manifest
+
+
+def test_failed_preparing_evaluation_can_persist_without_manifest(
+    database: tuple[Engine, SessionFactory],
+) -> None:
+    _, sessions = database
+    evaluation = _evaluation()
+    repository = PostgreSQLEvaluationRepository(sessions)
+    repository.add(evaluation)
+    preparing = evaluation.prepare()
+    repository.save(preparing, expected_status=EvaluationStatus.QUEUED)
+    failed = preparing.fail("environmental input resolution failed")
+
+    repository.save(failed, expected_status=EvaluationStatus.PREPARING)
+    restored = repository.get(evaluation.id)
+
+    assert restored == failed
+    assert restored is not None
+    assert restored.environmental_input_references == evaluation.environmental_input_references
+    assert restored.environmental_input_manifest is None
+
+
 def test_explicit_recovery_persists_failure_and_preserves_outcomes(
     database: tuple[Engine, SessionFactory],
 ) -> None:
@@ -317,8 +538,7 @@ def test_explicit_recovery_persists_failure_and_preserves_outcomes(
     repository.add(evaluation)
     preparing = evaluation.prepare()
     repository.save(preparing, expected_status=EvaluationStatus.QUEUED)
-    running = preparing.start_running()
-    repository.save(running, expected_status=EvaluationStatus.PREPARING)
+    _start_running(repository, preparing)
     outcome = _succeeded_outcome()
     repository.add_outcome(evaluation.id, outcome)
 
@@ -376,11 +596,7 @@ def test_comparison_round_trips_atomically_with_success(
         expected_status=EvaluationStatus.QUEUED,
     )
 
-    running = preparing.start_running()
-    repository.save(
-        running,
-        expected_status=EvaluationStatus.PREPARING,
-    )
+    running = _start_running(repository, preparing)
 
     current = running
 
@@ -479,11 +695,7 @@ def test_legacy_common_support_without_comparable_crops_still_round_trips(
         expected_status=EvaluationStatus.QUEUED,
     )
 
-    running = preparing.start_running()
-    repository.save(
-        running,
-        expected_status=EvaluationStatus.PREPARING,
-    )
+    running = _start_running(repository, preparing)
 
     current = running
     for crop_id in evaluation.requested_crops:
@@ -531,11 +743,7 @@ def test_comparison_persistence_rolls_back_final_state_atomically_on_conflict(
         expected_status=EvaluationStatus.QUEUED,
     )
 
-    running = preparing.start_running()
-    repository.save(
-        running,
-        expected_status=EvaluationStatus.PREPARING,
-    )
+    running = _start_running(repository, preparing)
 
     current = running
     for crop_id in evaluation.requested_crops:

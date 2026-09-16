@@ -9,6 +9,7 @@ import pytest
 from via_backend.contexts.agroclimatic_evaluation.domain import (
     DomainValidationError,
     EnvironmentalInputManifest,
+    EnvironmentalInputReference,
     EnvironmentalInputSnapshot,
 )
 
@@ -49,6 +50,30 @@ def test_environmental_input_snapshot_accepts_valid_reproducibility_metadata() -
     snapshot = _snapshot()
     assert snapshot.dataset_id == DATASET_ID
     assert snapshot.dataset_version_id == DATASET_VERSION_ID
+
+
+def test_environmental_input_reference_accepts_exact_version_identity() -> None:
+    reference = EnvironmentalInputReference(
+        input_key="soil.ph",
+        dataset_id=DATASET_ID,
+        dataset_version_id=DATASET_VERSION_ID,
+    )
+
+    assert reference.input_key == "soil.ph"
+    assert reference.dataset_id == DATASET_ID
+    assert reference.dataset_version_id == DATASET_VERSION_ID
+
+
+@pytest.mark.parametrize("input_key", ["", " soil.ph", "soil.ph "])
+def test_environmental_input_reference_rejects_empty_or_untrimmed_key(
+    input_key: str,
+) -> None:
+    with pytest.raises(DomainValidationError):
+        EnvironmentalInputReference(
+            input_key=input_key,
+            dataset_id=DATASET_ID,
+            dataset_version_id=DATASET_VERSION_ID,
+        )
 
 
 def test_environmental_input_manifest_accepts_valid_inputs() -> None:

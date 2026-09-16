@@ -162,6 +162,10 @@ def test_environmental_information_does_not_import_other_contexts() -> None:
 
 def test_agroclimatic_evaluation_does_not_import_other_contexts() -> None:
     evaluation_context = CONTEXTS_ROOT / "agroclimatic_evaluation"
+    allowed_public_reader = (
+        evaluation_context / "application" / "execution.py",
+        "via_backend.contexts.environmental_information.application.public",
+    )
     violations: list[str] = []
 
     for source_file in evaluation_context.rglob("*.py"):
@@ -171,6 +175,11 @@ def test_agroclimatic_evaluation_does_not_import_other_contexts() -> None:
                 continue
             context_index = parts.index("contexts") + 1
             if context_index < len(parts) and parts[context_index] != "agroclimatic_evaluation":
+                if (
+                    source_file == allowed_public_reader[0]
+                    and module.casefold() == allowed_public_reader[1]
+                ):
+                    continue
                 violations.append(f"{source_file.relative_to(SOURCE_ROOT)} imports {module}")
 
     assert not violations, "\n".join(violations)

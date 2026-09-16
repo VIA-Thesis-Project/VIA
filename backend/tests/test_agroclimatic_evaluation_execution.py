@@ -19,6 +19,7 @@ from via_backend.contexts.agroclimatic_evaluation.application import (
     CropSuitabilityExecutionError,
     CropSuitabilityRequest,
     CropSuitabilityResult,
+    EnvironmentalInputResolutionError,
     ExecuteEvaluation,
     ResourceConflictError,
     ScientificArtifactDescriptor,
@@ -31,6 +32,9 @@ from via_backend.contexts.agroclimatic_evaluation.application import (
 from via_backend.contexts.agroclimatic_evaluation.domain import (
     CropOutcome,
     CropOutcomeStatus,
+    EnvironmentalInputManifest,
+    EnvironmentalInputReference,
+    EnvironmentalInputSnapshot,
     Evaluation,
     EvaluationConflictError,
     EvaluationStatus,
@@ -42,8 +46,15 @@ from via_backend.contexts.agroclimatic_evaluation.domain import (
 from via_backend.contexts.agroclimatic_evaluation.infrastructure import (
     InMemoryEvaluationRepository,
 )
+from via_backend.contexts.environmental_information.application.public import (
+    GetPublishedDatasetVersion,
+    PublishedDatasetVersion,
+)
 
 NOW = datetime(2026, 9, 12, 15, 0, tzinfo=UTC)
+RESOLVED_AT = datetime(2026, 9, 12, 15, 30, tzinfo=UTC)
+DATASET_ID = uuid4()
+DATASET_VERSION_ID = uuid4()
 
 
 def _snapshot() -> ParcelSnapshot:
@@ -69,13 +80,91 @@ def _snapshot() -> ParcelSnapshot:
     )
 
 
-def _evaluation(crops: tuple[str, ...] = ("maize", "potato", "rice")) -> Evaluation:
+def _reference(
+    input_key: str = "soil.ph",
+    *,
+    dataset_id=DATASET_ID,
+    dataset_version_id=DATASET_VERSION_ID,
+) -> EnvironmentalInputReference:
+    return EnvironmentalInputReference(
+        input_key=input_key,
+        dataset_id=dataset_id,
+        dataset_version_id=dataset_version_id,
+    )
+
+
+def _published(reference: EnvironmentalInputReference) -> PublishedDatasetVersion:
+    return PublishedDatasetVersion(
+        dataset_id=reference.dataset_id,
+        dataset_name=f"Dataset for {reference.input_key}",
+        source="Open catalog",
+        variable=reference.input_key,
+        unit="unit",
+        dataset_version_id=reference.dataset_version_id,
+        version_identifier="2026-09",
+        checksum=f"sha256:{reference.dataset_version_id.hex}",
+        storage_reference=f"catalog://{reference.dataset_version_id}",
+        crs="EPSG:4326",
+        resolution_x=0.01,
+        resolution_y=0.01,
+        resolution_unit="degree",
+        extent_west=-77.8,
+        extent_south=-12.7,
+        extent_east=-76.2,
+        extent_north=-10.4,
+        valid_from=None,
+        valid_to=None,
+        scenario=None,
+        registered_at=NOW,
+    )
+
+
+def _manifest(reference: EnvironmentalInputReference | None = None) -> EnvironmentalInputManifest:
+    reference = reference or _reference()
+    published = _published(reference)
+    return EnvironmentalInputManifest(
+        resolved_at=RESOLVED_AT,
+        inputs=(
+            EnvironmentalInputSnapshot(
+                input_key=reference.input_key,
+                dataset_id=published.dataset_id,
+                dataset_name=published.dataset_name,
+                source=published.source,
+                variable=published.variable,
+                unit=published.unit,
+                dataset_version_id=published.dataset_version_id,
+                version_identifier=published.version_identifier,
+                checksum=published.checksum,
+                storage_reference=published.storage_reference,
+                crs=published.crs,
+                resolution_x=published.resolution_x,
+                resolution_y=published.resolution_y,
+                resolution_unit=published.resolution_unit,
+                extent_west=published.extent_west,
+                extent_south=published.extent_south,
+                extent_east=published.extent_east,
+                extent_north=published.extent_north,
+                valid_from=published.valid_from,
+                valid_to=published.valid_to,
+                scenario=published.scenario,
+                registered_at=published.registered_at,
+            ),
+        ),
+    )
+
+
+def _evaluation(
+    crops: tuple[str, ...] = ("maize", "potato", "rice"),
+    *,
+    references: tuple[EnvironmentalInputReference, ...] | None = None,
+) -> Evaluation:
     return Evaluation(
         id=uuid4(),
         parcel_snapshot=_snapshot(),
         requested_crops=crops,
         status=EvaluationStatus.QUEUED,
         created_at=NOW,
+        environmental_input_references=references or (_reference(),),
     )
 
 def _artifact(crop_id: str) -> ScientificArtifactDescriptor:
@@ -222,6 +311,31 @@ class FakeComparisonEngine:
             ),
         )
 
+
+class FakeEnvironmentalInformation:
+    def __init__(
+        self,
+        versions: tuple[PublishedDatasetVersion, ...] = (),
+    ) -> None:
+        self._versions = {
+            (version.dataset_id, version.dataset_version_id): version
+            for version in versions
+        }
+        self.queries: list[GetPublishedDatasetVersion] = []
+
+    def get_published_dataset_version(
+        self,
+        query: GetPublishedDatasetVersion,
+    ) -> PublishedDatasetVersion | None:
+        self.queries.append(query)
+        return self._versions.get((query.dataset_id, query.dataset_version_id))
+
+
+def _environmental_information_for(evaluation: Evaluation) -> FakeEnvironmentalInformation:
+    return FakeEnvironmentalInformation(
+        tuple(_published(reference) for reference in evaluation.environmental_input_references)
+    )
+
 class RecordingRepository(InMemoryEvaluationRepository):
     def __init__(self) -> None:
         super().__init__()
@@ -245,6 +359,8 @@ def _execute(
         repository,
         engine,
         FakeComparisonEngine(),
+        _environmental_information_for(evaluation),
+        clock=lambda: RESOLVED_AT,
     ).execute_evaluation(
         ExecuteEvaluation(evaluation.id)
     )
@@ -266,6 +382,10 @@ def test_executes_one_request_per_crop_in_deterministic_order() -> None:
     assert all(request.evaluation_id == evaluation.id for request in engine.requests)
     assert all(
         request.parcel_snapshot is evaluation.parcel_snapshot
+        for request in engine.requests
+    )
+    assert all(
+        request.environmental_input_manifest is engine.requests[0].environmental_input_manifest
         for request in engine.requests
     )
     assert repository.saved_statuses == [
@@ -354,9 +474,11 @@ def test_fatal_engine_error_stops_execution_and_marks_evaluation_failed() -> Non
         ]
     )
     service = AgroclimaticEvaluationExecutionService(
-        repository, 
+        repository,
         engine,
-        FakeComparisonEngine()
+        FakeComparisonEngine(),
+        _environmental_information_for(evaluation),
+        clock=lambda: RESOLVED_AT,
     )
 
     with pytest.raises(
@@ -382,7 +504,11 @@ def test_non_queued_evaluation_is_rejected_without_engine_call() -> None:
 
     with pytest.raises(ResourceConflictError, match="preparing"):
         AgroclimaticEvaluationExecutionService(
-            repository, engine, FakeComparisonEngine(),
+            repository,
+            engine,
+            FakeComparisonEngine(),
+            _environmental_information_for(evaluation),
+            clock=lambda: RESOLVED_AT,
         ).execute_evaluation(ExecuteEvaluation(evaluation.id))
 
     assert engine.requests == []
@@ -395,7 +521,7 @@ def test_duplicate_crop_outcome_is_rejected() -> None:
     repository.add(evaluation)
     preparing = evaluation.prepare()
     repository.save(preparing, expected_status=EvaluationStatus.QUEUED)
-    running = preparing.start_running()
+    running = preparing.attach_environmental_input_manifest(_manifest()).start_running()
     repository.save(running, expected_status=EvaluationStatus.PREPARING)
     outcome = CropOutcome(
         crop_id="maize",
@@ -485,6 +611,8 @@ def test_summarizing_compares_only_non_failed_crop_outcomes() -> None:
         repository,
         engine,
         comparison,
+        _environmental_information_for(evaluation),
+        clock=lambda: RESOLVED_AT,
     ).execute_evaluation(
         ExecuteEvaluation(evaluation.id)
     )
@@ -524,6 +652,8 @@ def test_comparison_failure_marks_summarizing_evaluation_failed() -> None:
         repository,
         engine,
         comparison,
+        _environmental_information_for(evaluation),
+        clock=lambda: RESOLVED_AT,
     )
 
     with pytest.raises(
@@ -551,3 +681,112 @@ def test_comparison_failure_marks_summarizing_evaluation_failed() -> None:
         EvaluationStatus.SUMMARIZING,
         EvaluationStatus.FAILED,
     ]
+
+
+def test_preparing_resolves_exact_versions_in_stored_order_and_maps_all_metadata() -> None:
+    first = _reference("soil.ph")
+    second = _reference(
+        "climate.precipitation",
+        dataset_id=uuid4(),
+        dataset_version_id=uuid4(),
+    )
+    evaluation = _evaluation(("maize",), references=(first, second))
+    reader = FakeEnvironmentalInformation((_published(first), _published(second)))
+    repository = RecordingRepository()
+    repository.add(evaluation)
+    engine = FakeEngine([_result("maize")])
+
+    AgroclimaticEvaluationExecutionService(
+        repository,
+        engine,
+        FakeComparisonEngine(),
+        reader,
+        clock=lambda: RESOLVED_AT,
+    ).execute_evaluation(ExecuteEvaluation(evaluation.id))
+
+    assert reader.queries == [
+        GetPublishedDatasetVersion(first.dataset_id, first.dataset_version_id),
+        GetPublishedDatasetVersion(second.dataset_id, second.dataset_version_id),
+    ]
+    manifest = engine.requests[0].environmental_input_manifest
+    assert manifest.resolved_at == RESOLVED_AT
+    assert tuple(item.input_key for item in manifest.inputs) == (
+        "soil.ph",
+        "climate.precipitation",
+    )
+    expected = _published(first)
+    actual = manifest.inputs[0]
+    assert actual.dataset_id == expected.dataset_id
+    assert actual.dataset_name == expected.dataset_name
+    assert actual.source == expected.source
+    assert actual.variable == expected.variable
+    assert actual.unit == expected.unit
+    assert actual.dataset_version_id == expected.dataset_version_id
+    assert actual.version_identifier == expected.version_identifier
+    assert actual.checksum == expected.checksum
+    assert actual.storage_reference == expected.storage_reference
+    assert actual.crs == expected.crs
+    assert actual.resolution_x == expected.resolution_x
+    assert actual.resolution_y == expected.resolution_y
+    assert actual.resolution_unit == expected.resolution_unit
+    assert actual.extent_west == expected.extent_west
+    assert actual.extent_south == expected.extent_south
+    assert actual.extent_east == expected.extent_east
+    assert actual.extent_north == expected.extent_north
+    assert actual.valid_from == expected.valid_from
+    assert actual.valid_to == expected.valid_to
+    assert actual.scenario == expected.scenario
+    assert actual.registered_at == expected.registered_at
+
+
+def test_missing_exact_environmental_version_fails_from_preparing_without_engine_call() -> None:
+    evaluation = _evaluation(("maize",))
+    repository = RecordingRepository()
+    repository.add(evaluation)
+    engine = FakeEngine([])
+
+    with pytest.raises(EnvironmentalInputResolutionError, match="Exact environmental dataset"):
+        AgroclimaticEvaluationExecutionService(
+            repository,
+            engine,
+            FakeComparisonEngine(),
+            FakeEnvironmentalInformation(),
+            clock=lambda: RESOLVED_AT,
+        ).execute_evaluation(ExecuteEvaluation(evaluation.id))
+
+    restored = repository.get(evaluation.id)
+    assert restored is not None
+    assert restored.status is EvaluationStatus.FAILED
+    assert restored.environmental_input_manifest is None
+    assert engine.requests == []
+    assert repository.saved_statuses == [EvaluationStatus.PREPARING, EvaluationStatus.FAILED]
+
+
+def test_legacy_queued_evaluation_without_references_fails_without_engine_call() -> None:
+    evaluation = Evaluation(
+        id=uuid4(),
+        parcel_snapshot=_snapshot(),
+        requested_crops=("maize",),
+        status=EvaluationStatus.QUEUED,
+        created_at=NOW,
+    )
+    repository = RecordingRepository()
+    repository.add(evaluation)
+    engine = FakeEngine([])
+
+    with pytest.raises(
+        EnvironmentalInputResolutionError,
+        match="no environmental input references",
+    ):
+        AgroclimaticEvaluationExecutionService(
+            repository,
+            engine,
+            FakeComparisonEngine(),
+            FakeEnvironmentalInformation(),
+            clock=lambda: RESOLVED_AT,
+        ).execute_evaluation(ExecuteEvaluation(evaluation.id))
+
+    restored = repository.get(evaluation.id)
+    assert restored is not None
+    assert restored.status is EvaluationStatus.FAILED
+    assert engine.requests == []

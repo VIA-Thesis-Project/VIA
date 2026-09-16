@@ -77,6 +77,13 @@ def _body() -> dict[str, Any]:
             "captured_at": "2026-09-12T15:00:00Z",
         },
         "requested_crops": ["maize", "potato", "rice"],
+        "environmental_inputs": [
+            {
+                "input_key": "soil.ph",
+                "dataset_id": str(uuid4()),
+                "dataset_version_id": str(uuid4()),
+            }
+        ],
     }
 
 
@@ -257,6 +264,42 @@ def test_create_get_and_list_evaluation() -> None:
 def test_duplicate_crops_return_validation_error() -> None:
     body = _body()
     body["requested_crops"] = ["maize", "maize"]
+
+    response = asyncio.run(_request(_test_app(), "POST", "/api/v1/evaluations", json=body))
+
+    assert response.status_code == 422
+    assert "unique" in response.json()["detail"]
+
+
+def test_empty_environmental_inputs_return_validation_error() -> None:
+    body = _body()
+    body["environmental_inputs"] = []
+
+    response = asyncio.run(_request(_test_app(), "POST", "/api/v1/evaluations", json=body))
+
+    assert response.status_code == 422
+
+
+def test_malformed_environmental_input_reference_is_rejected() -> None:
+    body = _body()
+    body["environmental_inputs"] = [{"input_key": "soil.ph"}]
+
+    response = asyncio.run(_request(_test_app(), "POST", "/api/v1/evaluations", json=body))
+
+    assert response.status_code == 422
+
+
+def test_duplicate_environmental_input_keys_return_validation_error() -> None:
+    body = _body()
+    first = body["environmental_inputs"][0]
+    body["environmental_inputs"] = [
+        first,
+        {
+            "input_key": first["input_key"],
+            "dataset_id": str(uuid4()),
+            "dataset_version_id": str(uuid4()),
+        },
+    ]
 
     response = asyncio.run(_request(_test_app(), "POST", "/api/v1/evaluations", json=body))
 

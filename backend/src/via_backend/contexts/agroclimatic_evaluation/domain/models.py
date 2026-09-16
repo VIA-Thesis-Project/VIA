@@ -13,6 +13,7 @@ from .comparison import (
     ComparableCrop,
     validate_comparable_crops,
 )
+from .environmental_inputs import EnvironmentalInputManifest, EnvironmentalInputReference
 from .errors import DomainValidationError, InvalidEvaluationTransitionError
 from .outcomes import CropOutcome, CropOutcomeStatus
 from .snapshot import ParcelSnapshot
@@ -39,6 +40,8 @@ class Evaluation:
     requested_crops: tuple[str, ...]
     status: EvaluationStatus
     created_at: datetime
+    environmental_input_references: tuple[EnvironmentalInputReference, ...] = ()
+    environmental_input_manifest: EnvironmentalInputManifest | None = None
     outcomes: tuple[CropOutcome, ...] = ()
     common_support: CommonSupport | None = None
     comparable_crops: tuple[ComparableCrop, ...] = ()
@@ -63,6 +66,38 @@ class Evaluation:
             raise DomainValidationError("Requested crop identifiers must be unique.")
         if self.created_at.tzinfo is None or self.created_at.utcoffset() is None:
             raise DomainValidationError("Evaluation creation time must be timezone-aware.")
+
+        environmental_input_references = tuple(self.environmental_input_references)
+        reference_keys = tuple(reference.input_key for reference in environmental_input_references)
+        if len(set(reference_keys)) != len(reference_keys):
+            raise DomainValidationError(
+                "Environmental input keys must be unique within an evaluation request."
+            )
+        object.__setattr__(
+            self,
+            "environmental_input_references",
+            environmental_input_references,
+        )
+
+        if self.environmental_input_manifest is not None:
+            if not environmental_input_references:
+                raise DomainValidationError(
+                    "Environmental input manifest requires requested environmental inputs."
+                )
+            snapshots = self.environmental_input_manifest.inputs
+            if len(snapshots) != len(environmental_input_references) or any(
+                reference.input_key != snapshot.input_key
+                or reference.dataset_id != snapshot.dataset_id
+                or reference.dataset_version_id != snapshot.dataset_version_id
+                for reference, snapshot in zip(
+                    environmental_input_references,
+                    snapshots,
+                    strict=True,
+                )
+            ):
+                raise DomainValidationError(
+                    "Environmental input manifest must exactly match requested references in order."
+                )
         outcomes = tuple(self.outcomes)
         outcome_crops = tuple(outcome.crop_id for outcome in outcomes)
         if outcome_crops != crops[: len(outcome_crops)]:
@@ -117,7 +152,29 @@ class Evaluation:
     def prepare(self) -> Evaluation:
         return self._transition(EvaluationStatus.QUEUED, EvaluationStatus.PREPARING)
 
+    def attach_environmental_input_manifest(
+        self,
+        manifest: EnvironmentalInputManifest,
+    ) -> Evaluation:
+        if self.status is not EvaluationStatus.PREPARING:
+            raise InvalidEvaluationTransitionError(
+                "Environmental input manifest can only be attached while preparing."
+            )
+        if not self.environmental_input_references:
+            raise InvalidEvaluationTransitionError(
+                "Environmental input manifest requires requested environmental inputs."
+            )
+        if self.environmental_input_manifest is not None:
+            raise InvalidEvaluationTransitionError(
+                "Environmental input manifest has already been attached."
+            )
+        return replace(self, environmental_input_manifest=manifest)
+
     def start_running(self) -> Evaluation:
+        if self.status is EvaluationStatus.PREPARING and self.environmental_input_manifest is None:
+            raise InvalidEvaluationTransitionError(
+                "Evaluation cannot start running without an environmental input manifest."
+            )
         return self._transition(EvaluationStatus.PREPARING, EvaluationStatus.RUNNING)
 
     def record_outcome(self, outcome: CropOutcome) -> Evaluation:

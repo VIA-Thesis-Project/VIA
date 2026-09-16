@@ -13,6 +13,9 @@ from via_backend.contexts.agroclimatic_evaluation.domain import (
     ComparableCrop,
     CropOutcome,
     CropOutcomeStatus,
+    EnvironmentalInputManifest,
+    EnvironmentalInputReference,
+    EnvironmentalInputSnapshot,
     Evaluation,
     EvaluationStatus,
     ParcelSnapshot,
@@ -88,20 +91,63 @@ def _outcome(
     )
 
 
+def _reference() -> EnvironmentalInputReference:
+    return EnvironmentalInputReference(
+        input_key="soil.ph",
+        dataset_id=uuid4(),
+        dataset_version_id=uuid4(),
+    )
+
+
+def _manifest(reference: EnvironmentalInputReference) -> EnvironmentalInputManifest:
+    return EnvironmentalInputManifest(
+        resolved_at=NOW,
+        inputs=(
+            EnvironmentalInputSnapshot(
+                input_key=reference.input_key,
+                dataset_id=reference.dataset_id,
+                dataset_name="Soil pH",
+                source="test",
+                variable="ph",
+                unit="pH",
+                dataset_version_id=reference.dataset_version_id,
+                version_identifier="test-v1",
+                checksum="sha256:test",
+                storage_reference="test://soil-ph",
+                crs="EPSG:4326",
+                resolution_x=0.01,
+                resolution_y=0.01,
+                resolution_unit="degree",
+                extent_west=-78.0,
+                extent_south=-13.0,
+                extent_east=-76.0,
+                extent_north=-10.0,
+                valid_from=None,
+                valid_to=None,
+                scenario=None,
+                registered_at=NOW,
+            ),
+        ),
+    )
+
+
 def _summarizing(
     *crop_ids: str,
 ) -> Evaluation:
+    reference = _reference()
     evaluation = Evaluation(
         id=uuid4(),
         parcel_snapshot=_snapshot(),
         requested_crops=tuple(crop_ids),
         status=EvaluationStatus.QUEUED,
         created_at=NOW,
+        environmental_input_references=(reference,),
     )
 
     current = (
         evaluation
         .prepare()
+        .attach_environmental_input_manifest(_manifest(reference))
         .start_running()
     )
 

@@ -1,12 +1,16 @@
 """Agroclimatic Evaluation application layer."""
 
 from .commands import (
+    EnvironmentalInputReferenceInput,
     ExecuteEvaluation,
     ParcelSnapshotInput,
     RecoverEvaluation,
     RequestEvaluation,
 )
-from .execution import AgroclimaticEvaluationExecutionService
+from .execution import (
+    AgroclimaticEvaluationExecutionService,
+    EnvironmentalInputResolutionError,
+)
 from .ports import (
     CommonSupportResult,
     CommonSupportStatus,
@@ -90,6 +94,8 @@ __all__ = [
     "EvaluationResultAvailability",
     "EvaluationStatusResult",
     "ExecuteEvaluation",
+    "EnvironmentalInputReferenceInput",
+    "EnvironmentalInputResolutionError",
     "FinalizedCropOutcome",
     "FinalizedCropOutcomeStatus",
     "FinalizedEvaluationResult",

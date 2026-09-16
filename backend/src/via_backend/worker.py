@@ -24,6 +24,13 @@ from via_backend.contexts.agroclimatic_evaluation.infrastructure import (
     FilesystemScientificArtifactStore,
     PostgreSQLEvaluationRepository,
 )
+from via_backend.contexts.environmental_information.application import (
+    EnvironmentalInformationService,
+)
+from via_backend.contexts.environmental_information.infrastructure import (
+    PostgreSQLDatasetRepository,
+    PostgreSQLDatasetVersionRepository,
+)
 from via_backend.infrastructure import create_database
 
 LOGGER = logging.getLogger(__name__)
@@ -45,6 +52,10 @@ def create_worker(settings: WorkerSettings) -> WorkerRuntime:
     )
     database_engine, sessions = create_database(settings.database_url)
     evaluations = PostgreSQLEvaluationRepository(sessions)
+    environmental_information = EnvironmentalInformationService(
+        PostgreSQLDatasetRepository(sessions),
+        PostgreSQLDatasetVersionRepository(sessions),
+    )
     artifact_store = FilesystemScientificArtifactStore(artifacts_root)
     scientific_engine = CropSuiteAdapter(
         engine_root=engine_root,
@@ -65,6 +76,7 @@ def create_worker(settings: WorkerSettings) -> WorkerRuntime:
         evaluations=evaluations,
         engine=scientific_engine,
         comparison_engine=comparison_engine,
+        environmental_information=environmental_information,
     )
     return WorkerRuntime(
         database_engine=database_engine,

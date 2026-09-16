@@ -22,9 +22,17 @@ class ParcelSnapshotInput:
 
 
 @dataclass(frozen=True, slots=True)
+class EnvironmentalInputReferenceInput:
+    input_key: str
+    dataset_id: UUID
+    dataset_version_id: UUID
+
+
+@dataclass(frozen=True, slots=True)
 class RequestEvaluation:
     parcel_snapshot: ParcelSnapshotInput
     requested_crops: tuple[str, ...]
+    environmental_inputs: tuple[EnvironmentalInputReferenceInput, ...]
 
 
 @dataclass(frozen=True, slots=True)
