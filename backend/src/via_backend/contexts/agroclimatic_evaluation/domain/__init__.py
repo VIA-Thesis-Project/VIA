@@ -5,6 +5,7 @@ from .comparison import (
     CommonSupportStatus,
     ComparableCrop,
 )
+from .environmental_inputs import EnvironmentalInputManifest, EnvironmentalInputSnapshot
 from .errors import (
     DomainValidationError,
     EvaluationConflictError,
@@ -27,6 +28,8 @@ __all__ = [
     "CropOutcome",
     "CropOutcomeStatus",
     "DomainValidationError",
+    "EnvironmentalInputManifest",
+    "EnvironmentalInputSnapshot",
     "Evaluation",
     "EvaluationConflictError",
     "EvaluationRepository",
