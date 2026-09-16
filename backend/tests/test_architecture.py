@@ -289,6 +289,15 @@ def test_finalized_result_public_contract_has_no_internal_storage_dependency() -
     assert "postgresqlevaluationrepository" not in source
 
 
+def test_environmental_information_public_contract_uses_only_stdlib_imports() -> None:
+    public_contract = CONTEXTS_ROOT / "environmental_information" / "application" / "public.py"
+    modules = _imported_modules(public_contract)
+    allowed_modules = {"__future__", "dataclasses", "datetime", "typing", "uuid"}
+
+    unexpected_modules = modules - allowed_modules
+
+    assert not unexpected_modules, "\n".join(sorted(unexpected_modules))
+
 def test_decision_support_does_not_read_evaluation_internals() -> None:
     decision_support = CONTEXTS_ROOT / "decision_support"
     forbidden = {

@@ -21,6 +21,7 @@ from .ports import (
     SpatialCoveragePort,
     SpatialCoverageUnavailableError,
 )
+from .public import GetPublishedDatasetVersion, PublishedDatasetVersion
 from .queries import (
     CheckDatasetVersionCoverage,
     GetDataset,
@@ -147,6 +148,42 @@ class EnvironmentalInformationService:
         self._require_dataset(query.dataset_id)
         return DatasetVersionResult.from_domain(
             self._require_version(query.dataset_id, query.version_id)
+        )
+
+    def get_published_dataset_version(
+        self,
+        query: GetPublishedDatasetVersion,
+    ) -> PublishedDatasetVersion | None:
+        dataset = self._datasets.get(query.dataset_id)
+        if dataset is None:
+            return None
+
+        version = self._versions.get(query.dataset_version_id)
+        if version is None or version.dataset_id != query.dataset_id:
+            return None
+
+        return PublishedDatasetVersion(
+            dataset_id=dataset.id,
+            dataset_name=dataset.name,
+            source=dataset.source,
+            variable=dataset.variable,
+            unit=dataset.unit,
+            dataset_version_id=version.id,
+            version_identifier=version.version_identifier,
+            checksum=version.checksum,
+            storage_reference=version.storage_reference,
+            crs=version.crs,
+            resolution_x=version.resolution.x,
+            resolution_y=version.resolution.y,
+            resolution_unit=version.resolution.unit,
+            extent_west=version.extent.west,
+            extent_south=version.extent.south,
+            extent_east=version.extent.east,
+            extent_north=version.extent.north,
+            valid_from=version.valid_from,
+            valid_to=version.valid_to,
+            scenario=version.scenario,
+            registered_at=version.registered_at,
         )
 
     def check_dataset_version_coverage(

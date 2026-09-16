@@ -6,6 +6,11 @@ from .ports import (
     SpatialCoveragePort,
     SpatialCoverageUnavailableError,
 )
+from .public import (
+    GetPublishedDatasetVersion,
+    PublishedDatasetVersion,
+    PublishedDatasetVersionReader,
+)
 from .queries import (
     CheckDatasetVersionCoverage,
     GetDataset,
@@ -39,10 +44,13 @@ __all__ = [
     "EnvironmentalInformationService",
     "GetDataset",
     "GetDatasetVersion",
+    "GetPublishedDatasetVersion",
     "InvalidCommandError",
     "InvalidSpatialInputError",
     "ListDatasetVersions",
     "ListDatasets",
+    "PublishedDatasetVersion",
+    "PublishedDatasetVersionReader",
     "ResourceConflictError",
     "ResourceNotFoundError",
     "SpatialCoveragePort",
