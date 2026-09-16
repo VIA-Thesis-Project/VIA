@@ -822,9 +822,9 @@
     "semantic_hash": "32f97609ba70e7a2d2fee4b85882d2db"
   },
   "backend/src/via_backend/contexts/environmental_information/application/__init__.py": {
-    "mtime": 1789243309.9978952,
-    "seen": 1789244086.4231925,
-    "ast_hash": "84c2e7853399de8aa41011a8bf40ca55",
+    "mtime": 1789589129.5042727,
+    "seen": 1789589593.5017405,
+    "ast_hash": "1f83cc28bef5f86e845506ff246f0c50",
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/environmental_information/domain/__init__.py": {
@@ -930,9 +930,9 @@
     "semantic_hash": ""
   },
   "backend/tests/test_architecture.py": {
-    "mtime": 1789449387.877091,
-    "seen": 1789450391.4965506,
-    "ast_hash": "ea0c7efb919680c50be96364afca6a54",
+    "mtime": 1789589238.7169063,
+    "seen": 1789589593.5017946,
+    "ast_hash": "0a03ac042b216839b3b9b6029a773d14",
     "semantic_hash": ""
   },
   "backend/tests/test_health.py": {
@@ -1170,9 +1170,9 @@
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/environmental_information/application/service.py": {
-    "mtime": 1789246563.2735195,
-    "seen": 1789248030.659535,
-    "ast_hash": "57e5ad10ed82533ebfaa8a9af0ceff85",
+    "mtime": 1789589129.4702678,
+    "seen": 1789589593.5017464,
+    "ast_hash": "a2778818435d305fb38a393ad132feef",
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/environmental_information/domain/errors.py": {
@@ -1821,6 +1821,18 @@
     "mtime": 1789588494.9313056,
     "seen": 1789588655.0727487,
     "ast_hash": "6dd905fdde8a1c3001cf965807a86dbf",
+    "semantic_hash": ""
+  },
+  "backend/src/via_backend/contexts/environmental_information/application/public.py": {
+    "mtime": 1789589095.809965,
+    "seen": 1789589593.5017438,
+    "ast_hash": "a8a5fcf26c7b73f890ddbfb628787f4f",
+    "semantic_hash": ""
+  },
+  "backend/tests/test_environmental_information_public_contract.py": {
+    "mtime": 1789589374.405858,
+    "seen": 1789589593.5018077,
+    "ast_hash": "0d8a88e5341d3ab1dad1ac5d5663ef7b",
     "semantic_hash": ""
   }
 }
