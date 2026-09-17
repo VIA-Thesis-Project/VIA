@@ -970,5 +970,11 @@
     "seen": 1789612346.841767,
     "ast_hash": "1eaeaea1504c44870e1b603b5e0752d8",
     "semantic_hash": ""
+  },
+  "tests/test_production_compose_contract.py": {
+    "mtime": 1789618334.5840216,
+    "seen": 1789618933.1495233,
+    "ast_hash": "7f77802fa76fcec3b42b2409614d2d50",
+    "semantic_hash": ""
   }
 }

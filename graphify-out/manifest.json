@@ -1866,9 +1866,9 @@
     "semantic_hash": ""
   },
   "docs/architecture/deployment-runtime.md": {
-    "mtime": 1789613107.0602708,
-    "seen": 1789616871.0074353,
-    "ast_hash": "ae0518c5ab948b05361c207cf86a1d63",
+    "mtime": 1789617671.4866905,
+    "seen": 1789618926.6293297,
+    "ast_hash": "2c488f5cabee3c03cb5cb37464ebcfdf",
     "semantic_hash": ""
   },
   "backend/scripts/verify_container_runtime.py": {
@@ -1902,9 +1902,9 @@
     "semantic_hash": ""
   },
   ".github/workflows/b2-container-gate.yml": {
-    "mtime": 1789616547.9661868,
-    "seen": 1789616871.0073867,
-    "ast_hash": "05592a4f61411d2521f335f168ba9ef8",
+    "mtime": 1789618334.5840216,
+    "seen": 1789618926.6292856,
+    "ast_hash": "1f67cda825ac7b041a91fab6860806d5",
     "semantic_hash": ""
   },
   "backend/src/via_backend/migrate.py": {
@@ -1917,6 +1917,30 @@
     "mtime": 1789611895.637618,
     "seen": 1789612340.2780297,
     "ast_hash": "1eaeaea1504c44870e1b603b5e0752d8",
+    "semantic_hash": ""
+  },
+  "backend/tests/test_production_compose_contract.py": {
+    "mtime": 1789618334.5840216,
+    "seen": 1789618926.62925,
+    "ast_hash": "7f77802fa76fcec3b42b2409614d2d50",
+    "semantic_hash": ""
+  },
+  "deploy/smoke/config/input-bindings.json": {
+    "mtime": 1789617624.1947086,
+    "seen": 1789618926.6292548,
+    "ast_hash": "ebf520307b4340ff5b9f55718b4b7de9",
+    "semantic_hash": ""
+  },
+  "scripts/verify_production_compose.sh": {
+    "mtime": 1789617624.2007105,
+    "seen": 1789618926.629284,
+    "ast_hash": "07b2d1c424dbe7bd0eb00af79f883287",
+    "semantic_hash": ""
+  },
+  "compose.production-smoke.yaml": {
+    "mtime": 1789618248.5736947,
+    "seen": 1789618926.6293125,
+    "ast_hash": "a2cd6eb47b80601be9400d54b70f8462",
     "semantic_hash": ""
   }
 }
