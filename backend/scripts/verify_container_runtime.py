@@ -51,6 +51,13 @@ def _require_writable_directory(path: Path, *, variable: str) -> None:
         raise RuntimeError(f"{variable} must be writable by the runtime user: {path}") from exc
 
 
+def _require_read_only_directory(path: Path, *, label: str) -> None:
+    if not path.is_dir():
+        raise RuntimeError(f"{label} must be an existing directory: {path}")
+    if os.access(path, os.W_OK):
+        raise RuntimeError(f"{label} must not be writable by the runtime user: {path}")
+
+
 def _run_pip_check() -> None:
     completed = subprocess.run(
         [sys.executable, "-m", "pip", "check"],
@@ -104,6 +111,9 @@ def verify_runtime(*, require_linux: bool) -> None:
         )
     if os.access(engine_root, os.W_OK) or os.access(engine_root / "src" / "multicrop.py", os.W_OK):
         raise RuntimeError("CropSuiteLite source must not be writable by the runtime user.")
+
+    _require_read_only_directory(Path("/etc/via"), label="/etc/via")
+    _require_read_only_directory(Path("/mnt/via/sources"), label="/mnt/via/sources")
 
     workspace = Path(os.environ.get("VIA_CROPSUITE_WORKSPACE", "")).resolve()
     artifacts = Path(os.environ.get("VIA_ARTIFACTS_ROOT", "")).resolve()

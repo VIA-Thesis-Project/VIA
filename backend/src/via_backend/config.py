@@ -139,6 +139,11 @@ class WorkerSettings:
         assert self.cropsuite_workspace is not None
         assert self.artifacts_root is not None
         assert self.cropsuite_input_bindings is not None
+        _validate_scientific_path_topology(
+            cropsuite_root=self.cropsuite_root,
+            workspace=self.cropsuite_workspace,
+            artifacts_root=self.artifacts_root,
+        )
         return (
             self.cropsuite_root,
             self.cropsuite_python,
@@ -162,6 +167,34 @@ class WorkerSettings:
             batch_size=_environment_integer("VIA_WORKER_BATCH_SIZE", 1),
             cropsuite_max_workers=_environment_integer("VIA_CROPSUITE_MAX_WORKERS", 2),
         )
+
+
+def _validate_scientific_path_topology(
+    *,
+    cropsuite_root: Path,
+    workspace: Path,
+    artifacts_root: Path,
+) -> None:
+    engine = cropsuite_root.resolve(strict=False)
+    execution_workspace = workspace.resolve(strict=False)
+    durable_artifacts = artifacts_root.resolve(strict=False)
+
+    if _is_same_or_within(execution_workspace, engine):
+        raise ValueError("VIA_CROPSUITE_WORKSPACE must be outside VIA_CROPSUITE_ROOT.")
+    if _is_same_or_within(durable_artifacts, engine):
+        raise ValueError("VIA_ARTIFACTS_ROOT must be outside VIA_CROPSUITE_ROOT.")
+    if durable_artifacts == execution_workspace:
+        raise ValueError(
+            "VIA_ARTIFACTS_ROOT must be distinct from VIA_CROPSUITE_WORKSPACE."
+        )
+    if _is_same_or_within(durable_artifacts, execution_workspace):
+        raise ValueError(
+            "VIA_ARTIFACTS_ROOT must not be inside VIA_CROPSUITE_WORKSPACE."
+        )
+
+
+def _is_same_or_within(path: Path, parent: Path) -> bool:
+    return path == parent or parent in path.parents
 
 
 def _optional_path(name: str) -> Path | None:

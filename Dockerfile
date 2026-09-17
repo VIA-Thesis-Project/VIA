@@ -15,6 +15,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     VIA_CROPSUITE_PYTHON=/usr/local/bin/python \
     VIA_CROPSUITE_WORKSPACE=/var/lib/via/workspace \
     VIA_ARTIFACTS_ROOT=/var/lib/via/artifacts \
+    VIA_CROPSUITE_INPUT_BINDINGS=/etc/via/input-bindings.json \
     VIA_ALEMBIC_CONFIG=/opt/via/backend/alembic.ini
 
 WORKDIR /opt/via
@@ -37,9 +38,9 @@ COPY CropSuiteLite /opt/via/CropSuiteLite
 
 RUN groupadd --system via \
     && useradd --system --gid via --home-dir /nonexistent --shell /usr/sbin/nologin via \
-    && mkdir -p /etc/via /var/lib/via/workspace /var/lib/via/artifacts \
+    && mkdir -p /etc/via /mnt/via/sources /var/lib/via/workspace /var/lib/via/artifacts \
     && chown -R via:via /var/lib/via/workspace /var/lib/via/artifacts \
-    && chmod -R a+rX,a-w /opt/via/backend /opt/via/CropSuiteLite
+    && chmod -R a+rX,a-w /opt/via/backend /opt/via/CropSuiteLite /etc/via /mnt/via/sources
 
 USER via
 WORKDIR /opt/via/backend

@@ -1,4 +1,4 @@
-name: B2-B4 Container Gate
+name: B2-B5 Container Gate
 
 on:
   workflow_dispatch:
@@ -38,26 +38,26 @@ jobs:
 
       - name: Build VIA image
         run: |
-          docker build --progress=plain -t via:b4 .
+          docker build --progress=plain -t via:b5 .
 
       - name: Run VIA container runtime smoke
         run: |
           docker run --rm \
-            via:b4 \
+            via:b5 \
             python /opt/via/backend/scripts/verify_container_runtime.py \
             --require-linux
 
       - name: Verify Python
         run: |
-          docker run --rm via:b4 python --version
+          docker run --rm via:b5 python --version
 
       - name: Verify Python dependency consistency
         run: |
-          docker run --rm via:b4 python -m pip check
+          docker run --rm via:b5 python -m pip check
 
       - name: Verify worker CLI command override
         run: |
-          docker run --rm via:b4 via-worker --help
+          docker run --rm via:b5 via-worker --help
 
       - name: Verify worker run fails fast without scientific configuration
         run: |
@@ -69,13 +69,26 @@ jobs:
             -e VIA_CROPSUITE_WORKSPACE= \
             -e VIA_ARTIFACTS_ROOT= \
             -e VIA_CROPSUITE_INPUT_BINDINGS= \
-            via:b4 \
+            via:b5 \
             via-worker run 2>&1)"
           status=$?
           set -e
           printf '%s\n' "$output"
           test "$status" -ne 0
           grep -q "Worker scientific execution requires VIA_CROPSUITE_ROOT" <<<"$output"
+
+      - name: Verify worker run fails fast when mounted bindings are absent
+        run: |
+          set +e
+          output="$(docker run --rm \
+            -e VIA_DATABASE_URL=postgresql+psycopg://via:via@127.0.0.1:1/via \
+            via:b5 \
+            via-worker run 2>&1)"
+          status=$?
+          set -e
+          printf '%s\n' "$output"
+          test "$status" -ne 0
+          grep -q "/etc/via/input-bindings.json" <<<"$output"
 
       - name: Verify default production API startup, health, and shutdown
         run: |
@@ -95,7 +108,7 @@ jobs:
             --name "$container" \
             -p 18000:8000 \
             -e VIA_DATABASE_URL=postgresql+psycopg://via:via@127.0.0.1:1/via \
-            via:b4
+            via:b5
 
           healthy=false
           for attempt in $(seq 1 30); do
@@ -117,19 +130,152 @@ jobs:
 
       - name: Verify non-root runtime
         run: |
-          docker run --rm via:b4 id
-          docker run --rm via:b4 sh -c 'test "$(id -u)" -ne 0'
+          docker run --rm via:b5 id
+          docker run --rm via:b5 sh -c 'test "$(id -u)" -ne 0'
 
       - name: Verify writable runtime paths
         run: |
-          docker run --rm via:b4 sh -c '
+          docker run --rm via:b5 sh -c '
             touch /var/lib/via/workspace/.github-write-test &&
             touch /var/lib/via/artifacts/.github-write-test
           '
 
+      - name: Verify intrinsic scientific source and config targets are read-only
+        run: |
+          docker run --rm via:b5 sh -c '
+            test -d /mnt/via/sources &&
+            test -d /etc/via &&
+            test ! -w /mnt/via/sources &&
+            test ! -w /etc/via
+          '
+
+      - name: Verify scientific sources mount is read-only
+        run: |
+          set -Eeuo pipefail
+          source_mount="$(mktemp -d)"
+          cleanup() {
+            status=$?
+            if [ "$status" -ne 0 ]; then
+              echo "Scientific sources mount gate failed; host mount contents:"
+              ls -la "$source_mount" || true
+            fi
+            rm -rf "$source_mount"
+            exit "$status"
+          }
+          trap cleanup EXIT
+
+          printf '%s\n' 'source-marker' > "$source_mount/marker.txt"
+
+          docker run --rm \
+            -v "$source_mount:/mnt/via/sources:ro" \
+            via:b5 \
+            sh -c '
+              test "$(cat /mnt/via/sources/marker.txt)" = "source-marker" &&
+              if touch /mnt/via/sources/forbidden-write; then exit 1; fi &&
+              if printf modified > /mnt/via/sources/marker.txt; then exit 1; fi
+            '
+
+      - name: Verify configuration mount is read-only
+        run: |
+          set -Eeuo pipefail
+          config_mount="$(mktemp -d)"
+          cleanup() {
+            status=$?
+            if [ "$status" -ne 0 ]; then
+              echo "Configuration mount gate failed; host mount contents:"
+              ls -la "$config_mount" || true
+            fi
+            rm -rf "$config_mount"
+            exit "$status"
+          }
+          trap cleanup EXIT
+
+          printf '%s\n' 'config-marker' > "$config_mount/marker.txt"
+
+          docker run --rm \
+            -v "$config_mount:/etc/via:ro" \
+            via:b5 \
+            sh -c '
+              test "$(cat /etc/via/marker.txt)" = "config-marker" &&
+              if touch /etc/via/forbidden-write; then exit 1; fi &&
+              if printf modified > /etc/via/marker.txt; then exit 1; fi
+            '
+
+      - name: Verify artifact storage survives container replacement
+        run: |
+          set -Eeuo pipefail
+          artifact_mount="$(mktemp -d)"
+          container_a="via-b5-artifact-a-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          container_b="via-b5-artifact-b-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          cleanup() {
+            status=$?
+            if [ "$status" -ne 0 ]; then
+              echo "Artifact durability gate failed; host artifact contents:"
+              sudo find "$artifact_mount" -maxdepth 2 -ls || true
+              docker logs "$container_a" 2>/dev/null || true
+              docker logs "$container_b" 2>/dev/null || true
+            fi
+            docker rm -f "$container_a" "$container_b" >/dev/null 2>&1 || true
+            sudo rm -rf "$artifact_mount"
+            exit "$status"
+          }
+          trap cleanup EXIT
+
+          via_uid="$(docker run --rm via:b5 id -u)"
+          via_gid="$(docker run --rm via:b5 id -g)"
+          sudo chown "$via_uid:$via_gid" "$artifact_mount"
+          marker="${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-${GITHUB_SHA}"
+
+          docker run \
+            --name "$container_a" \
+            -e B5_MARKER="$marker" \
+            -v "$artifact_mount:/var/lib/via/artifacts" \
+            via:b5 \
+            sh -c 'printf "%s" "$B5_MARKER" > /var/lib/via/artifacts/b5-marker.txt'
+          docker rm "$container_a"
+
+          docker run \
+            --name "$container_b" \
+            -e B5_MARKER="$marker" \
+            -v "$artifact_mount:/var/lib/via/artifacts" \
+            via:b5 \
+            sh -c 'test "$(cat /var/lib/via/artifacts/b5-marker.txt)" = "$B5_MARKER"'
+          docker rm "$container_b"
+
+      - name: Verify unmounted workspace is disposable across replacement
+        run: |
+          set -Eeuo pipefail
+          container_a="via-b5-workspace-a-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          container_b="via-b5-workspace-b-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          cleanup() {
+            status=$?
+            if [ "$status" -ne 0 ]; then
+              echo "Disposable workspace gate failed; container diagnostics:"
+              docker diff "$container_a" 2>/dev/null || true
+              docker diff "$container_b" 2>/dev/null || true
+              docker logs "$container_a" 2>/dev/null || true
+              docker logs "$container_b" 2>/dev/null || true
+            fi
+            docker rm -f "$container_a" "$container_b" >/dev/null 2>&1 || true
+            exit "$status"
+          }
+          trap cleanup EXIT
+
+          docker run \
+            --name "$container_a" \
+            via:b5 \
+            sh -c 'printf workspace-marker > /var/lib/via/workspace/b5-marker.txt'
+          docker rm "$container_a"
+
+          docker run \
+            --name "$container_b" \
+            via:b5 \
+            sh -c 'test ! -e /var/lib/via/workspace/b5-marker.txt'
+          docker rm "$container_b"
+
       - name: Verify CropSuiteLite is read-only
         run: |
-          docker run --rm via:b4 sh -c '
+          docker run --rm via:b5 sh -c '
             test ! -w /opt/via/CropSuiteLite &&
             test ! -w /opt/via/CropSuiteLite/src/multicrop.py
           '
@@ -137,7 +283,7 @@ jobs:
       - name: Verify migration CLI fails fast without database configuration
         run: |
           set +e
-          output="$(docker run --rm via:b4 via-migrate upgrade 2>&1)"
+          output="$(docker run --rm via:b5 via-migrate upgrade 2>&1)"
           status=$?
           set -e
           printf '%s\n' "$output"
@@ -147,10 +293,10 @@ jobs:
       - name: Verify one-shot PostgreSQL/PostGIS release migration
         run: |
           set -Eeuo pipefail
-          network="via-b4-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
-          database="via-b4-postgis-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
-          migration_one="via-b4-migrate-one-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
-          migration_two="via-b4-migrate-two-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          network="via-b5-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          database="via-b5-postgis-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          migration_one="via-b5-migrate-one-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          migration_two="via-b5-migrate-two-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
           database_url="postgresql+psycopg://via:ci-only-password@${database}:5432/via"
 
           cleanup() {
@@ -191,7 +337,7 @@ jobs:
               --name "$name" \
               --network "$network" \
               -e VIA_DATABASE_URL="$database_url" \
-              via:b4 \
+              via:b5 \
               via-migrate upgrade
             test "$(docker inspect -f '{{.State.Status}}' "$name")" = "exited"
             test "$(docker inspect -f '{{.State.ExitCode}}' "$name")" -eq 0
@@ -201,7 +347,7 @@ jobs:
             docker run --rm -i \
               --network "$network" \
               -e VIA_DATABASE_URL="$database_url" \
-              via:b4 \
+              via:b5 \
               python - <<'PY'
           import os
 
@@ -237,5 +383,5 @@ jobs:
 
       - name: Show image size
         run: |
-          docker image inspect via:b4 --format='Image size: {{.Size}} bytes'
-          docker images via:b4
+          docker image inspect via:b5 --format='Image size: {{.Size}} bytes'
+          docker images via:b5

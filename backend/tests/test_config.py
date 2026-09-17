@@ -221,3 +221,61 @@ def test_worker_run_requires_scientific_input_bindings() -> None:
 
     with pytest.raises(ValueError, match="VIA_CROPSUITE_INPUT_BINDINGS"):
         settings.require_scientific_execution()
+
+
+def _scientific_worker_settings(
+    tmp_path: Path,
+    *,
+    cropsuite_root: Path | None = None,
+    workspace: Path | None = None,
+    artifacts_root: Path | None = None,
+) -> WorkerSettings:
+    return WorkerSettings(
+        database_url="postgresql+psycopg://example.invalid/via",
+        cropsuite_root=cropsuite_root or tmp_path / "engine",
+        cropsuite_python=tmp_path / "python",
+        cropsuite_workspace=workspace or tmp_path / "workspace",
+        artifacts_root=artifacts_root or tmp_path / "artifacts",
+        cropsuite_input_bindings=tmp_path / "config" / "input-bindings.json",
+    )
+
+
+def test_worker_scientific_paths_accept_separate_runtime_roots(tmp_path: Path) -> None:
+    settings = _scientific_worker_settings(tmp_path)
+
+    assert settings.require_scientific_execution() == (
+        tmp_path / "engine",
+        tmp_path / "python",
+        tmp_path / "workspace",
+        tmp_path / "artifacts",
+        tmp_path / "config" / "input-bindings.json",
+    )
+    assert settings.cropsuite_source_config is None
+    assert settings.cropsuite_catalog is None
+
+
+@pytest.mark.parametrize(
+    ("workspace_relative", "artifacts_relative", "message"),
+    [
+        ("engine", "artifacts", "VIA_CROPSUITE_WORKSPACE"),
+        ("engine/work", "artifacts", "VIA_CROPSUITE_WORKSPACE"),
+        ("workspace", "engine", "VIA_ARTIFACTS_ROOT"),
+        ("workspace", "engine/artifacts", "VIA_ARTIFACTS_ROOT"),
+        ("workspace", "workspace", "distinct"),
+        ("workspace", "workspace/artifacts", "inside VIA_CROPSUITE_WORKSPACE"),
+    ],
+)
+def test_worker_scientific_paths_reject_unsafe_topology(
+    tmp_path: Path,
+    workspace_relative: str,
+    artifacts_relative: str,
+    message: str,
+) -> None:
+    settings = _scientific_worker_settings(
+        tmp_path,
+        workspace=tmp_path / workspace_relative,
+        artifacts_root=tmp_path / artifacts_relative,
+    )
+
+    with pytest.raises(ValueError, match=message):
+        settings.require_scientific_execution()

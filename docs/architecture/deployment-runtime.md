@@ -116,29 +116,55 @@ job runs before application processes depend on the new schema.
 
 ## Filesystem contract
 
-Runtime paths are deployment configuration and must be absolute or otherwise
-resolved independently of the process current working directory. The execution
-workspace and durable artifacts root have different lifecycle requirements.
+Runtime paths are deployment configuration and must resolve independently of the
+process current working directory. B5 standardizes the provider-neutral
+container topology:
 
-| Resource | Access | Requirement | Persistence / placement |
+| Path | Access | Lifetime | Owner |
 | --- | --- | --- | --- |
-| CropSuiteLite engine root | Read-only | Required by worker | Persistent with deployed code/image |
-| Scientific source datasets | Read-only | Required by scientific execution | Deployment-provided inputs |
-| Scientific input bindings | Read-only | Required | Deployment configuration |
-| Source config/catalog | Read-only | Optional under current configuration | Deployment configuration |
-| CropSuite execution workspace | Writable | Required by scientific execution | Temporary/disposable and outside the CropSuiteLite engine tree |
-| Scientific artifacts root | Writable | Required by scientific execution | Durable; must survive worker/container replacement |
+| `/opt/via/CropSuiteLite` | read-only | image | VIA image |
+| `/mnt/via/sources` | read-only | external | deployment/data |
+| `/etc/via` | read-only | external | deployment/config |
+| `/var/lib/via/workspace` | read-write | disposable | worker/container |
+| `/var/lib/via/artifacts` | read-write | durable | deployment storage |
 
-The execution workspace is disposable process state and is not durable evidence.
-`VIA_ARTIFACTS_ROOT` stores durable scientific evidence. Any artifact reference
-persisted in PostgreSQL is unsafe if it points to a filesystem that disappears
-whenever a worker or container is replaced, so production must mount or provide
-artifact storage with the required lifetime.
+Scientific source datasets are supplied externally and are immutable to VIA.
+They are not copied into the image, moved into CropSuiteLite, or persisted as
+artifacts. Existing input bindings continue to carry exact source references;
+production bindings should use stable container paths below
+`/mnt/via/sources/...` where those references point to mounted datasets. The
+existing evaluation-time source SHA-256 verification remains authoritative.
+B5 does not add mount-wide hashing or startup dataset scans.
 
-Scientific source datasets, input bindings, and any configured source
-config/catalog are immutable runtime inputs from the worker's perspective.
-CropSuiteLite's engine/source tree is also immutable. `VIA_CROPSUITE_WORKSPACE`
-must remain outside `VIA_CROPSUITE_ROOT`, matching the existing adapter guard.
+Deployment configuration is supplied read-only at `/etc/via`. The required
+bindings file has canonical path `/etc/via/input-bindings.json`, exposed by the
+image as the structural default for `VIA_CROPSUITE_INPUT_BINDINGS`. The actual
+file is not baked into the image, so a worker without the deployment mount still
+fails when it attempts to load the required bindings. Optional
+`VIA_CROPSUITE_SOURCE_CONFIG` and `VIA_CROPSUITE_CATALOG` remain optional runtime
+files and may also be mounted below `/etc/via` when a deployment uses them.
+
+`VIA_CROPSUITE_WORKSPACE=/var/lib/via/workspace` is disposable process state.
+Per-evaluation request files, generated engine inputs, logs, bridge output, and
+temporary scientific output live there and may disappear when a worker/container
+is replaced. Finalized scientific artifacts are published into
+`VIA_ARTIFACTS_ROOT=/var/lib/via/artifacts` with opaque relative storage
+references plus their persisted SHA-256/size metadata. Persisted artifact
+references therefore must not depend on workspace files remaining after an
+evaluation completes.
+
+The filesystem artifact implementation can prove that its root exists and is
+writable; it cannot prove storage durability. Production deployment must mount
+storage at `/var/lib/via/artifacts` whose lifecycle survives container
+replacement. B5 deliberately selects no cloud storage product and adds no
+Docker `VOLUME` instruction. B6 will wire these paths in a production-like
+Compose deployment. B7 owns provider-specific persistent storage selection.
+
+Scientific execution rejects writable workspace/artifact layouts that are equal
+to or nested inside the immutable CropSuiteLite tree, and rejects durable
+artifact storage that is equal to or nested inside the disposable workspace.
+These checks resolve paths without requiring them to exist during pure settings
+parsing. The adapter's existing workspace-vs-engine guard remains in place.
 
 ## Environment contract
 
@@ -215,6 +241,7 @@ as the final non-root `via` user and fails unless all of the following are true:
   imports using the same scientific interpreter;
 - the runtime UID is not root;
 - `/opt/via/CropSuiteLite` is not writable by the runtime user; and
+- `/etc/via` and `/mnt/via/sources` exist and are not writable by the runtime user; and
 - `/var/lib/via/workspace` and `/var/lib/via/artifacts` are writable by that user.
 
 B2 intentionally stopped before defining a VIA `CMD` or `ENTRYPOINT`. B3 adds
@@ -223,10 +250,13 @@ B4 adds `via-migrate upgrade` as an explicit command override while keeping the
 default image role unchanged. Schema migration is never run by image startup.
 
 Runtime processes use the non-root `via` user. `/opt/via/CropSuiteLite` and the
-backend code remain image-owned read-only inputs. `/var/lib/via/workspace` is the
-disposable CropSuite execution workspace and `/var/lib/via/artifacts` is the
-writable artifact path; production still has to place the artifact path on
-durable storage. `VIA_CROPSUITE_INPUT_BINDINGS`, scientific datasets, and any
+backend code remain image-owned read-only inputs. The image also contains empty,
+non-writable mount targets at `/etc/via` and `/mnt/via/sources`.
+`/var/lib/via/workspace` is the disposable CropSuite execution workspace and
+`/var/lib/via/artifacts` is the writable artifact path; production must place
+the artifact path on deployment-owned durable storage.
+`VIA_CROPSUITE_INPUT_BINDINGS` defaults structurally to
+`/etc/via/input-bindings.json`; the bindings file, scientific datasets, and any
 optional source config/catalog remain deployment-provided read-only inputs and
 are intentionally not baked into the image. `HOME=/tmp` and
 `MPLCONFIGDIR=/tmp/matplotlib` keep Matplotlib's runtime cache/configuration in
@@ -236,21 +266,21 @@ Build from the repository root so both `backend/` and `CropSuiteLite/` are in
 the Docker build context:
 
 ```text
-docker build -t via:b4 .
-docker run --rm via:b4 python /opt/via/backend/scripts/verify_container_runtime.py --require-linux
-docker run --rm via:b4 python --version
-docker run --rm via:b4 python -m pip check
-docker run --rm via:b4 via-worker --help
-docker run --rm -e VIA_DATABASE_URL=<postgresql-url> via:b4 via-migrate upgrade
+docker build -t via:b5 .
+docker run --rm via:b5 python /opt/via/backend/scripts/verify_container_runtime.py --require-linux
+docker run --rm via:b5 python --version
+docker run --rm via:b5 python -m pip check
+docker run --rm via:b5 via-worker --help
+docker run --rm -e VIA_DATABASE_URL=<postgresql-url> via:b5 via-migrate upgrade
 ```
 
-B2-B4 do not choose a hosting provider, add scientific datasets to the image,
+B2-B5 do not choose a hosting provider, add scientific datasets to the image,
 alter CropSuiteLite scientific requirements or behavior, change artifact-storage
-semantics, or change worker lifecycle. B5 still owns durable artifact storage
-mounting/configuration.
+identities/database semantics, or change worker lifecycle. B5 defines the
+durability and mount contract while leaving provider-specific storage to B7.
 
-The existing Linux container workflow proves the B3 process contract and the B4
-release migration contract.
+The Linux container workflow proves the B3 process contract, the B4 release
+migration contract, and the B5 filesystem/mount contract.
 It starts the image using its default command with a syntactically valid but
 unreachable PostgreSQL URL, polls `/health`, then performs a normal
 `docker stop --time 10`. The health endpoint is technical API-process readiness
@@ -266,3 +296,13 @@ repository Alembic head, runs the migration command a second time, and verifies
 head again. It also proves `via-migrate upgrade` fails before database access
 when `VIA_DATABASE_URL` is absent. Temporary containers and networks are removed
 through cleanup traps and useful database/migration logs are emitted on failure.
+
+For B5, the workflow also verifies that the intrinsic `/etc/via` and
+`/mnt/via/sources` targets are non-writable by the default `via` user, then
+mounts harmless host marker directories read-only at those locations and proves
+the markers are readable while writes fail. A deployment-owned artifact bind
+mount is prepared using the image's dynamically discovered UID/GID; one
+container writes a unique marker and a replacement container reads the same
+marker from the same mount. A separate pair of containers proves an unmounted
+workspace marker disappears across container replacement. These Linux Docker
+checks prove deployment behavior that unit tests cannot establish.

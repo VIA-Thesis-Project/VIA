@@ -1,4 +1,4 @@
-"""Static invariants for the provider-neutral B2-B4 container image."""
+"""Static invariants for the provider-neutral B2-B5 container image."""
 
 import ast
 import json
@@ -42,13 +42,37 @@ def test_image_does_not_bake_deployment_secrets_or_bindings() -> None:
 
     for forbidden_setting in (
         "VIA_DATABASE_URL",
-        "VIA_CROPSUITE_INPUT_BINDINGS",
         "VIA_CROPSUITE_SOURCE_CONFIG",
         "VIA_CROPSUITE_CATALOG",
         "VIA_POSTGRES_PASSWORD",
     ):
         assert forbidden_setting not in dockerfile
+    copy_instructions = [
+        line.strip()
+        for line in dockerfile.splitlines()
+        if line.lstrip().upper().startswith("COPY ")
+    ]
+    copied_text = "\n".join(copy_instructions).casefold()
+    for forbidden_copy in ("input-bindings.json", "data/", "downloads/", "/etc/via"):
+        assert forbidden_copy not in copied_text
     assert "COPY . " not in dockerfile
+
+
+def test_image_declares_b5_canonical_filesystem_contract() -> None:
+    dockerfile = (REPOSITORY_ROOT / "Dockerfile").read_text(encoding="utf-8")
+    instructions = [
+        line.strip()
+        for line in dockerfile.splitlines()
+        if line.strip() and not line.lstrip().startswith("#")
+    ]
+
+    assert "VIA_CROPSUITE_ROOT=/opt/via/CropSuiteLite" in dockerfile
+    assert "VIA_CROPSUITE_WORKSPACE=/var/lib/via/workspace" in dockerfile
+    assert "VIA_ARTIFACTS_ROOT=/var/lib/via/artifacts" in dockerfile
+    assert "VIA_CROPSUITE_INPUT_BINDINGS=/etc/via/input-bindings.json" in dockerfile
+    assert "/mnt/via/sources" in dockerfile
+    assert "/etc/via" in dockerfile
+    assert not any(line.upper().startswith("VOLUME ") for line in instructions)
 
 
 def test_image_defaults_to_exec_form_production_api_command() -> None:
