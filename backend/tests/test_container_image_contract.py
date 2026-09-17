@@ -1,6 +1,7 @@
 """Static invariants for the provider-neutral B2-B5 container image."""
 
 import ast
+import hashlib
 import json
 import tomllib
 from pathlib import Path
@@ -8,6 +9,9 @@ from pathlib import Path
 REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
 HUAURA_BOUNDARY_SOURCE = "data/huaura/boundary/huaura_province.geojson"
 HUAURA_BOUNDARY_DESTINATION = "/opt/via/data/huaura/boundary/huaura_province.geojson"
+USDA_TEXTURE_SOURCE = "CropSuiteLite/data/usda_texture_classification.dat"
+USDA_TEXTURE_DESTINATION = "/opt/via/CropSuiteLite/data/usda_texture_classification.dat"
+USDA_TEXTURE_SHA256 = "e1397f6f47f26ad2f2bb42d1ac9c80c17473c50d856a4f9bd90778955b5eb46a"
 
 
 def test_docker_context_excludes_local_scientific_and_development_state() -> None:
@@ -49,6 +53,9 @@ def test_docker_context_excludes_local_scientific_and_development_state() -> Non
         "!data/huaura/boundary/",
         "data/huaura/boundary/*",
         f"!{HUAURA_BOUNDARY_SOURCE}",
+        "!CropSuiteLite/data/",
+        "CropSuiteLite/data/*",
+        f"!{USDA_TEXTURE_SOURCE}",
     ]
     first_data_rule = ignored_lines.index("data/")
     actual_data_rules = ignored_lines[
@@ -62,8 +69,44 @@ def test_docker_context_excludes_local_scientific_and_development_state() -> Non
         "!data/huaura/",
         "!data/huaura/boundary/",
         f"!{HUAURA_BOUNDARY_SOURCE}",
+        "!CropSuiteLite/data/",
+        f"!{USDA_TEXTURE_SOURCE}",
     }
     assert (REPOSITORY_ROOT / HUAURA_BOUNDARY_SOURCE).is_file()
+    usda_texture = REPOSITORY_ROOT / USDA_TEXTURE_SOURCE
+    assert usda_texture.is_file()
+    assert hashlib.sha256(usda_texture.read_bytes()).hexdigest() == USDA_TEXTURE_SHA256
+    assert not any(
+        line.startswith("!CropSuiteLite/data/worldclim_") for line in ignored_lines
+    )
+
+
+def test_cropsuite_scientific_manifest_pins_rioxarray_only_in_scientific_runtime() -> None:
+    requirements = (
+        REPOSITORY_ROOT / "CropSuiteLite" / "requirements.txt"
+    ).read_text(encoding="utf-8").splitlines()
+    pyproject = tomllib.loads(
+        (REPOSITORY_ROOT / "backend" / "pyproject.toml").read_text(encoding="utf-8")
+    )
+
+    assert requirements.count("rioxarray==0.19.0") == 1
+    assert not any(
+        dependency.casefold().startswith("rioxarray")
+        for dependency in pyproject["project"]["dependencies"]
+    )
+
+
+def test_container_runtime_gate_imports_real_cropsuite_with_same_interpreter() -> None:
+    verifier = (
+        REPOSITORY_ROOT / "backend" / "scripts" / "verify_container_runtime.py"
+    ).read_text(encoding="utf-8")
+
+    assert '"rioxarray",' in verifier
+    assert 'CROPSUITE_IMPORT_SMOKE = "import rioxarray; import CropSuite"' in verifier
+    assert '[sys.executable, "-c", CROPSUITE_IMPORT_SMOKE]' in verifier
+    assert "cwd=engine_root" in verifier
+    assert USDA_TEXTURE_DESTINATION in verifier
+    assert "_require_read_only_file(" in verifier
 
 
 def test_image_does_not_bake_deployment_secrets_or_bindings() -> None:

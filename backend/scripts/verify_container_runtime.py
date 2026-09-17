@@ -18,6 +18,7 @@ SCIENTIFIC_IMPORTS = (
     "matplotlib",
     "rasterio",
     "xarray",
+    "rioxarray",
     "numba",
     "rio_cogeo",
     "cartopy",
@@ -40,6 +41,10 @@ REQUIRED_CROPSUITE_FILES = (
     "scripts/run_evaluation_engine.py",
 )
 HUAURA_BOUNDARY = Path("/opt/via/data/huaura/boundary/huaura_province.geojson")
+USDA_TEXTURE_CLASSIFICATION = Path(
+    "/opt/via/CropSuiteLite/data/usda_texture_classification.dat"
+)
+CROPSUITE_IMPORT_SMOKE = "import rioxarray; import CropSuite"
 
 
 def _require_writable_directory(path: Path, *, variable: str) -> None:
@@ -59,6 +64,17 @@ def _require_read_only_directory(path: Path, *, label: str) -> None:
         raise RuntimeError(f"{label} must not be writable by the runtime user: {path}")
 
 
+def _require_read_only_file(path: Path, *, label: str) -> None:
+    if not path.exists():
+        raise RuntimeError(f"{label} is missing: {path}")
+    if not path.is_file():
+        raise RuntimeError(f"{label} must be a file: {path}")
+    if not os.access(path, os.R_OK):
+        raise RuntimeError(f"{label} must be readable by the runtime user: {path}")
+    if os.access(path, os.W_OK):
+        raise RuntimeError(f"{label} must not be writable by the runtime user: {path}")
+
+
 def _run_pip_check() -> None:
     completed = subprocess.run(
         [sys.executable, "-m", "pip", "check"],
@@ -69,6 +85,19 @@ def _run_pip_check() -> None:
     if completed.returncode != 0:
         details = (completed.stdout + completed.stderr).strip()
         raise RuntimeError(f"python -m pip check failed:\n{details}")
+
+
+def _run_cropsuite_import_smoke(engine_root: Path) -> None:
+    completed = subprocess.run(
+        [sys.executable, "-c", CROPSUITE_IMPORT_SMOKE],
+        cwd=engine_root,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if completed.returncode != 0:
+        details = (completed.stdout + completed.stderr).strip()
+        raise RuntimeError(f"CropSuite scientific import smoke failed:\n{details}")
 
 
 def verify_runtime(*, require_linux: bool) -> None:
@@ -113,14 +142,11 @@ def verify_runtime(*, require_linux: bool) -> None:
     if os.access(engine_root, os.W_OK) or os.access(engine_root / "src" / "multicrop.py", os.W_OK):
         raise RuntimeError("CropSuiteLite source must not be writable by the runtime user.")
 
-    if not HUAURA_BOUNDARY.exists():
-        raise RuntimeError(f"Required Huaura boundary is missing: {HUAURA_BOUNDARY}")
-    if not HUAURA_BOUNDARY.is_file():
-        raise RuntimeError(f"Required Huaura boundary must be a file: {HUAURA_BOUNDARY}")
-    if os.access(HUAURA_BOUNDARY, os.W_OK):
-        raise RuntimeError(
-            f"Required Huaura boundary must not be writable by the runtime user: {HUAURA_BOUNDARY}"
-        )
+    _require_read_only_file(HUAURA_BOUNDARY, label="Required Huaura boundary")
+    _require_read_only_file(
+        USDA_TEXTURE_CLASSIFICATION,
+        label="Required USDA texture classification",
+    )
 
     _require_read_only_directory(Path("/etc/via"), label="/etc/via")
     _require_read_only_directory(Path("/mnt/via/sources"), label="/mnt/via/sources")
@@ -136,6 +162,7 @@ def verify_runtime(*, require_linux: bool) -> None:
     finally:
         sys.path.pop(0)
 
+    _run_cropsuite_import_smoke(engine_root)
     _run_pip_check()
 
 

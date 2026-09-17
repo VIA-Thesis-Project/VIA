@@ -129,17 +129,19 @@ container topology:
 | `/var/lib/via/artifacts` | read-write | durable | deployment storage |
 
 Dynamic environmental source datasets are supplied externally and are immutable
-to VIA. They are not copied into the image, moved into CropSuiteLite, or
-persisted as artifacts. Existing input bindings continue to carry exact source
-references; production bindings should use stable container paths below
-`/mnt/via/sources/...` where those references point to mounted datasets. The
-existing evaluation-time source SHA-256 verification remains authoritative. The
-tracked Huaura scope boundary is different: the static, versioned
-`data/huaura/boundary/huaura_province.geojson` file is included in the image at
-`/opt/via/data/huaura/boundary/huaura_province.geojson` because CropSuiteLite
-resolves that fixed boundary relative to its image root. No environmental raster
-or other `data/` content is included. B5 does not add mount-wide hashing or
-startup dataset scans.
+to VIA. The 39 environmental rasters remain outside the image under
+`/mnt/via/sources`; they are not moved into CropSuiteLite or persisted as
+artifacts. Existing input bindings continue to carry exact source references;
+production bindings should use stable container paths below `/mnt/via/sources/...`
+where those references point to mounted datasets. The existing evaluation-time
+source SHA-256 verification remains authoritative. Two static, versioned `data/`
+assets are intentionally included in the image: the tracked Huaura scope boundary
+`data/huaura/boundary/huaura_province.geojson` at
+`/opt/via/data/huaura/boundary/huaura_province.geojson`, and
+`CropSuiteLite/data/usda_texture_classification.dat` at
+`/opt/via/CropSuiteLite/data/usda_texture_classification.dat`. No environmental
+raster, including `worldclim_prec` or `worldclim_temp`, is included. B5 does not
+add mount-wide hashing or startup dataset scans.
 
 Deployment configuration is supplied read-only at `/etc/via`. The required
 bindings file has canonical path `/etc/via/input-bindings.json`, exposed by the
@@ -381,7 +383,11 @@ Pelletier archives, raw SoilGrids downloads, historical CropSuite outputs,
 virtual environments, repository metadata, and other development caches do not.
 `scripts/sync_digitalocean_sources.ps1` requires the operator to name the local
 source directory explicitly before copying it. It performs no automatic
-discovery of a repository data directory.
+discovery of a repository data directory. After upload it normalizes
+`/srv/via/sources` and every source directory to mode `0755`, every source file
+to mode `0644`, and fails if verification finds any different mode. Ownership
+remains deployment-owned; these modes let runtime uid 999 traverse and read the
+tree while Compose still mounts `/srv/via/sources:/mnt/via/sources:ro`.
 
 PostgreSQL data lives in the Docker-managed `via_postgres_data` named volume and
 therefore survives database-container recreation and VIA image changes. Final
@@ -429,10 +435,12 @@ once as `VIA_POSTGRES_PASSWORD`; Compose derives the application
 requires a URL-unreserved password of at least 24 characters so no second
 encoded password copy is needed. A long random hex secret satisfies that
 constraint. `VIA_IMAGE` is supplied per release instead of being stored in the
-runtime secret file. Optional `VIA_CROPSUITE_SOURCE_CONFIG` may point to a
-read-only configuration file supplied through `/etc/via` or already present in
-the immutable image. Optional `VIA_CROPSUITE_CATALOG` similarly identifies a
-read-only directory of `.inf` catalog files. The initial 1 vCPU Droplet sets
+runtime secret file. The Huaura runtime example sets
+`VIA_CROPSUITE_SOURCE_CONFIG=/etc/via/huaura-runtime.ini` and
+`VIA_CROPSUITE_CATALOG=/opt/via/CropSuiteLite/plant_params/huaura_maize`. The
+external `huaura-runtime.ini` sets
+`texture_classes=/opt/via/CropSuiteLite/data/usda_texture_classification.dat`;
+that path does not belong in `runtime.env`. The initial 1 vCPU Droplet sets
 `VIA_CROPSUITE_MAX_WORKERS=1`.
 
 `.github/workflows/b7-publish-ghcr.yml` publishes to
@@ -508,12 +516,14 @@ libexpat1
 The selected scientific wheels must still prove their remaining Linux runtime
 requirements during the real image build and smoke verification.
 
-CropSuiteLite's source requirements are not rewritten. Repository inspection found
-no `tkinter`, `from tkinter`, or `import tk` usage in the VIA scientific path
-(`src.multicrop` and the engine code it launches). The `tk` line is therefore a
-non-portable packaging artifact for this runtime and only that exact line is
-excluded from the container installation. No other scientific dependency or
-version is changed.
+`CropSuiteLite/requirements.txt` is the authoritative scientific manifest
+installed into the image. It includes the required scientific runtime dependency
+`rioxarray==0.19.0`. CropSuiteLite's remaining source requirements are not
+rewritten. Repository inspection found no `tkinter`, `from tkinter`, or `import
+tk` usage in the VIA scientific path (`src.multicrop` and the engine code it
+launches). The `tk` line is therefore a non-portable packaging artifact for this
+runtime and only that exact line is excluded from the container installation. No
+other scientific dependency or version is changed.
 
 The build runs
 [`backend/scripts/verify_container_runtime.py`](../../backend/scripts/verify_container_runtime.py)
@@ -524,14 +534,20 @@ as the final non-root `via` user and fails unless all of the following are true:
 - `via_backend` and the worker module import successfully;
 - `via-api`, `via-backend`, `via-worker`, and `via-migrate` are installed on `PATH`;
 - the scientific stack imports successfully, including rasterio, pyproj,
-  shapely, cartopy, netCDF4, scipy, numba, xarray, rio-cogeo, dask,
+  shapely, cartopy, netCDF4, scipy, numba, xarray, rioxarray, rio-cogeo, dask,
   scikit-image, and related dependencies;
 - `python -m pip check` succeeds;
 - the expected CropSuiteLite entrypoint/source files exist and `src.multicrop`
   imports using the same scientific interpreter;
+- a subprocess using that same production interpreter and
+  `/opt/via/CropSuiteLite` as its working directory successfully executes
+  `import rioxarray; import CropSuite`, covering the real CropSuite entrypoint;
 - the static Huaura boundary exists at
   `/opt/via/data/huaura/boundary/huaura_province.geojson`, is a regular file,
   and is not writable by the runtime user;
+- the static USDA texture classification exists at
+  `/opt/via/CropSuiteLite/data/usda_texture_classification.dat`, is a regular
+  file, is readable, and is not writable by the runtime user;
 - the runtime UID is not root;
 - `/opt/via/CropSuiteLite` is not writable by the runtime user; and
 - `/etc/via` and `/mnt/via/sources` exist and are not writable by the runtime user; and
@@ -549,12 +565,14 @@ non-writable mount targets at `/etc/via` and `/mnt/via/sources`.
 `/var/lib/via/artifacts` is the writable artifact path; production must place
 the artifact path on deployment-owned durable storage.
 `VIA_CROPSUITE_INPUT_BINDINGS` defaults structurally to
-`/etc/via/input-bindings.json`; the bindings file, dynamic environmental
-datasets, optional source-config file, and optional `.inf` catalog directory
-remain deployment-provided read-only inputs and are intentionally not baked into
-the image. The only `data/` asset included in the image is the tracked, static
-Huaura scope boundary required by CropSuiteLite at
-`/opt/via/data/huaura/boundary/huaura_province.geojson`. `HOME=/tmp` and
+`/etc/via/input-bindings.json`; the bindings file, the 39 dynamic environmental
+rasters, and the source-config file remain deployment-provided read-only inputs.
+The validated Huaura maize catalog is image-owned at
+`/opt/via/CropSuiteLite/plant_params/huaura_maize`. The only permitted `data/`
+assets in the image are the tracked static Huaura scope boundary at
+`/opt/via/data/huaura/boundary/huaura_province.geojson` and the tracked static
+USDA texture classification at
+`/opt/via/CropSuiteLite/data/usda_texture_classification.dat`. `HOME=/tmp` and
 `MPLCONFIGDIR=/tmp/matplotlib` keep Matplotlib's runtime cache/configuration in
 temporary storage for the non-root process rather than in a persistent path.
 

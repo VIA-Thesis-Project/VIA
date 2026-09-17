@@ -119,8 +119,11 @@ def test_provider_files_do_not_embed_secrets_or_raw_huaura_paths() -> None:
 
     runtime_example = _read("deploy/digitalocean/runtime.env.example")
     assert "VIA_POSTGRES_PASSWORD=REPLACE_ME" in runtime_example
-    assert "VIA_CROPSUITE_SOURCE_CONFIG=/etc/via/source-config.ini" in runtime_example
-    assert "VIA_CROPSUITE_CATALOG=/etc/via/catalog" in runtime_example
+    assert "VIA_CROPSUITE_SOURCE_CONFIG=/etc/via/huaura-runtime.ini" in runtime_example
+    assert (
+        "VIA_CROPSUITE_CATALOG=/opt/via/CropSuiteLite/plant_params/huaura_maize"
+        in runtime_example
+    )
     assert "VIA_CROPSUITE_MAX_WORKERS=1" in runtime_example
     assert "VIA_DATABASE_URL=" not in runtime_example
     assert "VIA_IMAGE=" not in runtime_example
@@ -148,3 +151,15 @@ def test_docker_build_context_excludes_scientific_data() -> None:
 
     assert "data/" in dockerignore.splitlines()
     assert "**/data/" in dockerignore.splitlines()
+
+
+def test_source_sync_normalizes_and_verifies_read_only_runtime_permissions() -> None:
+    script = _read("scripts/sync_digitalocean_sources.ps1")
+
+    assert "chmod 0755 '__REMOTE_PATH__'" in script
+    assert "-mindepth 1 -type d -exec chmod 0755 {} +" in script
+    assert "-type f -exec chmod 0644 {} +" in script
+    assert "-type d ! -perm 0755 -print -quit" in script
+    assert "-type f ! -perm 0644 -print -quit" in script
+    assert "chmod 777" not in script
+    assert "chown" not in script.casefold()

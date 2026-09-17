@@ -49,4 +49,27 @@ if ($LASTEXITCODE -ne 0) {
     throw "Scientific source upload failed with exit code $LASTEXITCODE."
 }
 
-Write-Host "Copied the explicitly supplied scientific source tree to $target`:$RemotePath."
+$permissionCommand = (@'
+set -eu
+chmod 0755 '__REMOTE_PATH__'
+find '__REMOTE_PATH__' -mindepth 1 -type d -exec chmod 0755 {} +
+find '__REMOTE_PATH__' -type f -exec chmod 0644 {} +
+if find '__REMOTE_PATH__' -type d ! -perm 0755 -print -quit | grep -q .; then
+    echo "Scientific source directory permissions are not exactly 0755." >&2
+    exit 1
+fi
+if find '__REMOTE_PATH__' -type f ! -perm 0644 -print -quit | grep -q .; then
+    echo "Scientific source file permissions are not exactly 0644." >&2
+    exit 1
+fi
+'@).Replace('__REMOTE_PATH__', $RemotePath)
+
+& ssh @identityArguments $target $permissionCommand
+if ($LASTEXITCODE -ne 0) {
+    throw "Scientific source permission normalization or verification failed."
+}
+
+Write-Host (
+    "Copied scientific sources to $target`:$RemotePath and enforced " +
+    "directories 0755 / files 0644."
+)
