@@ -32,6 +32,25 @@ class CropOutcomeResult:
 
 
 @dataclass(frozen=True, slots=True)
+class ActiveEvaluationResult:
+    evaluation_id: UUID
+    status: EvaluationStatus
+    created_at: datetime
+    requested_crop_count: int
+    completed_crop_count: int
+
+    @classmethod
+    def from_domain(cls, evaluation: Evaluation) -> ActiveEvaluationResult:
+        return cls(
+            evaluation_id=evaluation.id,
+            status=evaluation.status,
+            created_at=evaluation.created_at,
+            requested_crop_count=len(evaluation.requested_crops),
+            completed_crop_count=len(evaluation.outcomes),
+        )
+
+
+@dataclass(frozen=True, slots=True)
 class EvaluationResult:
     id: UUID
     parcel_snapshot: ParcelSnapshotResult

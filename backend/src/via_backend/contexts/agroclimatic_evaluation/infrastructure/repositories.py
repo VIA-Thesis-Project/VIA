@@ -57,8 +57,7 @@ class InMemoryEvaluationRepository:
             return self._evaluations.get(evaluation_id)
 
     def list_queued_ids(self, *, limit: int) -> tuple[UUID, ...]:
-        if isinstance(limit, bool) or limit < 1:
-            raise ValueError("limit must be a positive integer.")
+        _validate_limit(limit)
         with self._lock:
             queued = (
                 evaluation
@@ -73,6 +72,26 @@ class InMemoryEvaluationRepository:
                 )[:limit]
             )
 
+    def list_active(self, *, limit: int) -> tuple[Evaluation, ...]:
+        _validate_limit(limit)
+        active_statuses = {
+            EvaluationStatus.PREPARING,
+            EvaluationStatus.RUNNING,
+            EvaluationStatus.SUMMARIZING,
+        }
+        with self._lock:
+            active = (
+                evaluation
+                for evaluation in self._evaluations.values()
+                if evaluation.status in active_statuses
+            )
+            return tuple(
+                sorted(
+                    active,
+                    key=lambda item: (item.created_at, item.id),
+                )[:limit]
+            )
+
     def list_all(self) -> tuple[Evaluation, ...]:
         with self._lock:
             return tuple(
@@ -81,3 +100,8 @@ class InMemoryEvaluationRepository:
                     key=lambda item: (item.created_at, item.id),
                 )
             )
+
+
+def _validate_limit(limit: int) -> None:
+    if isinstance(limit, bool) or not isinstance(limit, int) or limit < 1:
+        raise ValueError("limit must be a positive integer.")

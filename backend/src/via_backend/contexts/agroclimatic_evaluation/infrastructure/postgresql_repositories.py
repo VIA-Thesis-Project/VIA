@@ -229,7 +229,7 @@ class PostgreSQLEvaluationRepository:
             )
 
     def list_queued_ids(self, *, limit: int) -> tuple[UUID, ...]:
-        if isinstance(limit, bool) or limit < 1:
+        if isinstance(limit, bool) or not isinstance(limit, int) or limit < 1:
             raise ValueError("limit must be a positive integer.")
         with self._sessions() as session:
             return tuple(
@@ -240,6 +240,44 @@ class PostgreSQLEvaluationRepository:
                     .limit(limit)
                 )
             )
+
+    def list_active(self, *, limit: int) -> tuple[Evaluation, ...]:
+        if isinstance(limit, bool) or not isinstance(limit, int) or limit < 1:
+            raise ValueError("limit must be a positive integer.")
+        active_statuses = (
+            EvaluationStatus.PREPARING.value,
+            EvaluationStatus.RUNNING.value,
+            EvaluationStatus.SUMMARIZING.value,
+        )
+        with self._sessions() as session:
+            rows = session.execute(
+                _evaluation_query()
+                .where(EvaluationRecord.status.in_(active_statuses))
+                .order_by(EvaluationRecord.created_at, EvaluationRecord.id)
+                .limit(limit)
+            )
+            evaluations = []
+            for record, geometry_json in rows:
+                crops = tuple(
+                    session.scalars(
+                        select(EvaluationCropRecord.crop_id)
+                        .where(EvaluationCropRecord.evaluation_id == record.id)
+                        .order_by(EvaluationCropRecord.position)
+                    )
+                )
+                evaluations.append(
+                    _evaluation_from_row(
+                        record,
+                        geometry_json,
+                        crops,
+                        _load_environmental_input_references(session, record.id),
+                        _load_environmental_input_manifest(session, record.id),
+                        _load_outcomes(session, record.id),
+                        _load_common_support(session, record.id),
+                        _load_comparable_crops(session, record.id),
+                    )
+                )
+            return tuple(evaluations)
 
     def list_all(self) -> tuple[Evaluation, ...]:
         with self._sessions() as session:

@@ -70,7 +70,12 @@ from .read_models import (
     SuitabilitySummaryResult,
 )
 from .recovery import AgroclimaticEvaluationRecoveryService
-from .results import CropOutcomeResult, EvaluationResult, ParcelSnapshotResult
+from .results import (
+    ActiveEvaluationResult,
+    CropOutcomeResult,
+    EvaluationResult,
+    ParcelSnapshotResult,
+)
 from .service import (
     AgroclimaticEvaluationService,
     InvalidCommandError,
@@ -84,6 +89,7 @@ __all__ = [
     "AgroclimaticEvaluationRecoveryService",
     "AgroclimaticEvaluationService",
     "AgroclimaticEvaluationWorker",
+    "ActiveEvaluationResult",
     "CropEvidenceResult",
     "CropExecutionStatus",
     "CropOutcomeResult",

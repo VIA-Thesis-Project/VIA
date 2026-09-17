@@ -44,7 +44,23 @@ def test_evaluation_postgresql_selection_requires_database_url() -> None:
         ),
         lambda: WorkerSettings(
             database_url="postgresql+psycopg://example.invalid/via",
+            poll_interval_seconds=True,
+        ),
+        lambda: WorkerSettings(
+            database_url="postgresql+psycopg://example.invalid/via",
+            poll_interval_seconds=float("nan"),
+        ),
+        lambda: WorkerSettings(
+            database_url="postgresql+psycopg://example.invalid/via",
+            poll_interval_seconds=float("inf"),
+        ),
+        lambda: WorkerSettings(
+            database_url="postgresql+psycopg://example.invalid/via",
             batch_size=0,
+        ),
+        lambda: WorkerSettings(
+            database_url="postgresql+psycopg://example.invalid/via",
+            batch_size=True,
         ),
         lambda: WorkerSettings(
             database_url="postgresql+psycopg://example.invalid/via",

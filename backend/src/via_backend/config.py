@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass
+from math import isfinite
 from pathlib import Path
 from typing import Literal, cast
 
@@ -73,11 +74,24 @@ class WorkerSettings:
     def __post_init__(self) -> None:
         if not self.database_url:
             raise ValueError("VIA_DATABASE_URL is required for the worker.")
-        if self.poll_interval_seconds <= 0:
+        if (
+            isinstance(self.poll_interval_seconds, bool)
+            or not isinstance(self.poll_interval_seconds, (int, float))
+            or not isfinite(self.poll_interval_seconds)
+            or self.poll_interval_seconds <= 0
+        ):
             raise ValueError("VIA_WORKER_POLL_INTERVAL_SECONDS must be greater than zero.")
-        if isinstance(self.batch_size, bool) or self.batch_size < 1:
+        if (
+            isinstance(self.batch_size, bool)
+            or not isinstance(self.batch_size, int)
+            or self.batch_size < 1
+        ):
             raise ValueError("VIA_WORKER_BATCH_SIZE must be a positive integer.")
-        if isinstance(self.cropsuite_max_workers, bool) or self.cropsuite_max_workers < 1:
+        if (
+            isinstance(self.cropsuite_max_workers, bool)
+            or not isinstance(self.cropsuite_max_workers, int)
+            or self.cropsuite_max_workers < 1
+        ):
             raise ValueError("VIA_CROPSUITE_MAX_WORKERS must be a positive integer.")
 
     def require_scientific_execution(self) -> tuple[Path, Path, Path, Path, Path]:

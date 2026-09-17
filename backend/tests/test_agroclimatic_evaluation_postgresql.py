@@ -4,9 +4,11 @@ from __future__ import annotations
 
 import os
 from collections.abc import Iterator
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace
 from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
+from threading import Barrier
 from uuid import UUID, uuid4
 
 import pytest
@@ -208,6 +210,49 @@ def _start_running(
     )
     repository.save(running, expected_status=EvaluationStatus.PREPARING)
     return running
+
+
+def _persist_in_status(
+    repository: PostgreSQLEvaluationRepository,
+    evaluation: Evaluation,
+    status: EvaluationStatus,
+) -> Evaluation:
+    if status is EvaluationStatus.CANCELLED:
+        cancelled = replace(evaluation, status=EvaluationStatus.CANCELLED)
+        repository.add(cancelled)
+        return cancelled
+
+    repository.add(evaluation)
+    if status is EvaluationStatus.QUEUED:
+        return evaluation
+
+    preparing = evaluation.prepare()
+    repository.save(preparing, expected_status=EvaluationStatus.QUEUED)
+    if status is EvaluationStatus.PREPARING:
+        return preparing
+    if status is EvaluationStatus.FAILED:
+        failed = preparing.fail("operator-visible failure")
+        repository.save(failed, expected_status=EvaluationStatus.PREPARING)
+        return failed
+
+    running = _start_running(repository, preparing)
+    if status is EvaluationStatus.RUNNING:
+        return running
+
+    current = running
+    for crop_id in current.requested_crops:
+        outcome = _succeeded_outcome(crop_id)
+        repository.add_outcome(current.id, outcome)
+        current = current.record_outcome(outcome)
+
+    summarizing = current.start_summarizing()
+    repository.save(summarizing, expected_status=EvaluationStatus.RUNNING)
+    if status is EvaluationStatus.SUMMARIZING:
+        return summarizing
+
+    succeeded = summarizing.succeed()
+    repository.save(succeeded, expected_status=EvaluationStatus.SUMMARIZING)
+    return succeeded
 
 
 @pytest.mark.parametrize("geometry", [_polygon(), _multipolygon()])
@@ -621,6 +666,108 @@ def test_queued_discovery_filters_orders_and_limits(
     )
 
 
+def test_concurrent_claim_cas_allows_exactly_one_preparing_transition(
+    database: tuple[Engine, SessionFactory],
+) -> None:
+    _, sessions = database
+    repository = PostgreSQLEvaluationRepository(sessions)
+    evaluation = _evaluation()
+    repository.add(evaluation)
+    first_copy = repository.get(evaluation.id)
+    second_copy = repository.get(evaluation.id)
+    assert first_copy is not None
+    assert second_copy is not None
+    barrier = Barrier(2)
+
+    def claim(candidate: Evaluation) -> str:
+        contender = PostgreSQLEvaluationRepository(sessions)
+        preparing = candidate.prepare()
+        barrier.wait()
+        try:
+            contender.save(preparing, expected_status=EvaluationStatus.QUEUED)
+        except EvaluationConflictError:
+            return "conflict"
+        return "success"
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        results = tuple(pool.map(claim, (first_copy, second_copy)))
+
+    assert sorted(results) == ["conflict", "success"]
+    restored = repository.get(evaluation.id)
+    assert restored is not None
+    assert restored.status is EvaluationStatus.PREPARING
+
+
+def test_active_listing_filters_orders_limits_and_hydrates_outcomes(
+    database: tuple[Engine, SessionFactory],
+) -> None:
+    _, sessions = database
+    repository = PostgreSQLEvaluationRepository(sessions)
+    older = replace(
+        _evaluation(),
+        id=UUID(int=20),
+        created_at=NOW - timedelta(minutes=1),
+    )
+    same_time_first = replace(_evaluation(), id=UUID(int=1))
+    same_time_second = replace(_evaluation(), id=UUID(int=2))
+
+    _persist_in_status(repository, older, EvaluationStatus.PREPARING)
+    running = _persist_in_status(
+        repository,
+        same_time_first,
+        EvaluationStatus.RUNNING,
+    )
+    outcome = _succeeded_outcome("rice")
+    repository.add_outcome(running.id, outcome)
+    _persist_in_status(
+        repository,
+        same_time_second,
+        EvaluationStatus.SUMMARIZING,
+    )
+
+    inactive_statuses = (
+        EvaluationStatus.QUEUED,
+        EvaluationStatus.SUCCEEDED,
+        EvaluationStatus.FAILED,
+        EvaluationStatus.CANCELLED,
+    )
+    for index, status in enumerate(inactive_statuses, start=100):
+        _persist_in_status(
+            repository,
+            replace(_evaluation(), id=UUID(int=index)),
+            status,
+        )
+
+    limited = repository.list_active(limit=2)
+    assert [evaluation.id for evaluation in limited] == [
+        older.id,
+        same_time_first.id,
+    ]
+    assert limited[1].outcomes == (outcome,)
+
+    all_active = repository.list_active(limit=10)
+    assert [evaluation.id for evaluation in all_active] == [
+        older.id,
+        same_time_first.id,
+        same_time_second.id,
+    ]
+    assert {evaluation.status for evaluation in all_active} == {
+        EvaluationStatus.PREPARING,
+        EvaluationStatus.RUNNING,
+        EvaluationStatus.SUMMARIZING,
+    }
+
+
+@pytest.mark.parametrize("limit", [0, -1, True])
+def test_active_listing_requires_positive_integer_limit(
+    database: tuple[Engine, SessionFactory],
+    limit: int,
+) -> None:
+    _, sessions = database
+    with pytest.raises(ValueError, match="positive"):
+        PostgreSQLEvaluationRepository(sessions).list_active(limit=limit)
+
+
 def test_preparing_to_running_persists_complete_manifest_atomically(
     database: tuple[Engine, SessionFactory],
 ) -> None:
@@ -717,7 +864,11 @@ def test_explicit_recovery_persists_failure_and_preserves_outcomes(
     repository.add_outcome(evaluation.id, outcome)
 
     result = AgroclimaticEvaluationRecoveryService(repository).recover_evaluation(
-        RecoverEvaluation(evaluation.id, "worker process terminated")
+        RecoverEvaluation(
+            evaluation.id,
+            EvaluationStatus.RUNNING,
+            "worker process terminated",
+        )
     )
 
     restored = repository.get(evaluation.id)

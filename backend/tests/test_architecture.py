@@ -250,6 +250,29 @@ def test_worker_application_code_does_not_import_cropsuite_adapter() -> None:
     assert "cropsuiteadapter" not in worker_application.read_text(encoding="utf-8").casefold()
 
 
+def test_worker_operations_application_code_stays_persistence_agnostic() -> None:
+    application = CONTEXTS_ROOT / "agroclimatic_evaluation" / "application"
+    for filename in ("worker.py", "recovery.py"):
+        modules = _imported_modules(application / filename)
+        assert all("sqlalchemy" not in module.casefold() for module in modules)
+        assert all("postgresql" not in module.casefold() for module in modules)
+
+
+def test_evaluation_domain_does_not_import_worker_process_controls() -> None:
+    domain = CONTEXTS_ROOT / "agroclimatic_evaluation" / "domain"
+    forbidden = {"signal", "threading", "logging"}
+    violations = [
+        f"{path.name}: {module}"
+        for path in domain.glob("*.py")
+        for module in _imported_modules(path)
+        if module.casefold().split(".")[0] in forbidden
+    ]
+    source = "\n".join(path.read_text(encoding="utf-8") for path in domain.glob("*.py"))
+
+    assert not violations, "\n".join(violations)
+    assert "WorkerSettings" not in source
+
+
 def test_evaluation_query_path_does_not_reference_engine_or_worker_control() -> None:
     application = CONTEXTS_ROOT / "agroclimatic_evaluation" / "application"
     query_files = [

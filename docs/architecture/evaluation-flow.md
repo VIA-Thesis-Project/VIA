@@ -83,15 +83,38 @@ The future API requires an explicit mapping rather than renaming these values im
 - `completed` does not guarantee that every crop has usable coverage; clients must inspect per-crop results.
 
 The worker has no heartbeat, lease, automatic stale timeout, takeover, retry, or
-requeue. SIGINT does not attempt mid-CropSuite cancellation. Process death or
-interruption can therefore leave an evaluation in `preparing`, `running`, or
-`summarizing`. An operator who has confirmed the process is gone may run
-`via-worker recover <id> --reason <text>`; the Application recovery use case uses
-the aggregate's existing failure behavior and optimistic expected status to mark
-only an active evaluation `failed`. Already-persisted outcomes remain, missing
-outcomes are not fabricated, and the evaluation is never restarted or requeued.
-Automatic crash recovery, retry, cancellation semantics, and the final
-evidence/result model remain open decisions.
+requeue. `via-worker active --limit N` lists only `preparing`, `running`, and
+`summarizing` evaluations, ordered by `created_at` and `id`, with safe operational
+counts. Active age is not evidence of orphaning: without a heartbeat or durable
+status-transition timestamp, `active != orphaned` and `old != orphaned`.
+
+SIGINT and SIGTERM only set a process-local stop event. The worker checks that
+event before each evaluation in a discovered batch and defers the untouched
+remainder, which stays `queued`. If a synchronous CropSuiteLite call is already
+running, graceful shutdown allows that call to return and then starts no new
+evaluation. A hard kill or platform timeout can still leave an evaluation in an
+active state.
+
+After independently confirming that the owning worker process is gone, an
+operator may run `via-worker recover <id> --expected-status
+preparing|running|summarizing --reason <text>`. The Application recovery use case
+compares the current state with that exact observed status and uses the same value
+as the persistence CAS expectation. If the evaluation moved meanwhile, recovery
+reports a conflict and makes no change. Successful recovery marks only that active
+evaluation `failed`; already-persisted outcomes remain, missing outcomes are not
+fabricated, and the evaluation is never restarted or requeued.
+
+An execution/integration failure already persisted as overall `failed` is counted
+per evaluation and later work continues. An unexpected failure that could not be
+durably persisted escapes the worker process; it is logged and the process
+supervisor may restart the worker. There is no automatic scientific retry or
+automatic orphan recovery.
+
+`GET /health` remains health/readiness for the API process only. The worker is a
+separate process, so its liveness belongs to the process/container supervisor; A7
+does not add a misleading heartbeat endpoint. `cancelled` also remains outside the
+A7 operational workflow: shutdown does not convert work to `cancelled`, and the
+worker does not terminate an active CropSuiteLite execution.
 
 ## Implemented query endpoints
 

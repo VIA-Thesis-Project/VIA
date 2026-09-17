@@ -8,6 +8,8 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID
 
+from ..domain.models import EvaluationStatus
+
 
 @dataclass(frozen=True, slots=True)
 class ParcelSnapshotInput:
@@ -47,4 +49,5 @@ class RecoverEvaluation:
     """Fail one operator-confirmed orphaned active evaluation."""
 
     evaluation_id: UUID
+    expected_status: EvaluationStatus
     reason: str

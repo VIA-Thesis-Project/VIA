@@ -59,6 +59,9 @@ class _ReadOnlySpyRepository:
     def list_queued_ids(self, *, limit: int) -> tuple[UUID, ...]:
         raise AssertionError("read query called list_queued_ids()")
 
+    def list_active(self, *, limit: int) -> tuple[Evaluation, ...]:
+        raise AssertionError("read query called list_active()")
+
     def list_all(self) -> tuple[Evaluation, ...]:
         raise AssertionError("read query called list_all()")
 

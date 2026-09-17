@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Protocol
 
@@ -23,6 +24,7 @@ class WorkerRunSummary:
     completed: int
     conflicted: int
     failed: int
+    deferred: int
 
 
 class AgroclimaticEvaluationWorker:
@@ -43,12 +45,20 @@ class AgroclimaticEvaluationWorker:
         self.batch_size = batch_size
         self._logger = logger or logging.getLogger(__name__)
 
-    def run_once(self) -> WorkerRunSummary:
+    def run_once(
+        self,
+        *,
+        stop_requested: Callable[[], bool] | None = None,
+    ) -> WorkerRunSummary:
         evaluation_ids = self._evaluations.list_queued_ids(limit=self.batch_size)
         self._logger.info("Queue batch discovered", extra={"count": len(evaluation_ids)})
-        completed = conflicted = failed = 0
+        completed = conflicted = failed = deferred = 0
+        should_stop = stop_requested or (lambda: False)
 
-        for evaluation_id in evaluation_ids:
+        for index, evaluation_id in enumerate(evaluation_ids):
+            if should_stop():
+                deferred = len(evaluation_ids) - index
+                break
             self._logger.info(
                 "Evaluation selected for execution",
                 extra={"evaluation_id": str(evaluation_id)},
@@ -68,7 +78,7 @@ class AgroclimaticEvaluationWorker:
                     raise
                 failed += 1
                 self._logger.exception(
-                    "Evaluation execution failed",
+                    "Evaluation failure was durably persisted",
                     extra={"evaluation_id": str(evaluation_id)},
                 )
             else:
@@ -78,9 +88,21 @@ class AgroclimaticEvaluationWorker:
                     extra={"evaluation_id": str(evaluation_id)},
                 )
 
-        return WorkerRunSummary(
+        summary = WorkerRunSummary(
             discovered=len(evaluation_ids),
             completed=completed,
             conflicted=conflicted,
             failed=failed,
+            deferred=deferred,
         )
+        self._logger.info(
+            "Worker batch completed",
+            extra={
+                "discovered": summary.discovered,
+                "completed": summary.completed,
+                "conflicted": summary.conflicted,
+                "failed": summary.failed,
+                "deferred": summary.deferred,
+            },
+        )
+        return summary

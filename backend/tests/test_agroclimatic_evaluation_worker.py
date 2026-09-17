@@ -377,6 +377,7 @@ def test_run_once_executes_through_existing_execution_service() -> None:
     restored = repository.get(evaluation.id)
 
     assert summary.completed == 1
+    assert summary.deferred == 0
     assert restored is not None
     assert restored.status is EvaluationStatus.SUCCEEDED
     assert [
@@ -430,6 +431,56 @@ def test_no_queued_work_never_calls_engine() -> None:
 
     assert worker.run_once().discovered == 0
     assert engine.requests == []
+
+
+def test_stop_before_first_item_defers_entire_discovered_batch() -> None:
+    repository = InMemoryEvaluationRepository()
+    first = _evaluation(evaluation_id=UUID(int=1))
+    second = _evaluation(evaluation_id=UUID(int=2))
+    repository.add(first)
+    repository.add(second)
+    engine = FakeEngine([])
+
+    summary = AgroclimaticEvaluationWorker(
+        repository,
+        _executor(repository, engine),
+        batch_size=2,
+    ).run_once(stop_requested=lambda: True)
+
+    assert summary.discovered == 2
+    assert summary.completed == 0
+    assert summary.conflicted == 0
+    assert summary.failed == 0
+    assert summary.deferred == 2
+    assert engine.requests == []
+    assert repository.get(first.id) == first
+    assert repository.get(second.id) == second
+
+
+def test_stop_after_first_item_defers_remaining_discovered_work() -> None:
+    repository = InMemoryEvaluationRepository()
+    first = _evaluation(evaluation_id=UUID(int=1))
+    second = _evaluation(evaluation_id=UUID(int=2))
+    repository.add(first)
+    repository.add(second)
+    engine = FakeEngine([_engine_result("maize")])
+
+    summary = AgroclimaticEvaluationWorker(
+        repository,
+        _executor(repository, engine),
+        batch_size=2,
+    ).run_once(stop_requested=lambda: bool(engine.requests))
+
+    assert summary.discovered == 2
+    assert summary.completed == 1
+    assert summary.conflicted == 0
+    assert summary.failed == 0
+    assert summary.deferred == 1
+    first_after = repository.get(first.id)
+    second_after = repository.get(second.id)
+    assert first_after is not None
+    assert first_after.status is EvaluationStatus.SUCCEEDED
+    assert second_after == second
 
 
 def test_claim_conflict_is_benign_and_later_work_continues() -> None:
@@ -573,7 +624,7 @@ def test_unpersisted_unexpected_failure_escapes_as_systemic() -> None:
         worker.run_once()
 
 
-def test_run_forever_sleeps_after_non_full_batch() -> None:
+def test_run_forever_waits_after_non_full_batch() -> None:
     repository = InMemoryEvaluationRepository()
 
     worker = AgroclimaticEvaluationWorker(
@@ -585,22 +636,22 @@ def test_run_forever_sleeps_after_non_full_batch() -> None:
         batch_size=1,
     )
 
-    sleeps: list[float] = []
+    waits: list[float] = []
 
-    def interrupting_sleep(
+    def interrupting_wait(
         seconds: float,
-    ) -> None:
-        sleeps.append(seconds)
+    ) -> bool:
+        waits.append(seconds)
         raise KeyboardInterrupt
 
     with pytest.raises(KeyboardInterrupt):
         run_forever(
             worker,
             poll_interval_seconds=2.5,
-            sleeper=interrupting_sleep,
+            wait_for_stop=interrupting_wait,
         )
 
-    assert sleeps == [2.5]
+    assert waits == [2.5]
 
 
 def _outcome() -> CropOutcome:
@@ -678,6 +729,45 @@ def _evaluation_in_status(
     )
 
 
+def test_active_discovery_filters_orders_limits_and_reports_counts() -> None:
+    repository = InMemoryEvaluationRepository()
+    older = replace(
+        _evaluation_in_status(EvaluationStatus.PREPARING),
+        id=UUID(int=20),
+        created_at=NOW - timedelta(minutes=1),
+    )
+    same_time_first = replace(
+        _evaluation_in_status(EvaluationStatus.RUNNING),
+        id=UUID(int=1),
+    )
+    same_time_second = replace(
+        _evaluation_in_status(EvaluationStatus.SUMMARIZING),
+        id=UUID(int=2),
+    )
+    inactive = _evaluation_in_status(EvaluationStatus.FAILED)
+    for evaluation in (same_time_second, inactive, older, same_time_first):
+        repository.add(evaluation)
+
+    results = AgroclimaticEvaluationRecoveryService(
+        repository
+    ).list_active_evaluations(limit=2)
+
+    assert [result.evaluation_id for result in results] == [
+        older.id,
+        same_time_first.id,
+    ]
+    assert results[0].requested_crop_count == 1
+    assert results[0].completed_crop_count == 0
+    assert results[1].requested_crop_count == 1
+    assert results[1].completed_crop_count == 0
+
+
+@pytest.mark.parametrize("limit", [0, -1, True, 1.5])
+def test_active_discovery_requires_positive_integer_limit(limit: object) -> None:
+    with pytest.raises(ValueError, match="positive"):
+        InMemoryEvaluationRepository().list_active(limit=limit)  # type: ignore[arg-type]
+
+
 @pytest.mark.parametrize(
     "status",
     [
@@ -699,6 +789,7 @@ def test_explicit_recovery_fails_active_evaluation_and_preserves_outcomes(
         ).recover_evaluation(
             RecoverEvaluation(
                 evaluation.id,
+                status,
                 "worker process terminated",
             )
         )
@@ -741,7 +832,7 @@ def test_explicit_recovery_rejects_non_active_status(
 
     with pytest.raises(
         InvalidCommandError,
-        match="cannot fail",
+        match="expected status",
     ):
         (
             AgroclimaticEvaluationRecoveryService(
@@ -749,6 +840,7 @@ def test_explicit_recovery_rejects_non_active_status(
             ).recover_evaluation(
                 RecoverEvaluation(
                     evaluation.id,
+                    status,
                     "operator confirmed orphan",
                 )
             )
@@ -771,6 +863,7 @@ def test_explicit_recovery_requires_non_empty_reason() -> None:
             ).recover_evaluation(
                 RecoverEvaluation(
                     evaluation.id,
+                    EvaluationStatus.PREPARING,
                     "   ",
                 )
             )
@@ -816,6 +909,7 @@ def test_explicit_recovery_uses_expected_status() -> None:
     ).recover_evaluation(
         RecoverEvaluation(
             evaluation.id,
+            EvaluationStatus.RUNNING,
             "worker process terminated",
         )
     )
@@ -872,6 +966,7 @@ def test_concurrent_recovery_reports_conflict_without_overwrite() -> None:
             ).recover_evaluation(
                 RecoverEvaluation(
                     evaluation.id,
+                    EvaluationStatus.RUNNING,
                     "stale recovery command",
                 )
             )
@@ -886,6 +981,46 @@ def test_concurrent_recovery_reports_conflict_without_overwrite() -> None:
         restored.failure_reason
         == "another operator recovered it"
     )
+
+
+def test_recovery_rejects_stale_observed_active_status_without_mutation() -> None:
+    repository = InMemoryEvaluationRepository()
+    evaluation = _evaluation_in_status(EvaluationStatus.SUMMARIZING)
+    repository.add(evaluation)
+
+    with pytest.raises(
+        ResourceConflictError,
+        match="expected status running but actual status is summarizing",
+    ):
+        AgroclimaticEvaluationRecoveryService(repository).recover_evaluation(
+            RecoverEvaluation(
+                evaluation.id,
+                EvaluationStatus.RUNNING,
+                "stale operator observation",
+            )
+        )
+
+    assert repository.get(evaluation.id) == evaluation
+
+
+def test_recovery_rejects_terminal_state_changed_since_observation() -> None:
+    repository = InMemoryEvaluationRepository()
+    evaluation = _evaluation_in_status(EvaluationStatus.FAILED)
+    repository.add(evaluation)
+
+    with pytest.raises(
+        ResourceConflictError,
+        match="expected status preparing but actual status is failed",
+    ):
+        AgroclimaticEvaluationRecoveryService(repository).recover_evaluation(
+            RecoverEvaluation(
+                evaluation.id,
+                EvaluationStatus.PREPARING,
+                "stale operator observation",
+            )
+        )
+
+    assert repository.get(evaluation.id) == evaluation
 
 
 def _artifact(
