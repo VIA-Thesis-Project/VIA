@@ -1866,21 +1866,21 @@
     "semantic_hash": ""
   },
   "docs/architecture/deployment-runtime.md": {
-    "mtime": 1789633935.9798017,
-    "seen": 1789635152.3593216,
-    "ast_hash": "44951fbe45898d58e1008fd087edea1e",
+    "mtime": 1789657849.3568926,
+    "seen": 1789660625.6951954,
+    "ast_hash": "38d4091b046e518575e61171fbde648a",
     "semantic_hash": ""
   },
   "backend/scripts/verify_container_runtime.py": {
-    "mtime": 1789613083.3793054,
-    "seen": 1789616871.0072165,
-    "ast_hash": "77ba81ce4c7ff3df0a85f92f6e335d6f",
+    "mtime": 1789657849.3458824,
+    "seen": 1789660625.6949728,
+    "ast_hash": "8230d9d7052569f7f7756c37c8894bed",
     "semantic_hash": ""
   },
   "backend/tests/test_container_image_contract.py": {
-    "mtime": 1789613083.380305,
-    "seen": 1789616871.0073323,
-    "ast_hash": "c5ef5a3d62e8423f320aa31dfa000318",
+    "mtime": 1789657922.974044,
+    "seen": 1789660625.6950796,
+    "ast_hash": "c9f12a8bb64381bfca7123328cd25505",
     "semantic_hash": ""
   },
   "backend/src/via_backend/api.py": {
@@ -1944,9 +1944,9 @@
     "semantic_hash": ""
   },
   "backend/tests/test_digitalocean_deployment_contract.py": {
-    "mtime": 1789634536.25343,
-    "seen": 1789635152.3592215,
-    "ast_hash": "8f2bff039dcece626fd58259edbda9bc",
+    "mtime": 1789657849.3508806,
+    "seen": 1789660625.6950881,
+    "ast_hash": "86115968fc7f0718422a9e53a68c71f3",
     "semantic_hash": ""
   },
   "backend/tests/test_resource_benchmark_contract.py": {
@@ -2004,9 +2004,9 @@
     "semantic_hash": ""
   },
   "compose.digitalocean.yaml": {
-    "mtime": 1789633518.083904,
-    "seen": 1789635152.359303,
-    "ast_hash": "a22eaa2b2202e7856f41d105d2a2a27a",
+    "mtime": 1789641705.563985,
+    "seen": 1789660625.6951756,
+    "ast_hash": "15a8e6b6379b593f59b77ebb658ca19b",
     "semantic_hash": ""
   },
   "docs/scientific/huaura-fixture-recovery.md": {

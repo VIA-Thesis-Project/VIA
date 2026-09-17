@@ -12400,7 +12400,7 @@
       "file_type": "code",
       "norm_label": "main()",
       "source_file": "backend/scripts/verify_container_runtime.py",
-      "source_location": "L132"
+      "source_location": "L142"
     },
     {
       "id": "backend_scripts_verify_container_runtime_require_read_only_directory",
@@ -12412,7 +12412,7 @@
       "file_type": "code",
       "norm_label": "_require_read_only_directory()",
       "source_file": "backend/scripts/verify_container_runtime.py",
-      "source_location": "L54"
+      "source_location": "L55"
     },
     {
       "id": "backend_scripts_verify_container_runtime_require_writable_directory",
@@ -12424,7 +12424,7 @@
       "file_type": "code",
       "norm_label": "_require_writable_directory()",
       "source_file": "backend/scripts/verify_container_runtime.py",
-      "source_location": "L44"
+      "source_location": "L45"
     },
     {
       "id": "backend_scripts_verify_container_runtime_run_pip_check",
@@ -12436,7 +12436,7 @@
       "file_type": "code",
       "norm_label": "_run_pip_check()",
       "source_file": "backend/scripts/verify_container_runtime.py",
-      "source_location": "L61"
+      "source_location": "L62"
     },
     {
       "id": "backend_scripts_verify_container_runtime_verify_runtime",
@@ -12448,7 +12448,7 @@
       "file_type": "code",
       "norm_label": "verify_runtime()",
       "source_file": "backend/scripts/verify_container_runtime.py",
-      "source_location": "L73"
+      "source_location": "L74"
     },
     {
       "id": "backend_src_via_backend_contexts_agroclimatic_evaluation_application_read_models_availability",
@@ -12892,7 +12892,7 @@
       "file_type": "code",
       "norm_label": "test_api_and_worker_hosts_do_not_import_migration_execution()",
       "source_file": "backend/tests/test_container_image_contract.py",
-      "source_location": "L110"
+      "source_location": "L144"
     },
     {
       "id": "backend_tests_test_container_image_contract_test_docker_context_excludes_local_scientific_and_development_state",
@@ -12904,7 +12904,7 @@
       "file_type": "code",
       "norm_label": "test_docker_context_excludes_local_scientific_and_development_state()",
       "source_file": "backend/tests/test_container_image_contract.py",
-      "source_location": "L11"
+      "source_location": "L13"
     },
     {
       "id": "backend_tests_test_container_image_contract_test_image_declares_b5_canonical_filesystem_contract",
@@ -12916,7 +12916,7 @@
       "file_type": "code",
       "norm_label": "test_image_declares_b5_canonical_filesystem_contract()",
       "source_file": "backend/tests/test_container_image_contract.py",
-      "source_location": "L61"
+      "source_location": "L95"
     },
     {
       "id": "backend_tests_test_container_image_contract_test_image_defaults_to_exec_form_production_api_command",
@@ -12928,7 +12928,7 @@
       "file_type": "code",
       "norm_label": "test_image_defaults_to_exec_form_production_api_command()",
       "source_file": "backend/tests/test_container_image_contract.py",
-      "source_location": "L78"
+      "source_location": "L112"
     },
     {
       "id": "backend_tests_test_container_image_contract_test_image_does_not_bake_deployment_secrets_or_bindings",
@@ -12940,7 +12940,7 @@
       "file_type": "code",
       "norm_label": "test_image_does_not_bake_deployment_secrets_or_bindings()",
       "source_file": "backend/tests/test_container_image_contract.py",
-      "source_location": "L40"
+      "source_location": "L69"
     },
     {
       "id": "backend_tests_test_container_image_contract_test_image_has_no_shell_process_multiplexer",
@@ -12952,7 +12952,7 @@
       "file_type": "code",
       "norm_label": "test_image_has_no_shell_process_multiplexer()",
       "source_file": "backend/tests/test_container_image_contract.py",
-      "source_location": "L93"
+      "source_location": "L127"
     },
     {
       "id": "backend_tests_test_container_image_contract_test_migration_cli_is_registered_and_container_has_structural_config_path",
@@ -12964,7 +12964,7 @@
       "file_type": "code",
       "norm_label": "test_migration_cli_is_registered_and_container_has_structural_config_path()",
       "source_file": "backend/tests/test_container_image_contract.py",
-      "source_location": "L100"
+      "source_location": "L134"
     },
     {
       "id": "backend_tests_test_digitalocean_deployment_contract_read",
@@ -13000,7 +13000,7 @@
       "file_type": "code",
       "norm_label": "test_deployment_script_enforces_release_order_without_destructive_cleanup()",
       "source_file": "backend/tests/test_digitalocean_deployment_contract.py",
-      "source_location": "L58"
+      "source_location": "L61"
     },
     {
       "id": "backend_tests_test_digitalocean_deployment_contract_test_deployment_script_requires_stable_worker_liveness_across_poll_intervals",
@@ -13012,7 +13012,7 @@
       "file_type": "code",
       "norm_label": "test_deployment_script_requires_stable_worker_liveness_across_poll_intervals()",
       "source_file": "backend/tests/test_digitalocean_deployment_contract.py",
-      "source_location": "L77"
+      "source_location": "L80"
     },
     {
       "id": "backend_tests_test_digitalocean_deployment_contract_test_digitalocean_compose_preserves_runtime_and_durability_contracts",
@@ -13036,7 +13036,7 @@
       "file_type": "code",
       "norm_label": "test_docker_build_context_excludes_scientific_data()",
       "source_file": "backend/tests/test_digitalocean_deployment_contract.py",
-      "source_location": "L140"
+      "source_location": "L146"
     },
     {
       "id": "backend_tests_test_digitalocean_deployment_contract_test_ghcr_publish_is_gated_by_successful_b2_b6_run_for_same_commit",
@@ -13048,7 +13048,7 @@
       "file_type": "code",
       "norm_label": "test_ghcr_publish_is_gated_by_successful_b2_b6_run_for_same_commit()",
       "source_file": "backend/tests/test_digitalocean_deployment_contract.py",
-      "source_location": "L123"
+      "source_location": "L129"
     },
     {
       "id": "backend_tests_test_digitalocean_deployment_contract_test_provider_files_do_not_embed_secrets_or_raw_huaura_paths",
@@ -13060,7 +13060,7 @@
       "file_type": "code",
       "norm_label": "test_provider_files_do_not_embed_secrets_or_raw_huaura_paths()",
       "source_file": "backend/tests/test_digitalocean_deployment_contract.py",
-      "source_location": "L95"
+      "source_location": "L98"
     },
     {
       "id": "cropsuitelite_src_nc_tools_get_netcdf_extent",
@@ -22146,7 +22146,7 @@
       "node_kind": "heading",
       "norm_label": "b2 reproducible linux container image",
       "source_file": "docs/architecture/deployment-runtime.md",
-      "source_location": "L481"
+      "source_location": "L494"
     },
     {
       "id": "docs_architecture_deployment_runtime_b6_1_resource_benchmark",
@@ -22158,7 +22158,7 @@
       "node_kind": "heading",
       "norm_label": "b6.1 resource benchmark",
       "source_file": "docs/architecture/deployment-runtime.md",
-      "source_location": "L253"
+      "source_location": "L260"
     },
     {
       "id": "docs_architecture_deployment_runtime_b6_production_like_docker_compose_smoke",
@@ -22170,7 +22170,7 @@
       "node_kind": "heading",
       "norm_label": "b6 production-like docker compose smoke",
       "source_file": "docs/architecture/deployment-runtime.md",
-      "source_location": "L204"
+      "source_location": "L211"
     },
     {
       "id": "docs_architecture_deployment_runtime_b7_digitalocean_single_droplet_deployment_definition",
@@ -22182,7 +22182,7 @@
       "node_kind": "heading",
       "norm_label": "b7 digitalocean single-droplet deployment definition",
       "source_file": "docs/architecture/deployment-runtime.md",
-      "source_location": "L341"
+      "source_location": "L348"
     },
     {
       "id": "docs_architecture_deployment_runtime_database_and_migration_contract",
@@ -22206,7 +22206,7 @@
       "node_kind": "heading",
       "norm_label": "environment contract",
       "source_file": "docs/architecture/deployment-runtime.md",
-      "source_location": "L169"
+      "source_location": "L176"
     },
     {
       "id": "docs_architecture_deployment_runtime_filesystem_contract",
@@ -25447,7 +25447,7 @@
       "source_location": "L1"
     },
     {
-      "id": "backend_scripts_verify_container_runtime_rationale_74",
+      "id": "backend_scripts_verify_container_runtime_rationale_75",
       "label": "Verify the interpreter used by the worker can import the complete runtime.",
       "_origin": "ast",
       "community": 187,
@@ -25455,7 +25455,7 @@
       "file_type": "rationale",
       "norm_label": "verify the interpreter used by the worker can import the complete runtime.",
       "source_file": "backend/scripts/verify_container_runtime.py",
-      "source_location": "L74"
+      "source_location": "L75"
     },
     {
       "id": "backend_src_via_backend_contexts_agroclimatic_evaluation_application_init",
@@ -35576,7 +35576,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/scripts/verify_container_runtime.py",
-      "source_location": "L136",
+      "source_location": "L146",
       "weight": 1.0
     },
     {
@@ -35588,7 +35588,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/scripts/verify_container_runtime.py",
-      "source_location": "L115",
+      "source_location": "L125",
       "weight": 1.0
     },
     {
@@ -35600,7 +35600,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/scripts/verify_container_runtime.py",
-      "source_location": "L120",
+      "source_location": "L130",
       "weight": 1.0
     },
     {
@@ -35612,7 +35612,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/scripts/verify_container_runtime.py",
-      "source_location": "L129",
+      "source_location": "L139",
       "weight": 1.0
     },
     {
@@ -35624,7 +35624,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/scripts/verify_container_runtime.py",
-      "source_location": "L82",
+      "source_location": "L83",
       "weight": 1.0
     },
     {
@@ -51836,7 +51836,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/test_digitalocean_deployment_contract.py",
-      "source_location": "L59",
+      "source_location": "L62",
       "weight": 1.0
     },
     {
@@ -51848,7 +51848,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/test_digitalocean_deployment_contract.py",
-      "source_location": "L78",
+      "source_location": "L81",
       "weight": 1.0
     },
     {
@@ -51872,7 +51872,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/test_digitalocean_deployment_contract.py",
-      "source_location": "L141",
+      "source_location": "L147",
       "weight": 1.0
     },
     {
@@ -51884,7 +51884,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/test_digitalocean_deployment_contract.py",
-      "source_location": "L124",
+      "source_location": "L130",
       "weight": 1.0
     },
     {
@@ -51896,7 +51896,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/test_digitalocean_deployment_contract.py",
-      "source_location": "L112",
+      "source_location": "L115",
       "weight": 1.0
     },
     {
@@ -75044,7 +75044,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "backend/scripts/verify_container_runtime.py",
-      "source_location": "L54",
+      "source_location": "L55",
       "weight": 1.0
     },
     {
@@ -75056,7 +75056,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "backend/scripts/verify_container_runtime.py",
-      "source_location": "L44",
+      "source_location": "L45",
       "weight": 1.0
     },
     {
@@ -81352,7 +81352,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/scripts/verify_container_runtime.py",
-      "source_location": "L132",
+      "source_location": "L142",
       "weight": 1.0
     },
     {
@@ -81363,7 +81363,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/scripts/verify_container_runtime.py",
-      "source_location": "L44",
+      "source_location": "L45",
       "weight": 1.0
     },
     {
@@ -81374,7 +81374,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/scripts/verify_container_runtime.py",
-      "source_location": "L54",
+      "source_location": "L55",
       "weight": 1.0
     },
     {
@@ -81385,7 +81385,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/scripts/verify_container_runtime.py",
-      "source_location": "L61",
+      "source_location": "L62",
       "weight": 1.0
     },
     {
@@ -81396,7 +81396,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/scripts/verify_container_runtime.py",
-      "source_location": "L73",
+      "source_location": "L74",
       "weight": 1.0
     },
     {
@@ -88606,68 +88606,13 @@
     },
     {
       "source": "backend_tests_test_container_image_contract",
-      "target": "backend_tests_test_container_image_contract_test_migration_cli_is_registered_and_container_has_structural_config_path",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "backend/tests/test_container_image_contract.py",
-      "source_location": "L100",
-      "weight": 1.0
-    },
-    {
-      "source": "backend_tests_test_container_image_contract",
-      "target": "backend_tests_test_container_image_contract_test_docker_context_excludes_local_scientific_and_development_state",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "backend/tests/test_container_image_contract.py",
-      "source_location": "L11",
-      "weight": 1.0
-    },
-    {
-      "source": "backend_tests_test_container_image_contract",
-      "target": "backend_tests_test_container_image_contract_test_api_and_worker_hosts_do_not_import_migration_execution",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "backend/tests/test_container_image_contract.py",
-      "source_location": "L110",
-      "weight": 1.0
-    },
-    {
-      "source": "backend_tests_test_container_image_contract",
-      "target": "backend_tests_test_container_image_contract_test_image_does_not_bake_deployment_secrets_or_bindings",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "backend/tests/test_container_image_contract.py",
-      "source_location": "L40",
-      "weight": 1.0
-    },
-    {
-      "source": "backend_tests_test_container_image_contract",
-      "target": "backend_tests_test_container_image_contract_test_image_declares_b5_canonical_filesystem_contract",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "backend/tests/test_container_image_contract.py",
-      "source_location": "L61",
-      "weight": 1.0
-    },
-    {
-      "source": "backend_tests_test_container_image_contract",
       "target": "backend_tests_test_container_image_contract_test_image_defaults_to_exec_form_production_api_command",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/tests/test_container_image_contract.py",
-      "source_location": "L78",
+      "source_location": "L112",
       "weight": 1.0
     },
     {
@@ -88678,7 +88623,62 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/tests/test_container_image_contract.py",
-      "source_location": "L93",
+      "source_location": "L127",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_tests_test_container_image_contract",
+      "target": "backend_tests_test_container_image_contract_test_docker_context_excludes_local_scientific_and_development_state",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "backend/tests/test_container_image_contract.py",
+      "source_location": "L13",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_tests_test_container_image_contract",
+      "target": "backend_tests_test_container_image_contract_test_migration_cli_is_registered_and_container_has_structural_config_path",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "backend/tests/test_container_image_contract.py",
+      "source_location": "L134",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_tests_test_container_image_contract",
+      "target": "backend_tests_test_container_image_contract_test_api_and_worker_hosts_do_not_import_migration_execution",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "backend/tests/test_container_image_contract.py",
+      "source_location": "L144",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_tests_test_container_image_contract",
+      "target": "backend_tests_test_container_image_contract_test_image_does_not_bake_deployment_secrets_or_bindings",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "backend/tests/test_container_image_contract.py",
+      "source_location": "L69",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_tests_test_container_image_contract",
+      "target": "backend_tests_test_container_image_contract_test_image_declares_b5_canonical_filesystem_contract",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "backend/tests/test_container_image_contract.py",
+      "source_location": "L95",
       "weight": 1.0
     },
     {
@@ -90108,7 +90108,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/tests/test_digitalocean_deployment_contract.py",
-      "source_location": "L123",
+      "source_location": "L129",
       "weight": 1.0
     },
     {
@@ -90130,7 +90130,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/tests/test_digitalocean_deployment_contract.py",
-      "source_location": "L140",
+      "source_location": "L146",
       "weight": 1.0
     },
     {
@@ -90152,7 +90152,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/tests/test_digitalocean_deployment_contract.py",
-      "source_location": "L58",
+      "source_location": "L61",
       "weight": 1.0
     },
     {
@@ -90163,7 +90163,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/tests/test_digitalocean_deployment_contract.py",
-      "source_location": "L77",
+      "source_location": "L80",
       "weight": 1.0
     },
     {
@@ -90174,7 +90174,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/tests/test_digitalocean_deployment_contract.py",
-      "source_location": "L95",
+      "source_location": "L98",
       "weight": 1.0
     },
     {
@@ -94101,7 +94101,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/architecture/deployment-runtime.md",
-      "source_location": "L169",
+      "source_location": "L176",
       "weight": 1.0
     },
     {
@@ -94112,7 +94112,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/architecture/deployment-runtime.md",
-      "source_location": "L204",
+      "source_location": "L211",
       "weight": 1.0
     },
     {
@@ -94123,7 +94123,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/architecture/deployment-runtime.md",
-      "source_location": "L253",
+      "source_location": "L260",
       "weight": 1.0
     },
     {
@@ -94145,7 +94145,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/architecture/deployment-runtime.md",
-      "source_location": "L341",
+      "source_location": "L348",
       "weight": 1.0
     },
     {
@@ -94167,7 +94167,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/architecture/deployment-runtime.md",
-      "source_location": "L481",
+      "source_location": "L494",
       "weight": 1.0
     },
     {
@@ -101365,14 +101365,14 @@
       "weight": 1.0
     },
     {
-      "source": "backend_scripts_verify_container_runtime_rationale_74",
+      "source": "backend_scripts_verify_container_runtime_rationale_75",
       "target": "backend_scripts_verify_container_runtime_verify_runtime",
       "relation": "rationale_for",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/scripts/verify_container_runtime.py",
-      "source_location": "L74",
+      "source_location": "L75",
       "weight": 1.0
     },
     {
@@ -118687,5 +118687,5 @@
       "source_file": "docs/architecture/cropsuite-integration.md"
     }
   ],
-  "built_at_commit": "57292df8bdbcca0edd3e94870fec9788727884ab"
+  "built_at_commit": "6528614b84f5659a7228ca5a995a0653c26755c8"
 }
