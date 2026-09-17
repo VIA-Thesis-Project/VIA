@@ -30,6 +30,13 @@ coverage/
 
 data/
 **/data/
+!data/
+data/*
+!data/huaura/
+data/huaura/*
+!data/huaura/boundary/
+data/huaura/boundary/*
+!data/huaura/boundary/huaura_province.geojson
 downloads/
 **/downloads/
 results/

@@ -39,6 +39,7 @@ REQUIRED_CROPSUITE_FILES = (
     "src/multicrop.py",
     "scripts/run_evaluation_engine.py",
 )
+HUAURA_BOUNDARY = Path("/opt/via/data/huaura/boundary/huaura_province.geojson")
 
 
 def _require_writable_directory(path: Path, *, variable: str) -> None:
@@ -111,6 +112,15 @@ def verify_runtime(*, require_linux: bool) -> None:
         )
     if os.access(engine_root, os.W_OK) or os.access(engine_root / "src" / "multicrop.py", os.W_OK):
         raise RuntimeError("CropSuiteLite source must not be writable by the runtime user.")
+
+    if not HUAURA_BOUNDARY.exists():
+        raise RuntimeError(f"Required Huaura boundary is missing: {HUAURA_BOUNDARY}")
+    if not HUAURA_BOUNDARY.is_file():
+        raise RuntimeError(f"Required Huaura boundary must be a file: {HUAURA_BOUNDARY}")
+    if os.access(HUAURA_BOUNDARY, os.W_OK):
+        raise RuntimeError(
+            f"Required Huaura boundary must not be writable by the runtime user: {HUAURA_BOUNDARY}"
+        )
 
     _require_read_only_directory(Path("/etc/via"), label="/etc/via")
     _require_read_only_directory(Path("/mnt/via/sources"), label="/mnt/via/sources")

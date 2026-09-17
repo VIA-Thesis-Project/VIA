@@ -6,14 +6,17 @@ import tomllib
 from pathlib import Path
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
+HUAURA_BOUNDARY_SOURCE = "data/huaura/boundary/huaura_province.geojson"
+HUAURA_BOUNDARY_DESTINATION = "/opt/via/data/huaura/boundary/huaura_province.geojson"
 
 
 def test_docker_context_excludes_local_scientific_and_development_state() -> None:
-    ignored = {
+    ignored_lines = [
         line.strip()
         for line in (REPOSITORY_ROOT / ".dockerignore").read_text(encoding="utf-8").splitlines()
         if line.strip() and not line.lstrip().startswith("#")
-    }
+    ]
+    ignored = set(ignored_lines)
     required = {
         ".git/",
         ".codex/",
@@ -36,6 +39,32 @@ def test_docker_context_excludes_local_scientific_and_development_state() -> Non
     }
     assert required <= ignored
 
+    expected_data_rules = [
+        "data/",
+        "**/data/",
+        "!data/",
+        "data/*",
+        "!data/huaura/",
+        "data/huaura/*",
+        "!data/huaura/boundary/",
+        "data/huaura/boundary/*",
+        f"!{HUAURA_BOUNDARY_SOURCE}",
+    ]
+    first_data_rule = ignored_lines.index("data/")
+    actual_data_rules = ignored_lines[
+        first_data_rule : first_data_rule + len(expected_data_rules)
+    ]
+    assert actual_data_rules == expected_data_rules
+    assert {
+        line for line in ignored_lines if line.startswith("!") and "data/" in line
+    } == {
+        "!data/",
+        "!data/huaura/",
+        "!data/huaura/boundary/",
+        f"!{HUAURA_BOUNDARY_SOURCE}",
+    }
+    assert (REPOSITORY_ROOT / HUAURA_BOUNDARY_SOURCE).is_file()
+
 
 def test_image_does_not_bake_deployment_secrets_or_bindings() -> None:
     dockerfile = (REPOSITORY_ROOT / "Dockerfile").read_text(encoding="utf-8")
@@ -52,7 +81,12 @@ def test_image_does_not_bake_deployment_secrets_or_bindings() -> None:
         for line in dockerfile.splitlines()
         if line.lstrip().upper().startswith("COPY ")
     ]
-    copied_text = "\n".join(copy_instructions).casefold()
+    boundary_copy = f"COPY {HUAURA_BOUNDARY_SOURCE} {HUAURA_BOUNDARY_DESTINATION}"
+    assert copy_instructions.count(boundary_copy) == 1
+
+    copied_text = "\n".join(
+        instruction for instruction in copy_instructions if instruction != boundary_copy
+    ).casefold()
     for forbidden_copy in ("input-bindings.json", "data/", "downloads/", "/etc/via"):
         assert forbidden_copy not in copied_text
     assert "COPY . " not in dockerfile

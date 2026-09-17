@@ -128,21 +128,28 @@ container topology:
 | `/var/lib/via/workspace` | read-write | disposable | worker/container |
 | `/var/lib/via/artifacts` | read-write | durable | deployment storage |
 
-Scientific source datasets are supplied externally and are immutable to VIA.
-They are not copied into the image, moved into CropSuiteLite, or persisted as
-artifacts. Existing input bindings continue to carry exact source references;
-production bindings should use stable container paths below
+Dynamic environmental source datasets are supplied externally and are immutable
+to VIA. They are not copied into the image, moved into CropSuiteLite, or
+persisted as artifacts. Existing input bindings continue to carry exact source
+references; production bindings should use stable container paths below
 `/mnt/via/sources/...` where those references point to mounted datasets. The
-existing evaluation-time source SHA-256 verification remains authoritative.
-B5 does not add mount-wide hashing or startup dataset scans.
+existing evaluation-time source SHA-256 verification remains authoritative. The
+tracked Huaura scope boundary is different: the static, versioned
+`data/huaura/boundary/huaura_province.geojson` file is included in the image at
+`/opt/via/data/huaura/boundary/huaura_province.geojson` because CropSuiteLite
+resolves that fixed boundary relative to its image root. No environmental raster
+or other `data/` content is included. B5 does not add mount-wide hashing or
+startup dataset scans.
 
 Deployment configuration is supplied read-only at `/etc/via`. The required
 bindings file has canonical path `/etc/via/input-bindings.json`, exposed by the
 image as the structural default for `VIA_CROPSUITE_INPUT_BINDINGS`. The actual
 file is not baked into the image, so a worker without the deployment mount still
 fails when it attempts to load the required bindings. Optional
-`VIA_CROPSUITE_SOURCE_CONFIG` and `VIA_CROPSUITE_CATALOG` remain optional runtime
-files and may also be mounted below `/etc/via` when a deployment uses them.
+`VIA_CROPSUITE_SOURCE_CONFIG` identifies a runtime configuration file, while
+`VIA_CROPSUITE_CATALOG` identifies a directory containing CropSuite `.inf`
+catalog files. Either may be supplied read-only below `/etc/via` when a
+deployment uses them.
 
 `VIA_CROPSUITE_WORKSPACE=/var/lib/via/workspace` is disposable process state.
 Per-evaluation request files, generated engine inputs, logs, bridge output, and
@@ -348,8 +355,10 @@ been created by this repository change.
 The initial capacity target is 1 vCPU, 2 GiB RAM, and 50 GiB SSD for an expected
 audience of fewer than five people. The deployment runs one VIA worker and keeps
 the VIA evaluation queue sequential at the worker level with
-`VIA_WORKER_BATCH_SIZE=1`. No scientific parameters or workload are reduced to
-fit that capacity. A resize to a 4 GiB Basic Droplet requires no VIA application
+`VIA_WORKER_BATCH_SIZE=1`. The same initial single-Droplet profile sets
+`VIA_CROPSUITE_MAX_WORKERS=1`, so the scientific runtime also uses one worker on
+the 1 vCPU host. No scientific parameters or workload are reduced to fit that
+capacity. A resize to a 4 GiB Basic Droplet requires no VIA application
 architecture change.
 
 | B1-B6 contract | DigitalOcean implementation |
@@ -420,7 +429,11 @@ once as `VIA_POSTGRES_PASSWORD`; Compose derives the application
 requires a URL-unreserved password of at least 24 characters so no second
 encoded password copy is needed. A long random hex secret satisfies that
 constraint. `VIA_IMAGE` is supplied per release instead of being stored in the
-runtime secret file.
+runtime secret file. Optional `VIA_CROPSUITE_SOURCE_CONFIG` may point to a
+read-only configuration file supplied through `/etc/via` or already present in
+the immutable image. Optional `VIA_CROPSUITE_CATALOG` similarly identifies a
+read-only directory of `.inf` catalog files. The initial 1 vCPU Droplet sets
+`VIA_CROPSUITE_MAX_WORKERS=1`.
 
 `.github/workflows/b7-publish-ghcr.yml` publishes to
 `ghcr.io/<owner>/<repository>:<validated-git-sha>` only after the existing
@@ -516,6 +529,9 @@ as the final non-root `via` user and fails unless all of the following are true:
 - `python -m pip check` succeeds;
 - the expected CropSuiteLite entrypoint/source files exist and `src.multicrop`
   imports using the same scientific interpreter;
+- the static Huaura boundary exists at
+  `/opt/via/data/huaura/boundary/huaura_province.geojson`, is a regular file,
+  and is not writable by the runtime user;
 - the runtime UID is not root;
 - `/opt/via/CropSuiteLite` is not writable by the runtime user; and
 - `/etc/via` and `/mnt/via/sources` exist and are not writable by the runtime user; and
@@ -533,9 +549,12 @@ non-writable mount targets at `/etc/via` and `/mnt/via/sources`.
 `/var/lib/via/artifacts` is the writable artifact path; production must place
 the artifact path on deployment-owned durable storage.
 `VIA_CROPSUITE_INPUT_BINDINGS` defaults structurally to
-`/etc/via/input-bindings.json`; the bindings file, scientific datasets, and any
-optional source config/catalog remain deployment-provided read-only inputs and
-are intentionally not baked into the image. `HOME=/tmp` and
+`/etc/via/input-bindings.json`; the bindings file, dynamic environmental
+datasets, optional source-config file, and optional `.inf` catalog directory
+remain deployment-provided read-only inputs and are intentionally not baked into
+the image. The only `data/` asset included in the image is the tracked, static
+Huaura scope boundary required by CropSuiteLite at
+`/opt/via/data/huaura/boundary/huaura_province.geojson`. `HOME=/tmp` and
 `MPLCONFIGDIR=/tmp/matplotlib` keep Matplotlib's runtime cache/configuration in
 temporary storage for the non-root process rather than in a persistent path.
 
@@ -551,11 +570,13 @@ docker run --rm via:b6 via-worker --help
 docker run --rm -e VIA_DATABASE_URL=<postgresql-url> via:b6 via-migrate upgrade
 ```
 
-B2-B6 do not choose a hosting provider, add scientific datasets to the image,
-alter CropSuiteLite scientific requirements or behavior, change artifact-storage
-identities/database semantics, or change worker lifecycle. B5 defines the
-durability and mount contract, while B6 exercises that contract locally and in
-CI and leaves provider-specific storage to B7.
+B2-B6 do not choose a hosting provider, add dynamic environmental datasets to
+the image, alter CropSuiteLite scientific requirements or behavior, change
+artifact-storage identities/database semantics, or change worker lifecycle. The
+versioned Huaura scope boundary is the single static `data/` exception required
+by the existing scientific runtime. B5 defines the durability and mount
+contract, while B6 exercises that contract locally and in CI and leaves
+provider-specific storage to B7.
 
 The Linux container workflow proves the B3 process contract, the B4 release
 migration contract, and the B5 filesystem/mount contract.

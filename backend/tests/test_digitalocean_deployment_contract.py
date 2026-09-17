@@ -44,6 +44,9 @@ def test_digitalocean_compose_preserves_runtime_and_durability_contracts() -> No
     assert "restart: unless-stopped" in worker
     assert "ports:" not in worker
     assert '"127.0.0.1:${VIA_API_HOST_PORT:-8000}:8000"' in api
+    assert "VIA_CROPSUITE_SOURCE_CONFIG: ${VIA_CROPSUITE_SOURCE_CONFIG:-}" in worker
+    assert "VIA_CROPSUITE_CATALOG: ${VIA_CROPSUITE_CATALOG:-}" in worker
+    assert "VIA_CROPSUITE_MAX_WORKERS: ${VIA_CROPSUITE_MAX_WORKERS:-1}" in worker
 
     assert "/srv/via/config:/etc/via:ro" in worker
     assert "/srv/via/sources:/mnt/via/sources:ro" in worker
@@ -116,6 +119,9 @@ def test_provider_files_do_not_embed_secrets_or_raw_huaura_paths() -> None:
 
     runtime_example = _read("deploy/digitalocean/runtime.env.example")
     assert "VIA_POSTGRES_PASSWORD=REPLACE_ME" in runtime_example
+    assert "VIA_CROPSUITE_SOURCE_CONFIG=/etc/via/source-config.ini" in runtime_example
+    assert "VIA_CROPSUITE_CATALOG=/etc/via/catalog" in runtime_example
+    assert "VIA_CROPSUITE_MAX_WORKERS=1" in runtime_example
     assert "VIA_DATABASE_URL=" not in runtime_example
     assert "VIA_IMAGE=" not in runtime_example
 
