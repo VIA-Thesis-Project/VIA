@@ -546,10 +546,10 @@
     "semantic_hash": "3f40d2aeeca441e6c0bc7b2f50dfc1cd"
   },
   "CropSuiteLite/requirements.txt": {
-    "mtime": 1789087720.4710906,
-    "seen": 1789135460.865782,
-    "ast_hash": "7a1b04648313047d48a668b585f9a222",
-    "semantic_hash": "7a1b04648313047d48a668b585f9a222"
+    "mtime": 1789665116.6707401,
+    "seen": 1789665800.9715867,
+    "ast_hash": "58aae7ce81b0500e6b8837ac1614f497",
+    "semantic_hash": ""
   },
   "CropSuiteLite/yaml_configurations/crop_suite_datasets.yaml": {
     "mtime": 1788218836.803935,
@@ -1866,21 +1866,21 @@
     "semantic_hash": ""
   },
   "docs/architecture/deployment-runtime.md": {
-    "mtime": 1789657849.3568926,
-    "seen": 1789660625.6951954,
-    "ast_hash": "38d4091b046e518575e61171fbde648a",
+    "mtime": 1789665381.5347204,
+    "seen": 1789665800.9716167,
+    "ast_hash": "e9f0e615cb560942abbc71a7fe31f5f4",
     "semantic_hash": ""
   },
   "backend/scripts/verify_container_runtime.py": {
-    "mtime": 1789657849.3458824,
-    "seen": 1789660625.6949728,
-    "ast_hash": "8230d9d7052569f7f7756c37c8894bed",
+    "mtime": 1789665116.6767375,
+    "seen": 1789665800.9714038,
+    "ast_hash": "ec9c5c01ee242774f8a73c0e07f5a732",
     "semantic_hash": ""
   },
   "backend/tests/test_container_image_contract.py": {
-    "mtime": 1789657922.974044,
-    "seen": 1789660625.6950796,
-    "ast_hash": "c9f12a8bb64381bfca7123328cd25505",
+    "mtime": 1789665116.6787999,
+    "seen": 1789665800.971506,
+    "ast_hash": "ac14aa9f4a3a1da60e76d451174ef3de",
     "semantic_hash": ""
   },
   "backend/src/via_backend/api.py": {
@@ -1944,9 +1944,9 @@
     "semantic_hash": ""
   },
   "backend/tests/test_digitalocean_deployment_contract.py": {
-    "mtime": 1789657849.3508806,
-    "seen": 1789660625.6950881,
-    "ast_hash": "86115968fc7f0718422a9e53a68c71f3",
+    "mtime": 1789665116.6828265,
+    "seen": 1789665800.971515,
+    "ast_hash": "796b8921ee8dd9f6e86af0483bb554ec",
     "semantic_hash": ""
   },
   "backend/tests/test_resource_benchmark_contract.py": {
@@ -1980,9 +1980,9 @@
     "semantic_hash": ""
   },
   "scripts/sync_digitalocean_sources.ps1": {
-    "mtime": 1789633518.0933323,
-    "seen": 1789635152.3592694,
-    "ast_hash": "221ca6e2b0fe125b754d0c4256e485a1",
+    "mtime": 1789665116.6808357,
+    "seen": 1789665800.9715624,
+    "ast_hash": "73037354adf30077a3b6353bcfa9f8c5",
     "semantic_hash": ""
   },
   ".github/workflows/b6-resource-benchmark.yml": {
