@@ -327,13 +327,22 @@ jobs:
 
           ready=false
           for attempt in $(seq 1 60); do
-            if docker exec "$database" pg_isready -U via -d via >/dev/null 2>&1; then
+            if docker exec "$database" pg_isready -h 127.0.0.1 -U via -d via >/dev/null 2>&1; then
               ready=true
               break
             fi
+            if [ "$(docker inspect -f '{{.State.Running}}' "$database")" != "true" ]; then
+              echo "PostGIS container stopped during initialization."
+              docker logs "$database" || true
+              exit 1
+            fi
             sleep 1
           done
-          test "$ready" = "true"
+          if [ "$ready" != "true" ]; then
+            echo "PostGIS did not become TCP-ready within the readiness timeout."
+            docker logs "$database" || true
+            exit 1
+          fi
 
           run_migration() {
             name="$1"
