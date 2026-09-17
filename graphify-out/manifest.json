@@ -1488,9 +1488,9 @@
     "semantic_hash": ""
   },
   "backend/tests/test_agroclimatic_evaluation_postgresql.py": {
-    "mtime": 1789601871.6252372,
-    "seen": 1789604883.463304,
-    "ast_hash": "a11b3f7c9b30ce5097fa5a3ad2791dac",
+    "mtime": 1789669384.33181,
+    "seen": 1789675924.818538,
+    "ast_hash": "a02bff69e62d47563129490a9461bde3",
     "semantic_hash": ""
   },
   "backend/tests/test_agroclimatic_evaluation_repositories.py": {
@@ -1668,15 +1668,15 @@
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/agroclimatic_evaluation/domain/comparison.py": {
-    "mtime": 1789435877.3459454,
-    "seen": 1789438392.5448365,
-    "ast_hash": "cd091679f161236c60058131202dfe21",
+    "mtime": 1789675664.080652,
+    "seen": 1789675924.8184638,
+    "ast_hash": "74991b6f00174d7c809d1fcb76504b90",
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/agroclimatic_evaluation/infrastructure/cropsuite_comparison_adapter.py": {
-    "mtime": 1789431408.3962154,
-    "seen": 1789438392.5448625,
-    "ast_hash": "ff7ca7a74a916baa1e82981c887d8c20",
+    "mtime": 1789669297.575996,
+    "seen": 1789675924.8184712,
+    "ast_hash": "52882e13fa02e9000a4870d59786c13d",
     "semantic_hash": ""
   },
   "backend/tests/test_crop_comparison_contracts.py": {
@@ -1686,9 +1686,9 @@
     "semantic_hash": ""
   },
   "backend/tests/test_cropsuite_comparison_adapter.py": {
-    "mtime": 1789425143.7865884,
-    "seen": 1789438392.5451393,
-    "ast_hash": "c7b65268293ab4cd89dbe4448ddca8c3",
+    "mtime": 1789675664.0846546,
+    "seen": 1789675924.8185477,
+    "ast_hash": "69db33ab58135f1754c3155cdb893242",
     "semantic_hash": ""
   },
   "backend/tests/test_cropsuite_comparison_adapter_scientific.py": {
@@ -1704,9 +1704,9 @@
     "semantic_hash": ""
   },
   "backend/tests/test_crop_comparison_domain.py": {
-    "mtime": 1789592813.167521,
-    "seen": 1789596300.1663325,
-    "ast_hash": "30a3fa3444583ddddf05642fab9da7b9",
+    "mtime": 1789675691.2145102,
+    "seen": 1789675924.8185453,
+    "ast_hash": "d05257f620d32adc15d05f8a7bcc9a73",
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/decision_support/application/ports.py": {
