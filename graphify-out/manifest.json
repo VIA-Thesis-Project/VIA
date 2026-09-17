@@ -1056,9 +1056,9 @@
     "semantic_hash": "147774db32a5f22008dac63554067cac"
   },
   "backend/src/via_backend/config.py": {
-    "mtime": 1789605908.7970235,
-    "seen": 1789606380.2066326,
-    "ast_hash": "0771b3e2d4ab04a215afc34676f39f64",
+    "mtime": 1789613083.3753042,
+    "seen": 1789616871.007222,
+    "ast_hash": "c55ff871643af84ba7ef5535452b0a09",
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/farm_management/infrastructure/database.py": {
@@ -1080,9 +1080,9 @@
     "semantic_hash": ""
   },
   "backend/tests/test_config.py": {
-    "mtime": 1789610688.5191038,
-    "seen": 1789611235.8902893,
-    "ast_hash": "da288a3985d1010912be28c701f12a1f",
+    "mtime": 1789613083.376305,
+    "seen": 1789616871.0073316,
+    "ast_hash": "653ec562ba4aac3a22f3b9fac4e2c9ab",
     "semantic_hash": ""
   },
   "backend/tests/test_farm_management_postgresql.py": {
@@ -1866,21 +1866,21 @@
     "semantic_hash": ""
   },
   "docs/architecture/deployment-runtime.md": {
-    "mtime": 1789611856.656719,
-    "seen": 1789612340.2781103,
-    "ast_hash": "842d284ba4d1d7f9a147198b73c04c45",
+    "mtime": 1789613107.0602708,
+    "seen": 1789616871.0074353,
+    "ast_hash": "ae0518c5ab948b05361c207cf86a1d63",
     "semantic_hash": ""
   },
   "backend/scripts/verify_container_runtime.py": {
-    "mtime": 1789611823.2045195,
-    "seen": 1789612340.2779074,
-    "ast_hash": "fb3ef78fcb6f5e511e990ea401af33af",
+    "mtime": 1789613083.3793054,
+    "seen": 1789616871.0072165,
+    "ast_hash": "77ba81ce4c7ff3df0a85f92f6e335d6f",
     "semantic_hash": ""
   },
   "backend/tests/test_container_image_contract.py": {
-    "mtime": 1789611823.2150834,
-    "seen": 1789612340.2780116,
-    "ast_hash": "880dbfe295db6e5338fd4892e546ba4d",
+    "mtime": 1789613083.380305,
+    "seen": 1789616871.0073323,
+    "ast_hash": "c5ef5a3d62e8423f320aa31dfa000318",
     "semantic_hash": ""
   },
   "backend/src/via_backend/api.py": {
@@ -1902,9 +1902,9 @@
     "semantic_hash": ""
   },
   ".github/workflows/b2-container-gate.yml": {
-    "mtime": 1789611981.581758,
-    "seen": 1789612340.2780635,
-    "ast_hash": "7754d2bf1f7db8fe3ddf9ed9a0a9ae54",
+    "mtime": 1789616547.9661868,
+    "seen": 1789616871.0073867,
+    "ast_hash": "05592a4f61411d2521f335f168ba9ef8",
     "semantic_hash": ""
   },
   "backend/src/via_backend/migrate.py": {
