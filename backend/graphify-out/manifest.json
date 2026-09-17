@@ -78,9 +78,9 @@
     "semantic_hash": ""
   },
   "pyproject.toml": {
-    "mtime": 1789610656.7300687,
-    "seen": 1789611242.2846854,
-    "ast_hash": "e27cdeb737f501c0610e63ee6b695008",
+    "mtime": 1789611823.2040086,
+    "seen": 1789612346.8416448,
+    "ast_hash": "1759a86aaa8e43eaa22b40c28f994367",
     "semantic_hash": ""
   },
   "scripts/verify.ps1": {
@@ -930,15 +930,15 @@
     "semantic_hash": ""
   },
   "scripts/verify_container_runtime.py": {
-    "mtime": 1789610656.731065,
-    "seen": 1789611242.2846878,
-    "ast_hash": "8b24a3edd4148f1bac38eeccb0e56e56",
+    "mtime": 1789611823.2045195,
+    "seen": 1789612346.8416474,
+    "ast_hash": "fb3ef78fcb6f5e511e990ea401af33af",
     "semantic_hash": ""
   },
   "tests/test_container_image_contract.py": {
-    "mtime": 1789610688.522099,
-    "seen": 1789611242.2848527,
-    "ast_hash": "462f89546426e3215972b430073d4800",
+    "mtime": 1789611823.2150834,
+    "seen": 1789612346.8417492,
+    "ast_hash": "880dbfe295db6e5338fd4892e546ba4d",
     "semantic_hash": ""
   },
   "src/via_backend/api.py": {
@@ -957,6 +957,18 @@
     "mtime": 1789610688.5210996,
     "seen": 1789611242.2848501,
     "ast_hash": "a1fdd61fdde90f4fed7f3fa22d6bb6ce",
+    "semantic_hash": ""
+  },
+  "src/via_backend/migrate.py": {
+    "mtime": 1789611895.6342177,
+    "seen": 1789612346.8417375,
+    "ast_hash": "b2f9348a1da0f3609d00eababc9c0532",
+    "semantic_hash": ""
+  },
+  "tests/test_migration_host.py": {
+    "mtime": 1789611895.637618,
+    "seen": 1789612346.841767,
+    "ast_hash": "1eaeaea1504c44870e1b603b5e0752d8",
     "semantic_hash": ""
   }
 }
