@@ -1,4 +1,4 @@
-name: B2 Container Gate
+name: B2/B3 Container Gate
 
 on:
   workflow_dispatch:
@@ -38,47 +38,103 @@ jobs:
 
       - name: Build VIA image
         run: |
-          docker build --progress=plain -t via:b2 .
+          docker build --progress=plain -t via:b3 .
 
       - name: Run VIA container runtime smoke
         run: |
           docker run --rm \
-            via:b2 \
+            via:b3 \
             python /opt/via/backend/scripts/verify_container_runtime.py \
             --require-linux
 
       - name: Verify Python
         run: |
-          docker run --rm via:b2 python --version
+          docker run --rm via:b3 python --version
 
       - name: Verify Python dependency consistency
         run: |
-          docker run --rm via:b2 python -m pip check
+          docker run --rm via:b3 python -m pip check
 
-      - name: Verify worker CLI
+      - name: Verify worker CLI command override
         run: |
-          docker run --rm via:b2 via-worker --help
+          docker run --rm via:b3 via-worker --help
+
+      - name: Verify worker run fails fast without scientific configuration
+        run: |
+          set +e
+          output="$(docker run --rm \
+            -e VIA_DATABASE_URL=postgresql+psycopg://via:via@127.0.0.1:1/via \
+            -e VIA_CROPSUITE_ROOT= \
+            -e VIA_CROPSUITE_PYTHON= \
+            -e VIA_CROPSUITE_WORKSPACE= \
+            -e VIA_ARTIFACTS_ROOT= \
+            -e VIA_CROPSUITE_INPUT_BINDINGS= \
+            via:b3 \
+            via-worker run 2>&1)"
+          status=$?
+          set -e
+          printf '%s\n' "$output"
+          test "$status" -ne 0
+          grep -q "Worker scientific execution requires VIA_CROPSUITE_ROOT" <<<"$output"
+
+      - name: Verify default production API startup, health, and shutdown
+        run: |
+          set -Eeuo pipefail
+          container=via-api-smoke
+          cleanup() {
+            status=$?
+            if [ "$status" -ne 0 ]; then
+              docker logs "$container" || true
+            fi
+            docker rm -f "$container" >/dev/null 2>&1 || true
+            exit "$status"
+          }
+          trap cleanup EXIT
+
+          docker run -d \
+            --name "$container" \
+            -p 18000:8000 \
+            -e VIA_DATABASE_URL=postgresql+psycopg://via:via@127.0.0.1:1/via \
+            via:b3
+
+          healthy=false
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:18000/health > /tmp/via-health.json; then
+              healthy=true
+              break
+            fi
+            if [ "$(docker inspect -f '{{.State.Running}}' "$container")" != "true" ]; then
+              break
+            fi
+            sleep 1
+          done
+
+          test "$healthy" = "true"
+          grep -q '"status":"ok"' /tmp/via-health.json
+          docker stop --time 10 "$container"
+          test "$(docker inspect -f '{{.State.Running}}' "$container")" = "false"
+          test "$(docker inspect -f '{{.State.ExitCode}}' "$container")" -eq 0
 
       - name: Verify non-root runtime
         run: |
-          docker run --rm via:b2 id
-          docker run --rm via:b2 sh -c 'test "$(id -u)" -ne 0'
+          docker run --rm via:b3 id
+          docker run --rm via:b3 sh -c 'test "$(id -u)" -ne 0'
 
       - name: Verify writable runtime paths
         run: |
-          docker run --rm via:b2 sh -c '
+          docker run --rm via:b3 sh -c '
             touch /var/lib/via/workspace/.github-write-test &&
             touch /var/lib/via/artifacts/.github-write-test
           '
 
       - name: Verify CropSuiteLite is read-only
         run: |
-          docker run --rm via:b2 sh -c '
+          docker run --rm via:b3 sh -c '
             test ! -w /opt/via/CropSuiteLite &&
             test ! -w /opt/via/CropSuiteLite/src/multicrop.py
           '
 
       - name: Show image size
         run: |
-          docker image inspect via:b2 --format='Image size: {{.Size}} bytes'
-          docker images via:b2
+          docker image inspect via:b3 --format='Image size: {{.Size}} bytes'
+          docker images via:b3

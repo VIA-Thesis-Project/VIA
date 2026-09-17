@@ -26,6 +26,7 @@ test = [
 ]
 
 [project.scripts]
+via-api = "via_backend.api:main"
 via-worker = "via_backend.worker:main"
 via-backend = "via_backend.__main__:main"
 

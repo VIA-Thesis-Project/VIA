@@ -48,5 +48,4 @@ WORKDIR /opt/via/backend
 # requiring PostgreSQL, datasets, bindings, credentials, or network access.
 RUN python /opt/via/backend/scripts/verify_container_runtime.py --require-linux
 
-# B3 owns production API/worker process commands and orchestration. Intentionally
-# inherit the base image's neutral Python command in B2.
+CMD ["via-api"]

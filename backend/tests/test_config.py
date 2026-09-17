@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-import via_backend.main as main_module
+import via_backend.app as app_module
 from via_backend.config import Settings, WorkerSettings
 
 
@@ -104,10 +104,10 @@ def test_create_production_app_validates_before_composition(
     def fail_if_composed(_: Settings | None = None) -> None:
         raise AssertionError("create_app must not run for invalid production settings")
 
-    monkeypatch.setattr(main_module, "create_app", fail_if_composed)
+    monkeypatch.setattr(app_module, "create_app", fail_if_composed)
 
     with pytest.raises(ValueError, match="VIA_FARM_MANAGEMENT_REPOSITORY"):
-        main_module.create_production_app()
+        app_module.create_production_app()
 
     assert validation_calls == [settings]
 
