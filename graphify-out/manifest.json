@@ -924,9 +924,9 @@
     "semantic_hash": "45fa1e1fde90e7b5c42d7b06d1ac67a3"
   },
   "backend/src/via_backend/main.py": {
-    "mtime": 1789373346.1312766,
-    "seen": 1789395691.2146518,
-    "ast_hash": "ae2cc7bf433fed0a2732989ed4ffd9e5",
+    "mtime": 1789605908.7980258,
+    "seen": 1789606380.2067356,
+    "ast_hash": "3e8eb70b59cd1ec344f6dc3a1dff0351",
     "semantic_hash": ""
   },
   "backend/tests/test_architecture.py": {
@@ -1056,9 +1056,9 @@
     "semantic_hash": "147774db32a5f22008dac63554067cac"
   },
   "backend/src/via_backend/config.py": {
-    "mtime": 1789600654.3796341,
-    "seen": 1789604883.463215,
-    "ast_hash": "7a8d8f2df54c32d8e1fbee0c250b4752",
+    "mtime": 1789605908.7970235,
+    "seen": 1789606380.2066326,
+    "ast_hash": "0771b3e2d4ab04a215afc34676f39f64",
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/farm_management/infrastructure/database.py": {
@@ -1080,9 +1080,9 @@
     "semantic_hash": ""
   },
   "backend/tests/test_config.py": {
-    "mtime": 1789600718.2901914,
-    "seen": 1789604883.4633079,
-    "ast_hash": "558b5bbe8fb93deec9871c0f222693ca",
+    "mtime": 1789606010.4236765,
+    "seen": 1789606380.2067459,
+    "ast_hash": "027c5392135e92e6d24ae37b83acc56f",
     "semantic_hash": ""
   },
   "backend/tests/test_farm_management_postgresql.py": {
@@ -1863,6 +1863,12 @@
     "mtime": 1789600751.3029304,
     "seen": 1789604883.4633267,
     "ast_hash": "180aecc05fb74491cad34458df334109",
+    "semantic_hash": ""
+  },
+  "docs/architecture/deployment-runtime.md": {
+    "mtime": 1789605961.9928174,
+    "seen": 1789606380.2068563,
+    "ast_hash": "22f427d9c8ccbecb0f0cb4c2a69f91b0",
     "semantic_hash": ""
   }
 }
