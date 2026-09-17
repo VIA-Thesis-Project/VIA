@@ -1866,9 +1866,9 @@
     "semantic_hash": ""
   },
   "docs/architecture/deployment-runtime.md": {
-    "mtime": 1789617671.4866905,
-    "seen": 1789618926.6293297,
-    "ast_hash": "2c488f5cabee3c03cb5cb37464ebcfdf",
+    "mtime": 1789633935.9798017,
+    "seen": 1789635152.3593216,
+    "ast_hash": "44951fbe45898d58e1008fd087edea1e",
     "semantic_hash": ""
   },
   "backend/scripts/verify_container_runtime.py": {
@@ -1941,6 +1941,84 @@
     "mtime": 1789618248.5736947,
     "seen": 1789618926.6293125,
     "ast_hash": "a2cd6eb47b80601be9400d54b70f8462",
+    "semantic_hash": ""
+  },
+  "backend/tests/test_digitalocean_deployment_contract.py": {
+    "mtime": 1789634536.25343,
+    "seen": 1789635152.3592215,
+    "ast_hash": "8f2bff039dcece626fd58259edbda9bc",
+    "semantic_hash": ""
+  },
+  "backend/tests/test_resource_benchmark_contract.py": {
+    "mtime": 1789621859.7513797,
+    "seen": 1789635152.3592343,
+    "ast_hash": "d3aa634f92df0440a5f806c93a3a1a41",
+    "semantic_hash": ""
+  },
+  "scripts/backup_postgres.sh": {
+    "mtime": 1789633518.0893161,
+    "seen": 1789635152.3592403,
+    "ast_hash": "f8765d750b49c400f2d7ffe306c69194",
+    "semantic_hash": ""
+  },
+  "scripts/benchmark_production_runtime.sh": {
+    "mtime": 1789621844.2592196,
+    "seen": 1789635152.359241,
+    "ast_hash": "0dddd99db7559a0a8f2b5af77009fcc4",
+    "semantic_hash": ""
+  },
+  "scripts/deploy_digitalocean.ps1": {
+    "mtime": 1789633518.0913308,
+    "seen": 1789635152.3592517,
+    "ast_hash": "967618acd000814b5e3ff7b4eb97f5c4",
+    "semantic_hash": ""
+  },
+  "scripts/deploy_digitalocean.sh": {
+    "mtime": 1789634557.3159976,
+    "seen": 1789635152.3592525,
+    "ast_hash": "27161132dfc827773dda393008aafbc5",
+    "semantic_hash": ""
+  },
+  "scripts/sync_digitalocean_sources.ps1": {
+    "mtime": 1789633518.0933323,
+    "seen": 1789635152.3592694,
+    "ast_hash": "221ca6e2b0fe125b754d0c4256e485a1",
+    "semantic_hash": ""
+  },
+  ".github/workflows/b6-resource-benchmark.yml": {
+    "mtime": 1789621787.4241729,
+    "seen": 1789635152.359274,
+    "ast_hash": "9911fc10bf4d56378a0d31fc9b6a5f31",
+    "semantic_hash": ""
+  },
+  ".github/workflows/b7-publish-ghcr.yml": {
+    "mtime": 1789633518.1013377,
+    "seen": 1789635152.3592749,
+    "ast_hash": "1896b6deb5a515d3e283d3391273a7a6",
+    "semantic_hash": ""
+  },
+  "compose.benchmark.yaml": {
+    "mtime": 1789621787.4201622,
+    "seen": 1789635152.359302,
+    "ast_hash": "5a3bc785487245423d67cad1e9eae8d7",
+    "semantic_hash": ""
+  },
+  "compose.digitalocean.yaml": {
+    "mtime": 1789633518.083904,
+    "seen": 1789635152.359303,
+    "ast_hash": "a22eaa2b2202e7856f41d105d2a2a27a",
+    "semantic_hash": ""
+  },
+  "docs/scientific/huaura-fixture-recovery.md": {
+    "mtime": 1789628655.3569431,
+    "seen": 1789635152.359329,
+    "ast_hash": "d40dad13f0f33256e19b372f1d2918c9",
+    "semantic_hash": ""
+  },
+  "infra/digitalocean/cloud-init.yaml": {
+    "mtime": 1789634027.8697925,
+    "seen": 1789635152.3593483,
+    "ast_hash": "8676f149700222adbcb979a2195f4220",
     "semantic_hash": ""
   }
 }
