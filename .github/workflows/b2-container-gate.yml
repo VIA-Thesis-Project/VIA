@@ -1,0 +1,84 @@
+name: B2 Container Gate
+
+on:
+  workflow_dispatch:
+
+  pull_request:
+    paths:
+      - "Dockerfile"
+      - ".dockerignore"
+      - "backend/**"
+      - "CropSuiteLite/**"
+      - ".github/workflows/b2-container-gate.yml"
+
+  push:
+    branches:
+      - main
+    paths:
+      - "Dockerfile"
+      - ".dockerignore"
+      - "backend/**"
+      - "CropSuiteLite/**"
+      - ".github/workflows/b2-container-gate.yml"
+
+jobs:
+  container-gate:
+    name: Build and verify VIA Linux image
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Show Docker environment
+        run: |
+          docker version
+          docker info
+
+      - name: Build VIA image
+        run: |
+          docker build --progress=plain -t via:b2 .
+
+      - name: Run VIA container runtime smoke
+        run: |
+          docker run --rm \
+            via:b2 \
+            python /opt/via/backend/scripts/verify_container_runtime.py \
+            --require-linux
+
+      - name: Verify Python
+        run: |
+          docker run --rm via:b2 python --version
+
+      - name: Verify Python dependency consistency
+        run: |
+          docker run --rm via:b2 python -m pip check
+
+      - name: Verify worker CLI
+        run: |
+          docker run --rm via:b2 via-worker --help
+
+      - name: Verify non-root runtime
+        run: |
+          docker run --rm via:b2 id
+          docker run --rm via:b2 sh -c 'test "$(id -u)" -ne 0'
+
+      - name: Verify writable runtime paths
+        run: |
+          docker run --rm via:b2 sh -c '
+            touch /var/lib/via/workspace/.github-write-test &&
+            touch /var/lib/via/artifacts/.github-write-test
+          '
+
+      - name: Verify CropSuiteLite is read-only
+        run: |
+          docker run --rm via:b2 sh -c '
+            test ! -w /opt/via/CropSuiteLite &&
+            test ! -w /opt/via/CropSuiteLite/src/multicrop.py
+          '
+
+      - name: Show image size
+        run: |
+          docker image inspect via:b2 --format='Image size: {{.Size}} bytes'
+          docker images via:b2
