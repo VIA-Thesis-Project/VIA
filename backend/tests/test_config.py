@@ -5,11 +5,13 @@ from pathlib import Path
 
 import pytest
 
+import via_backend.main as main_module
 from via_backend.config import Settings, WorkerSettings
 
 
 def test_database_url_selects_postgresql_by_default(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("VIA_FARM_MANAGEMENT_REPOSITORY", raising=False)
+    monkeypatch.delenv("VIA_ENVIRONMENTAL_INFORMATION_REPOSITORY", raising=False)
     monkeypatch.delenv("VIA_AGROCLIMATIC_EVALUATION_REPOSITORY", raising=False)
     monkeypatch.setenv("VIA_DATABASE_URL", "postgresql+psycopg://example.invalid/via")
 
@@ -18,6 +20,96 @@ def test_database_url_selects_postgresql_by_default(monkeypatch: pytest.MonkeyPa
     assert settings.farm_management_repository == "postgresql"
     assert settings.environmental_information_repository == "postgresql"
     assert settings.agroclimatic_evaluation_repository == "postgresql"
+
+
+def test_development_settings_can_fall_back_to_memory(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("VIA_DATABASE_URL", raising=False)
+    monkeypatch.delenv("VIA_FARM_MANAGEMENT_REPOSITORY", raising=False)
+    monkeypatch.delenv("VIA_ENVIRONMENTAL_INFORMATION_REPOSITORY", raising=False)
+    monkeypatch.delenv("VIA_AGROCLIMATIC_EVALUATION_REPOSITORY", raising=False)
+
+    settings = Settings.from_env()
+
+    assert settings.farm_management_repository == "memory"
+    assert settings.environmental_information_repository == "memory"
+    assert settings.agroclimatic_evaluation_repository == "memory"
+
+
+def test_production_settings_accept_postgresql_repositories_and_database_url() -> None:
+    settings = Settings(
+        farm_management_repository="postgresql",
+        environmental_information_repository="postgresql",
+        agroclimatic_evaluation_repository="postgresql",
+        database_url="postgresql+psycopg://example.invalid/via",
+    )
+
+    assert settings.require_production() is settings
+
+
+@pytest.mark.parametrize(
+    ("settings", "environment_name"),
+    [
+        (
+            Settings(
+                farm_management_repository="memory",
+                environmental_information_repository="postgresql",
+                agroclimatic_evaluation_repository="postgresql",
+                database_url="postgresql+psycopg://example.invalid/via",
+            ),
+            "VIA_FARM_MANAGEMENT_REPOSITORY",
+        ),
+        (
+            Settings(
+                farm_management_repository="postgresql",
+                environmental_information_repository="memory",
+                agroclimatic_evaluation_repository="postgresql",
+                database_url="postgresql+psycopg://example.invalid/via",
+            ),
+            "VIA_ENVIRONMENTAL_INFORMATION_REPOSITORY",
+        ),
+        (
+            Settings(
+                farm_management_repository="postgresql",
+                environmental_information_repository="postgresql",
+                agroclimatic_evaluation_repository="memory",
+                database_url="postgresql+psycopg://example.invalid/via",
+            ),
+            "VIA_AGROCLIMATIC_EVALUATION_REPOSITORY",
+        ),
+    ],
+)
+def test_production_settings_reject_memory_repository(
+    settings: Settings,
+    environment_name: str,
+) -> None:
+    with pytest.raises(ValueError, match=environment_name):
+        settings.require_production()
+
+
+def test_create_production_app_validates_before_composition(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    settings = Settings()
+    validation_calls: list[Settings] = []
+    original_require_production = Settings.require_production
+
+    monkeypatch.setattr(Settings, "from_env", lambda: settings)
+
+    def record_validation(candidate: Settings) -> Settings:
+        validation_calls.append(candidate)
+        return original_require_production(candidate)
+
+    monkeypatch.setattr(Settings, "require_production", record_validation)
+
+    def fail_if_composed(_: Settings | None = None) -> None:
+        raise AssertionError("create_app must not run for invalid production settings")
+
+    monkeypatch.setattr(main_module, "create_app", fail_if_composed)
+
+    with pytest.raises(ValueError, match="VIA_FARM_MANAGEMENT_REPOSITORY"):
+        main_module.create_production_app()
+
+    assert validation_calls == [settings]
 
 
 def test_postgresql_selection_requires_database_url() -> None:

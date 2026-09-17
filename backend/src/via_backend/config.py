@@ -34,6 +34,32 @@ class Settings:
                 "VIA_DATABASE_URL is required when PostgreSQL persistence is selected."
             )
 
+    def require_production(self) -> Settings:
+        """Require the durable persistence contract used by the production API."""
+        selections = {
+            "VIA_FARM_MANAGEMENT_REPOSITORY": self.farm_management_repository,
+            "VIA_ENVIRONMENTAL_INFORMATION_REPOSITORY": (
+                self.environmental_information_repository
+            ),
+            "VIA_AGROCLIMATIC_EVALUATION_REPOSITORY": (
+                self.agroclimatic_evaluation_repository
+            ),
+        }
+        invalid = [
+            f"{setting_name}=postgresql (got {selection!r})"
+            for setting_name, selection in selections.items()
+            if selection != "postgresql"
+        ]
+        if invalid:
+            raise ValueError(
+                "Production API requires PostgreSQL persistence: "
+                + ", ".join(invalid)
+                + "."
+            )
+        if not self.database_url:
+            raise ValueError("Production API requires a non-empty VIA_DATABASE_URL.")
+        return self
+
     @classmethod
     def from_env(cls) -> Settings:
         database_url = os.getenv("VIA_DATABASE_URL") or None

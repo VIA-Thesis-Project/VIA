@@ -121,4 +121,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     return application
 
 
+def create_production_app() -> FastAPI:
+    """Build the production API after enforcing durable persistence settings."""
+    settings = Settings.from_env().require_production()
+    return create_app(settings)
+
+
 app = create_app()
