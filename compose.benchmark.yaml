@@ -1,0 +1,10 @@
+services:
+  worker:
+    environment:
+      VIA_CROPSUITE_SOURCE_CONFIG: ${VIA_BENCHMARK_SOURCE_CONFIG:-}
+      VIA_CROPSUITE_CATALOG: ${VIA_BENCHMARK_CATALOG:-}
+    volumes:
+      - ${VIA_BENCHMARK_RUNTIME_CONFIG_DIR:?set VIA_BENCHMARK_RUNTIME_CONFIG_DIR}:/etc/via:ro
+      - ${VIA_BENCHMARK_SOURCE_DIR:?set VIA_BENCHMARK_SOURCE_DIR}:/mnt/via/sources:ro
+      - via_artifacts:/var/lib/via/artifacts
+

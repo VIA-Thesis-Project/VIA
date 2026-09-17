@@ -250,6 +250,77 @@ evaluation and provides no synthetic scientific dataset; the source mount is an
 empty tracked deployment target. Consequently the worker remains idle and does
 not execute CropSuiteLite or validate a source fingerprint during B6.
 
+## B6.1 resource benchmark
+
+B6.1 sizes the first VIA deployment for an expected audience of fewer than five
+users. HTTP request concurrency is therefore not the initial capacity driver;
+the dominant operational question is the RAM, CPU, and temporary-disk peak of a
+single real scientific worker execution. Provider and tier selection remain B7
+decisions made only after valid measurements exist.
+
+`scripts/benchmark_production_runtime.sh` reuses
+`compose.production-smoke.yaml` and the same image/process topology. The small
+`compose.benchmark.yaml` override changes only the worker's external scientific
+configuration/source mounts. The harness first starts PostGIS, the release
+migration, and API, registers the fixture's Dataset and DatasetVersion metadata
+through the existing HTTP API, generates exact `input-bindings.json` identities
+from the returned UUIDs plus fixture-supplied source SHA-256 values, and only
+then starts the normal asynchronous worker. Source SHA-256 verification,
+`EnvironmentalInputManifest`, artifact persistence, and CropSuite execution are
+not bypassed.
+
+The fixture is deliberately external to the repository. Set
+`VIA_BENCHMARK_FIXTURE` to a JSON document containing a parcel snapshot,
+requested crops, environmental Dataset/DatasetVersion metadata, exact expected
+CropSuite source SHA-256 values, and a `repeatable` flag. Set
+`VIA_BENCHMARK_SOURCE_DIR` to the corresponding legitimate source tree, which is
+mounted read-only at `/mnt/via/sources`. Optional additional worker
+configuration can be supplied with `VIA_BENCHMARK_CONFIG_DIR`,
+`VIA_BENCHMARK_SOURCE_CONFIG`, and `VIA_BENCHMARK_CATALOG`. Three runs are
+allowed only when the fixture explicitly declares that sequential repetition is
+safe; otherwise the harness runs exactly one evaluation.
+
+The repository currently does not contain the Huaura scientific source tree
+required by the existing CropSuite configurations. In particular,
+`CropSuiteLite/data/huaura` is absent, so the referenced Huaura mask, climate,
+soil, DEM, and land/sea inputs are unavailable in this checkout. The tracked B6
+smoke binding is startup-only and is explicitly rejected by the benchmark
+harness. B6.1 must therefore stop before scientific execution on a machine that
+does not provide a legitimate external fixture and its matching source files;
+no raster or benchmark value is synthesized to fill that gap.
+
+After a configurable settle period, the harness samples the idle db/API/worker
+stack for 45 seconds by default. During each evaluation it samples at a target
+interval of approximately one second until a terminal status. Memory is Docker's
+reported current `MemUsage` for each container, with total stack memory computed
+as the per-sample sum. CPU is Docker `CPUPerc`; 100% is approximately one fully
+utilized host core, so values can exceed 100% on multicore hosts. CPU percentages
+and elapsed time from a GitHub runner must not be treated as equivalent to a
+particular future VPS CPU model.
+
+Temporary disk is the peak `du -sb` size of evaluation-prefixed entries below
+`/var/lib/via/workspace`. Final artifact bytes are measured only below
+`/var/lib/via/artifacts/evaluations/<evaluation_id>`, excluding unrelated
+artifacts. Database growth is
+`pg_database_size(current_database())` after terminal state minus the value
+immediately before submission. Elapsed time uses a monotonic clock. The JSON
+also records `uname -m`, `nproc`, host RAM, Docker version, image ID, and git SHA.
+
+Generated `benchmark-results.json` is ignored by git. It contains idle metrics,
+individual evaluation samples, min/median/max aggregates when three sequential
+runs are valid, and +30%/+50% RAM headroom calculations from the observed
+container-stack peak. Those values are environment-specific and do not include
+all host reserve needs such as Linux, Docker, filesystem cache, SSH/monitoring,
+or operational variance, so B6.1 does not automatically declare a provider or
+tier safe.
+
+`.github/workflows/b6-resource-benchmark.yml` is manual-only and uses a
+`self-hosted` Linux runner labelled `via-benchmark`, where the legitimate source
+tree can already exist without being uploaded to GitHub. It builds the same VIA
+image and may upload only the generated JSON. The normal B2-B6 gate never runs
+the scientific benchmark, and scientific source data is not published as an
+Actions artifact.
+
 `scripts/verify_production_compose.sh` is the runtime gate. It validates the
 Compose model, starts the topology, verifies PostGIS health and successful
 one-shot migration, dynamically proves the database revision equals the single

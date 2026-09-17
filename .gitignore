@@ -36,6 +36,8 @@ downloads/
 
 # Generated evaluation outputs
 results/evaluations/
+benchmark-results.json
+benchmark-results-*.json
 
 # Graphify local and reproducible state. Durable graph outputs remain versioned.
 graphify-out/cache/
