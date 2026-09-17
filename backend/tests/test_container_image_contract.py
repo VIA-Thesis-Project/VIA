@@ -1,6 +1,8 @@
-"""Static invariants for the provider-neutral B2/B3 container image."""
+"""Static invariants for the provider-neutral B2-B4 container image."""
 
+import ast
 import json
+import tomllib
 from pathlib import Path
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
@@ -49,7 +51,7 @@ def test_image_does_not_bake_deployment_secrets_or_bindings() -> None:
     assert "COPY . " not in dockerfile
 
 
-def test_b3_image_defaults_to_exec_form_production_api_command() -> None:
+def test_image_defaults_to_exec_form_production_api_command() -> None:
     dockerfile = (REPOSITORY_ROOT / "Dockerfile").read_text(encoding="utf-8")
     instructions = [
         line.strip()
@@ -64,8 +66,37 @@ def test_b3_image_defaults_to_exec_form_production_api_command() -> None:
     assert entrypoints == []
 
 
-def test_b3_image_has_no_shell_process_multiplexer() -> None:
+def test_image_has_no_shell_process_multiplexer() -> None:
     dockerfile = (REPOSITORY_ROOT / "Dockerfile").read_text(encoding="utf-8").casefold()
 
     for forbidden in ("sh -c", "bash -c", "supervisor", "systemd"):
         assert forbidden not in dockerfile
+
+
+def test_migration_cli_is_registered_and_container_has_structural_config_path() -> None:
+    pyproject = tomllib.loads(
+        (REPOSITORY_ROOT / "backend" / "pyproject.toml").read_text(encoding="utf-8")
+    )
+    dockerfile = (REPOSITORY_ROOT / "Dockerfile").read_text(encoding="utf-8")
+
+    assert pyproject["project"]["scripts"]["via-migrate"] == "via_backend.migrate:main"
+    assert "VIA_ALEMBIC_CONFIG=/opt/via/backend/alembic.ini" in dockerfile
+
+
+def test_api_and_worker_hosts_do_not_import_migration_execution() -> None:
+    forbidden_modules = {"alembic", "via_backend.migrate"}
+    host_paths = (
+        REPOSITORY_ROOT / "backend" / "src" / "via_backend" / "api.py",
+        REPOSITORY_ROOT / "backend" / "src" / "via_backend" / "app.py",
+        REPOSITORY_ROOT / "backend" / "src" / "via_backend" / "worker.py",
+    )
+
+    for host_path in host_paths:
+        tree = ast.parse(host_path.read_text(encoding="utf-8"), filename=str(host_path))
+        imported: set[str] = set()
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Import):
+                imported.update(alias.name for alias in node.names)
+            elif isinstance(node, ast.ImportFrom) and node.module:
+                imported.add(node.module)
+        assert forbidden_modules.isdisjoint(imported), host_path

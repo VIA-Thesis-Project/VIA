@@ -41,23 +41,24 @@ claiming new evaluations between items and allows an already-running synchronous
 scientific call to finish. `via-worker active` and `via-worker recover` remain
 separate, explicit operator commands; they are not automatic recovery behavior.
 
-## B3 production process commands
+## Production process commands
 
-The same OCI image serves both production roles, with exactly one process role
-per container:
+The same OCI image serves the API, worker, and one-shot release migration roles,
+with exactly one process role per container:
 
 ```text
-API process:       via-api
-Worker process:    via-worker run
+API process:        via-api
+Worker process:     via-worker run
+Release migration: via-migrate upgrade
 Operator commands: via-worker active
                    via-worker recover ...
 ```
 
 The image default is the exec-form command `CMD ["via-api"]`. A worker
-deployment overrides the image command with `via-worker run`. No shell wrapper,
-Supervisor, systemd, or combined API/worker launcher sits between the container
-runtime and either process, so SIGINT/SIGTERM are delivered directly to the
-selected API or worker process.
+deployment overrides the image command with `via-worker run`. A release job
+overrides it with `via-migrate upgrade`. No shell wrapper, Supervisor, systemd,
+or combined launcher sits between the container runtime and the selected
+process, so SIGINT/SIGTERM are delivered directly to API or worker processes.
 
 `via-api` starts one Uvicorn process using factory semantics against
 `via_backend.app:create_production_app`. It binds `0.0.0.0` by default on port
@@ -69,14 +70,16 @@ enabled.
 to serve `via_backend.main:app` on its existing development defaults. It is not
 the production process command.
 
-Database migration remains a separate operation:
+Database migration is a separate one-shot release operation:
 
 ```text
-alembic upgrade head
+via-migrate upgrade
 ```
 
-Neither `via-api` nor `via-worker run` applies migrations during startup. B4
-owns the formal release migration command/process.
+`via-migrate upgrade` validates the production persistence contract and invokes
+Alembic programmatically with target `head`. It accepts no arbitrary revision,
+downgrade, revision-generation, or autogenerate operation. Neither `via-api` nor
+`via-worker run` applies migrations during startup.
 
 ## Database and migration contract
 
@@ -84,10 +87,32 @@ owns the formal release migration command/process.
 worker, and Alembic release operation. API startup and worker startup never run
 migrations automatically.
 
-For each release, `alembic upgrade head` is a separate release step and should
-be executed once by a release/migration operation before the new application
-processes depend on that schema version. API or worker replicas must not race to
-apply migrations themselves.
+For each release, `via-migrate upgrade` is run before processes that require the
+new schema are deployed or restarted. The command requires the same production
+PostgreSQL persistence configuration as the application, applies `alembic
+upgrade head`, and exits after Alembic reaches head. Running it again when the
+database is already at head is safe and leaves the schema unchanged. Migration
+failures and invalid configuration propagate as a non-zero process exit; B4 does
+not add application-level retries, locks, leader election, or automatic rollback.
+
+Release orchestration is provider-neutral and conceptually ordered as:
+
+```text
+build/release image
+       |
+       v
+via-migrate upgrade
+       |
+    success
+       |
+       +------> deploy/restart API
+       |
+       +------> deploy/restart worker
+```
+
+The migration role is responsible only for schema evolution. Deployment
+orchestration is responsible for ensuring that the intended release migration
+job runs before application processes depend on the new schema.
 
 ## Filesystem contract
 
@@ -138,6 +163,15 @@ They are not the API/worker database contract. `VIA_TEST_DATABASE_URL` and
 `VIA_ALLOW_EXTERNAL_TEST_DATABASE` are integration-test controls only and are
 not production runtime variables.
 
+`VIA_ALEMBIC_CONFIG` is a structural path used only by the release migration
+host. The standard OCI image sets it to `/opt/via/backend/alembic.ini`, so normal
+container deployments do not need to override it. Source development can omit
+the variable because `via_backend.migrate` resolves `backend/alembic.ini`
+relative to its source module rather than the process current working directory.
+If the variable is explicitly set, it must be non-empty and reference an
+existing file. The path contains no credentials; `VIA_DATABASE_URL` remains the
+single database URL consumed by Alembic through `migrations/env.py`.
+
 See `backend/.env.example` for local development and
 `backend/.env.production.example` for portable production path examples.
 
@@ -172,7 +206,7 @@ as the final non-root `via` user and fails unless all of the following are true:
 - the build is running on Linux with Python 3.11 or newer;
 - `VIA_CROPSUITE_PYTHON` is the interpreter executing the verification;
 - `via_backend` and the worker module import successfully;
-- `via-api`, `via-backend`, and `via-worker` are installed on `PATH`;
+- `via-api`, `via-backend`, `via-worker`, and `via-migrate` are installed on `PATH`;
 - the scientific stack imports successfully, including rasterio, pyproj,
   shapely, cartopy, netCDF4, scipy, numba, xarray, rio-cogeo, dask,
   scikit-image, and related dependencies;
@@ -185,8 +219,8 @@ as the final non-root `via` user and fails unless all of the following are true:
 
 B2 intentionally stopped before defining a VIA `CMD` or `ENTRYPOINT`. B3 adds
 the exec-form default `CMD ["via-api"]` while retaining no `ENTRYPOINT` wrapper.
-Schema migration remains a separate release operation and is not run by image
-startup.
+B4 adds `via-migrate upgrade` as an explicit command override while keeping the
+default image role unchanged. Schema migration is never run by image startup.
 
 Runtime processes use the non-root `via` user. `/opt/via/CropSuiteLite` and the
 backend code remain image-owned read-only inputs. `/var/lib/via/workspace` is the
@@ -202,24 +236,33 @@ Build from the repository root so both `backend/` and `CropSuiteLite/` are in
 the Docker build context:
 
 ```text
-docker build -t via:b3 .
-docker run --rm via:b3 python /opt/via/backend/scripts/verify_container_runtime.py --require-linux
-docker run --rm via:b3 python --version
-docker run --rm via:b3 python -m pip check
-docker run --rm via:b3 via-worker --help
+docker build -t via:b4 .
+docker run --rm via:b4 python /opt/via/backend/scripts/verify_container_runtime.py --require-linux
+docker run --rm via:b4 python --version
+docker run --rm via:b4 python -m pip check
+docker run --rm via:b4 via-worker --help
+docker run --rm -e VIA_DATABASE_URL=<postgresql-url> via:b4 via-migrate upgrade
 ```
 
-B2/B3 do not choose a hosting provider, add scientific datasets to the image,
+B2-B4 do not choose a hosting provider, add scientific datasets to the image,
 alter CropSuiteLite scientific requirements or behavior, change artifact-storage
-semantics, or change worker lifecycle and migration behavior. B5 still owns
-durable artifact storage mounting/configuration.
+semantics, or change worker lifecycle. B5 still owns durable artifact storage
+mounting/configuration.
 
-The existing Linux container workflow now also proves the B3 process contract.
+The existing Linux container workflow proves the B3 process contract and the B4
+release migration contract.
 It starts the image using its default command with a syntactically valid but
 unreachable PostgreSQL URL, polls `/health`, then performs a normal
 `docker stop --time 10`. The health endpoint is technical API-process readiness
 and application composition only constructs the SQLAlchemy engine, so this smoke
 does not require a live database connection. The same workflow verifies the
 worker CLI through command override and asserts that `via-worker run` exits
-non-zero when required scientific configuration is missing. Container logs are
-dumped on API smoke failure and the smoke container is always removed.
+non-zero when required scientific configuration is missing.
+
+For B4, the workflow additionally starts a temporary `postgis/postgis:16-3.5`
+database on an isolated Docker network, runs `via-migrate upgrade` from the VIA
+image, verifies the database revision equals the single dynamically discovered
+repository Alembic head, runs the migration command a second time, and verifies
+head again. It also proves `via-migrate upgrade` fails before database access
+when `VIA_DATABASE_URL` is absent. Temporary containers and networks are removed
+through cleanup traps and useful database/migration logs are emitted on failure.

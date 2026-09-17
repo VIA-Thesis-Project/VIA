@@ -32,7 +32,7 @@ SCIENTIFIC_IMPORTS = (
     "tqdm",
 )
 
-REQUIRED_CONSOLE_SCRIPTS = ("via-api", "via-backend", "via-worker")
+REQUIRED_CONSOLE_SCRIPTS = ("via-api", "via-backend", "via-worker", "via-migrate")
 REQUIRED_CROPSUITE_FILES = (
     "CropSuite.py",
     "run_cropsuitelite.py",

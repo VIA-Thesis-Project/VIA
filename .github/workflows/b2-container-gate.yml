@@ -1,4 +1,4 @@
-name: B2/B3 Container Gate
+name: B2-B4 Container Gate
 
 on:
   workflow_dispatch:
@@ -38,26 +38,26 @@ jobs:
 
       - name: Build VIA image
         run: |
-          docker build --progress=plain -t via:b3 .
+          docker build --progress=plain -t via:b4 .
 
       - name: Run VIA container runtime smoke
         run: |
           docker run --rm \
-            via:b3 \
+            via:b4 \
             python /opt/via/backend/scripts/verify_container_runtime.py \
             --require-linux
 
       - name: Verify Python
         run: |
-          docker run --rm via:b3 python --version
+          docker run --rm via:b4 python --version
 
       - name: Verify Python dependency consistency
         run: |
-          docker run --rm via:b3 python -m pip check
+          docker run --rm via:b4 python -m pip check
 
       - name: Verify worker CLI command override
         run: |
-          docker run --rm via:b3 via-worker --help
+          docker run --rm via:b4 via-worker --help
 
       - name: Verify worker run fails fast without scientific configuration
         run: |
@@ -69,7 +69,7 @@ jobs:
             -e VIA_CROPSUITE_WORKSPACE= \
             -e VIA_ARTIFACTS_ROOT= \
             -e VIA_CROPSUITE_INPUT_BINDINGS= \
-            via:b3 \
+            via:b4 \
             via-worker run 2>&1)"
           status=$?
           set -e
@@ -95,7 +95,7 @@ jobs:
             --name "$container" \
             -p 18000:8000 \
             -e VIA_DATABASE_URL=postgresql+psycopg://via:via@127.0.0.1:1/via \
-            via:b3
+            via:b4
 
           healthy=false
           for attempt in $(seq 1 30); do
@@ -117,24 +117,125 @@ jobs:
 
       - name: Verify non-root runtime
         run: |
-          docker run --rm via:b3 id
-          docker run --rm via:b3 sh -c 'test "$(id -u)" -ne 0'
+          docker run --rm via:b4 id
+          docker run --rm via:b4 sh -c 'test "$(id -u)" -ne 0'
 
       - name: Verify writable runtime paths
         run: |
-          docker run --rm via:b3 sh -c '
+          docker run --rm via:b4 sh -c '
             touch /var/lib/via/workspace/.github-write-test &&
             touch /var/lib/via/artifacts/.github-write-test
           '
 
       - name: Verify CropSuiteLite is read-only
         run: |
-          docker run --rm via:b3 sh -c '
+          docker run --rm via:b4 sh -c '
             test ! -w /opt/via/CropSuiteLite &&
             test ! -w /opt/via/CropSuiteLite/src/multicrop.py
           '
 
+      - name: Verify migration CLI fails fast without database configuration
+        run: |
+          set +e
+          output="$(docker run --rm via:b4 via-migrate upgrade 2>&1)"
+          status=$?
+          set -e
+          printf '%s\n' "$output"
+          test "$status" -ne 0
+          grep -q "VIA_DATABASE_URL" <<<"$output"
+
+      - name: Verify one-shot PostgreSQL/PostGIS release migration
+        run: |
+          set -Eeuo pipefail
+          network="via-b4-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          database="via-b4-postgis-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          migration_one="via-b4-migrate-one-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          migration_two="via-b4-migrate-two-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          database_url="postgresql+psycopg://via:ci-only-password@${database}:5432/via"
+
+          cleanup() {
+            status=$?
+            if [ "$status" -ne 0 ]; then
+              docker logs "$migration_one" 2>/dev/null || true
+              docker logs "$migration_two" 2>/dev/null || true
+              docker logs "$database" 2>/dev/null || true
+            fi
+            docker rm -f "$migration_one" "$migration_two" "$database" >/dev/null 2>&1 || true
+            docker network rm "$network" >/dev/null 2>&1 || true
+            exit "$status"
+          }
+          trap cleanup EXIT
+
+          docker network create "$network"
+          docker run -d \
+            --name "$database" \
+            --network "$network" \
+            -e POSTGRES_DB=via \
+            -e POSTGRES_USER=via \
+            -e POSTGRES_PASSWORD=ci-only-password \
+            postgis/postgis:16-3.5
+
+          ready=false
+          for attempt in $(seq 1 60); do
+            if docker exec "$database" pg_isready -U via -d via >/dev/null 2>&1; then
+              ready=true
+              break
+            fi
+            sleep 1
+          done
+          test "$ready" = "true"
+
+          run_migration() {
+            name="$1"
+            docker run \
+              --name "$name" \
+              --network "$network" \
+              -e VIA_DATABASE_URL="$database_url" \
+              via:b4 \
+              via-migrate upgrade
+            test "$(docker inspect -f '{{.State.Status}}' "$name")" = "exited"
+            test "$(docker inspect -f '{{.State.ExitCode}}' "$name")" -eq 0
+          }
+
+          verify_head() {
+            docker run --rm -i \
+              --network "$network" \
+              -e VIA_DATABASE_URL="$database_url" \
+              via:b4 \
+              python - <<'PY'
+          import os
+
+          from alembic.config import Config
+          from alembic.script import ScriptDirectory
+          from sqlalchemy import create_engine, text
+
+          config = Config(os.environ["VIA_ALEMBIC_CONFIG"])
+          heads = ScriptDirectory.from_config(config).get_heads()
+          if len(heads) != 1:
+              raise SystemExit(f"Expected exactly one Alembic head, found {heads!r}")
+
+          engine = create_engine(os.environ["VIA_DATABASE_URL"])
+          try:
+              with engine.connect() as connection:
+                  current = connection.execute(text("SELECT version_num FROM alembic_version")).scalars().all()
+          finally:
+              engine.dispose()
+
+          if current != heads:
+              raise SystemExit(f"Database revision {current!r} does not equal repository head {heads!r}")
+          print(f"Database revision matches repository Alembic head: {heads[0]}")
+          PY
+          }
+
+          run_migration "$migration_one"
+          verify_head
+          docker rm "$migration_one"
+
+          run_migration "$migration_two"
+          verify_head
+          docker rm "$migration_two"
+
       - name: Show image size
         run: |
-          docker image inspect via:b3 --format='Image size: {{.Size}} bytes'
-          docker images via:b3
+          docker image inspect via:b4 --format='Image size: {{.Size}} bytes'
+          docker images via:b4

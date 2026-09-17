@@ -14,7 +14,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     VIA_CROPSUITE_ROOT=/opt/via/CropSuiteLite \
     VIA_CROPSUITE_PYTHON=/usr/local/bin/python \
     VIA_CROPSUITE_WORKSPACE=/var/lib/via/workspace \
-    VIA_ARTIFACTS_ROOT=/var/lib/via/artifacts
+    VIA_ARTIFACTS_ROOT=/var/lib/via/artifacts \
+    VIA_ALEMBIC_CONFIG=/opt/via/backend/alembic.ini
 
 WORKDIR /opt/via
 

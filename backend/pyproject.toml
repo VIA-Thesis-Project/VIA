@@ -28,6 +28,7 @@ test = [
 [project.scripts]
 via-api = "via_backend.api:main"
 via-worker = "via_backend.worker:main"
+via-migrate = "via_backend.migrate:main"
 via-backend = "via_backend.__main__:main"
 
 [tool.setuptools.packages.find]
