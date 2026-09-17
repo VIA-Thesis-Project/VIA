@@ -165,6 +165,8 @@ jobs:
           trap cleanup EXIT
 
           printf '%s\n' 'source-marker' > "$source_mount/marker.txt"
+          chmod 0755 "$source_mount"
+          chmod 0444 "$source_mount/marker.txt"
 
           docker run --rm \
             -v "$source_mount:/mnt/via/sources:ro" \
@@ -191,6 +193,8 @@ jobs:
           trap cleanup EXIT
 
           printf '%s\n' 'config-marker' > "$config_mount/marker.txt"
+          chmod 0755 "$config_mount"
+          chmod 0444 "$config_mount/marker.txt"
 
           docker run --rm \
             -v "$config_mount:/etc/via:ro" \
