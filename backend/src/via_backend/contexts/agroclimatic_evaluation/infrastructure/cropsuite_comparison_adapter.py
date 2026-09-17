@@ -22,6 +22,8 @@ from ..application.ports import (
     InvalidComparisonOutputError,
     ScientificArtifactRole,
 )
+from ..domain.comparison import normalize_common_support_measurements
+from ..domain.errors import DomainValidationError
 from .scientific_artifact_store import (
     ScientificArtifactStorageError,
     ScientificArtifactStore,
@@ -424,32 +426,19 @@ def _map_comparison_report(
         report,
         "common_valid_area_m2",
     )
-    coverage = _fraction(
+    coverage = _number(
         report,
         "common_coverage_fraction",
     )
 
-    if common_area > parcel_area and not math.isclose(
-        common_area,
-        parcel_area,
-        rel_tol=0.0,
-        abs_tol=1e-6,
-    ):
-        raise InvalidComparisonOutputError(
-            "Common valid area cannot exceed parcel area."
+    try:
+        common_area, coverage = normalize_common_support_measurements(
+            parcel_area_m2=parcel_area,
+            common_valid_area_m2=common_area,
+            common_coverage_fraction=coverage,
         )
-
-    expected_fraction = min(common_area / parcel_area, 1.0)
-
-    if not math.isclose(
-        coverage,
-        expected_fraction,
-        rel_tol=0.0,
-        abs_tol=1e-9,
-    ):
-        raise InvalidComparisonOutputError(
-            "Common coverage fraction is inconsistent with common valid area."
-        )
+    except DomainValidationError as error:
+        raise InvalidComparisonOutputError(str(error)) from error
 
     excluded = _string_sequence(
         report,
@@ -687,20 +676,6 @@ def _nonnegative_number(
     if value < 0:
         raise InvalidComparisonOutputError(
             f"{key} must be nonnegative."
-        )
-
-    return value
-
-
-def _fraction(
-    mapping: Mapping[str, Any],
-    key: str,
-) -> float:
-    value = _number(mapping, key)
-
-    if not 0.0 <= value <= 1.0:
-        raise InvalidComparisonOutputError(
-            f"{key} must be between zero and one."
         )
 
     return value

@@ -23,6 +23,9 @@ from via_backend.contexts.agroclimatic_evaluation.domain import (
     SnapshotGeometry,
     SuitabilitySummary,
 )
+from via_backend.contexts.agroclimatic_evaluation.domain.comparison import (
+    normalize_common_support_measurements,
+)
 from via_backend.contexts.agroclimatic_evaluation.domain.errors import (
     DomainValidationError,
 )
@@ -173,6 +176,138 @@ def _comparable_support(
         eligible_crops=tuple(eligible_crops),
         excluded_without_coverage=excluded_without_coverage,
     )
+
+
+def test_common_support_normalizes_minimal_area_overshoot() -> None:
+    parcel_area = 773671.1689055328
+
+    support = CommonSupport(
+        status=CommonSupportStatus.COMPARABLE,
+        method="area_weighted_mean_on_common_valid_cells",
+        area_crs="EPSG:6933",
+        parcel_area_m2=parcel_area,
+        common_valid_area_m2=773671.1689055329,
+        common_coverage_fraction=1.0,
+        eligible_crops=("maize",),
+        excluded_without_coverage=(),
+    )
+
+    assert support.common_valid_area_m2 == parcel_area
+    assert support.common_coverage_fraction == 1.0
+
+
+def test_common_support_normalizer_rejects_negative_common_area() -> None:
+    with pytest.raises(
+        DomainValidationError,
+        match="finite and nonnegative",
+    ):
+        normalize_common_support_measurements(
+            parcel_area_m2=100.0,
+            common_valid_area_m2=-1e-12,
+            common_coverage_fraction=0.0,
+        )
+
+
+@pytest.mark.parametrize("coverage", [-1.0, -1e-12])
+def test_common_support_normalizer_rejects_negative_coverage(
+    coverage: float,
+) -> None:
+    with pytest.raises(
+        DomainValidationError,
+        match="between zero and one",
+    ):
+        normalize_common_support_measurements(
+            parcel_area_m2=100.0,
+            common_valid_area_m2=0.0,
+            common_coverage_fraction=coverage,
+        )
+
+
+def test_common_support_normalizer_clamps_area_at_absolute_tolerance() -> None:
+    common_area, coverage = normalize_common_support_measurements(
+        parcel_area_m2=100.0,
+        common_valid_area_m2=100.0 + 1e-6,
+        common_coverage_fraction=1.0,
+    )
+
+    assert common_area == 100.0
+    assert coverage == 1.0
+
+
+def test_common_support_normalizer_rejects_area_above_absolute_tolerance() -> None:
+    with pytest.raises(
+        DomainValidationError,
+        match="cannot exceed parcel area",
+    ):
+        normalize_common_support_measurements(
+            parcel_area_m2=100.0,
+            common_valid_area_m2=100.0 + 1.1e-6,
+            common_coverage_fraction=1.0,
+        )
+
+
+def test_common_support_accepts_area_equal_to_parcel_area() -> None:
+    support = CommonSupport(
+        status=CommonSupportStatus.COMPARABLE,
+        method="area_weighted_mean_on_common_valid_cells",
+        area_crs="EPSG:6933",
+        parcel_area_m2=100.0,
+        common_valid_area_m2=100.0,
+        common_coverage_fraction=1.0,
+        eligible_crops=("maize",),
+        excluded_without_coverage=(),
+    )
+
+    assert support.common_valid_area_m2 == 100.0
+    assert support.common_coverage_fraction == 1.0
+
+
+def test_common_support_preserves_area_below_parcel_area() -> None:
+    support = CommonSupport(
+        status=CommonSupportStatus.COMPARABLE,
+        method="area_weighted_mean_on_common_valid_cells",
+        area_crs="EPSG:6933",
+        parcel_area_m2=100.0,
+        common_valid_area_m2=80.0,
+        common_coverage_fraction=0.8,
+        eligible_crops=("maize",),
+        excluded_without_coverage=(),
+    )
+
+    assert support.common_valid_area_m2 == 80.0
+    assert support.common_coverage_fraction == 0.8
+
+
+def test_common_support_rejects_material_area_overshoot() -> None:
+    with pytest.raises(
+        DomainValidationError,
+        match="cannot exceed parcel area",
+    ):
+        CommonSupport(
+            status=CommonSupportStatus.COMPARABLE,
+            method="area_weighted_mean_on_common_valid_cells",
+            area_crs="EPSG:6933",
+            parcel_area_m2=100.0,
+            common_valid_area_m2=100.01,
+            common_coverage_fraction=1.0,
+            eligible_crops=("maize",),
+            excluded_without_coverage=(),
+        )
+
+
+def test_common_support_normalizes_minimal_coverage_overshoot() -> None:
+    support = CommonSupport(
+        status=CommonSupportStatus.COMPARABLE,
+        method="area_weighted_mean_on_common_valid_cells",
+        area_crs="EPSG:6933",
+        parcel_area_m2=100.0,
+        common_valid_area_m2=100.0,
+        common_coverage_fraction=1.0 + 1e-12,
+        eligible_crops=("maize",),
+        excluded_without_coverage=(),
+    )
+
+    assert support.common_coverage_fraction == 1.0
 
 
 def test_record_comparison_accepts_competition_ranking_with_ties() -> None:

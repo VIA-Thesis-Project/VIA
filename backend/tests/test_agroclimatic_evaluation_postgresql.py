@@ -1005,6 +1005,59 @@ def test_comparison_round_trips_atomically_with_success(
     )
 
 
+def test_common_support_float_overshoot_is_normalized_before_persistence(
+    database: tuple[Engine, SessionFactory],
+) -> None:
+    engine, sessions = database
+    repository = PostgreSQLEvaluationRepository(sessions)
+
+    evaluation = replace(_evaluation(), requested_crops=("maize",))
+    repository.add(evaluation)
+
+    preparing = evaluation.prepare()
+    repository.save(preparing, expected_status=EvaluationStatus.QUEUED)
+    running = _start_running(repository, preparing)
+
+    outcome = _succeeded_outcome("maize")
+    repository.add_outcome(evaluation.id, outcome)
+    summarizing = running.record_outcome(outcome).start_summarizing()
+    repository.save(summarizing, expected_status=EvaluationStatus.RUNNING)
+
+    parcel_area = 773671.1689055328
+    support = CommonSupport(
+        status=CommonSupportStatus.COMPARABLE,
+        method="area_weighted_mean_on_common_valid_cells",
+        area_crs="EPSG:6933",
+        parcel_area_m2=parcel_area,
+        common_valid_area_m2=773671.1689055329,
+        common_coverage_fraction=1.0,
+        eligible_crops=("maize",),
+        excluded_without_coverage=(),
+    )
+    succeeded = summarizing.record_common_support(support).succeed()
+
+    repository.save(
+        succeeded,
+        expected_status=EvaluationStatus.SUMMARIZING,
+    )
+
+    with engine.connect() as connection:
+        persisted = connection.execute(
+            select(
+                EvaluationCommonSupportRecord.parcel_area_m2,
+                EvaluationCommonSupportRecord.common_valid_area_m2,
+                EvaluationCommonSupportRecord.common_coverage_fraction,
+            ).where(
+                EvaluationCommonSupportRecord.evaluation_id == evaluation.id
+            )
+        ).one()
+
+    assert support.common_valid_area_m2 == parcel_area
+    assert persisted.parcel_area_m2 == parcel_area
+    assert persisted.common_valid_area_m2 == parcel_area
+    assert persisted.common_coverage_fraction == 1.0
+
+
 def test_legacy_common_support_without_comparable_crops_still_round_trips(
     database: tuple[Engine, SessionFactory],
 ) -> None:

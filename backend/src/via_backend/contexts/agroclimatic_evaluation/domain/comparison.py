@@ -8,6 +8,70 @@ from enum import StrEnum
 
 from .errors import DomainValidationError
 
+_AREA_ABSOLUTE_TOLERANCE_M2 = 1e-6
+_COVERAGE_FRACTION_TOLERANCE = 1e-9
+
+
+def normalize_common_support_measurements(
+    *,
+    parcel_area_m2: float,
+    common_valid_area_m2: float,
+    common_coverage_fraction: float,
+) -> tuple[float, float]:
+    """Normalize impossible boundary overshoots caused only by float noise."""
+
+    if not math.isfinite(parcel_area_m2) or parcel_area_m2 <= 0:
+        raise DomainValidationError(
+            "Parcel area must be a positive finite number."
+        )
+
+    if (
+        not math.isfinite(common_valid_area_m2)
+        or common_valid_area_m2 < 0
+    ):
+        raise DomainValidationError(
+            "Common valid area must be finite and nonnegative."
+        )
+
+    if (
+        not math.isfinite(common_coverage_fraction)
+        or common_coverage_fraction < 0
+    ):
+        raise DomainValidationError(
+            "Common coverage fraction must be between zero and one."
+        )
+
+    if common_valid_area_m2 > parcel_area_m2:
+        if (
+            common_valid_area_m2
+            > parcel_area_m2 + _AREA_ABSOLUTE_TOLERANCE_M2
+        ):
+            raise DomainValidationError(
+                "Common valid area cannot exceed parcel area."
+            )
+        common_valid_area_m2 = parcel_area_m2
+
+    if common_coverage_fraction > 1.0:
+        if common_coverage_fraction > 1.0 + _COVERAGE_FRACTION_TOLERANCE:
+            raise DomainValidationError(
+                "Common coverage fraction must be between zero and one."
+            )
+        common_coverage_fraction = 1.0
+
+    expected_fraction = common_valid_area_m2 / parcel_area_m2
+
+    if not math.isclose(
+        common_coverage_fraction,
+        expected_fraction,
+        rel_tol=0.0,
+        abs_tol=_COVERAGE_FRACTION_TOLERANCE,
+    ):
+        raise DomainValidationError(
+            "Common coverage fraction is inconsistent with common valid area."
+        )
+
+    return common_valid_area_m2, common_coverage_fraction
+
 
 class CommonSupportStatus(StrEnum):
     COMPARABLE = "comparable"
@@ -48,33 +112,22 @@ class CommonSupport:
                 "Common valid area must be finite and nonnegative."
             )
 
-        if self.common_valid_area_m2 > self.parcel_area_m2 + 1e-6:
-            raise DomainValidationError(
-                "Common valid area cannot exceed parcel area."
-            )
-
         if (
             not math.isfinite(self.common_coverage_fraction)
-            or not 0 <= self.common_coverage_fraction <= 1
+            or self.common_coverage_fraction < 0
         ):
             raise DomainValidationError(
                 "Common coverage fraction must be between zero and one."
             )
 
-        expected_fraction = min(
-            self.common_valid_area_m2 / self.parcel_area_m2,
-            1.0,
+        common_area, coverage = normalize_common_support_measurements(
+            parcel_area_m2=self.parcel_area_m2,
+            common_valid_area_m2=self.common_valid_area_m2,
+            common_coverage_fraction=self.common_coverage_fraction,
         )
 
-        if not math.isclose(
-            self.common_coverage_fraction,
-            expected_fraction,
-            rel_tol=0.0,
-            abs_tol=1e-9,
-        ):
-            raise DomainValidationError(
-                "Common coverage fraction is inconsistent with common valid area."
-            )
+        object.__setattr__(self, "common_valid_area_m2", common_area)
+        object.__setattr__(self, "common_coverage_fraction", coverage)
 
         for crop_id in (*eligible, *excluded):
             if (

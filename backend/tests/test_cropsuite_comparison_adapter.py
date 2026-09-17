@@ -229,6 +229,31 @@ def test_adapter_maps_common_support_and_comparable_ranking(
     )
 
 
+def test_adapter_normalizes_real_common_support_float_overshoot(
+    tmp_path: Path,
+) -> None:
+    store = FilesystemScientificArtifactStore(
+        tmp_path / "artifacts"
+    )
+    report = _report()
+    report["parcel_area_m2"] = 773671.1689055328
+    report["common_valid_area_m2"] = 773671.1689055329
+    report["common_coverage_fraction"] = 1.0
+
+    adapter = CropSuiteComparisonAdapter(
+        engine_root=tmp_path / "engine",
+        workspace_root=tmp_path / "workspace",
+        artifact_store=store,
+        runner=StubComparisonRunner(report),
+    )
+
+    result = adapter.compare(_request(tmp_path, store))
+
+    assert result.common_support.parcel_area_m2 == 773671.1689055328
+    assert result.common_support.common_valid_area_m2 == 773671.1689055328
+    assert result.common_support.common_coverage_fraction == 1.0
+
+
 def test_no_common_coverage_remains_distinct(
     tmp_path: Path,
 ) -> None:
