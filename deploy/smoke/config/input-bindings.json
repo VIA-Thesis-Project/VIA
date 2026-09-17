@@ -1,0 +1,13 @@
+{
+  "bindings": [
+    {
+      "dataset_id": "10000000-0000-0000-0000-000000000001",
+      "dataset_version_id": "20000000-0000-0000-0000-000000000001",
+      "storage_reference": "/mnt/via/sources",
+      "checksum": "smoke-only:bindings-loader-fixture",
+      "source_sha256": [
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      ]
+    }
+  ]
+}

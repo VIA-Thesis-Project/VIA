@@ -1,0 +1,63 @@
+services:
+  db:
+    image: postgis/postgis:16-3.5
+    environment:
+      POSTGRES_DB: via
+      POSTGRES_USER: via
+      POSTGRES_PASSWORD: ci-only-password
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+
+  migrate:
+    image: ${VIA_IMAGE:-via:b6}
+    command: ["via-migrate", "upgrade"]
+    environment:
+      VIA_DATABASE_URL: postgresql+psycopg://via:ci-only-password@db:5432/via
+    depends_on:
+      db:
+        condition: service_healthy
+
+  api:
+    image: ${VIA_IMAGE:-via:b6}
+    environment:
+      VIA_DATABASE_URL: postgresql+psycopg://via:ci-only-password@db:5432/via
+    ports:
+      - "18000:8000"
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - >-
+          import urllib.request; response = urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=2); raise SystemExit(0 if response.status == 200 else 1)
+      interval: 2s
+      timeout: 5s
+      retries: 30
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+
+  worker:
+    image: ${VIA_IMAGE:-via:b6}
+    command: ["via-worker", "run"]
+    environment:
+      VIA_DATABASE_URL: postgresql+psycopg://via:ci-only-password@db:5432/via
+    volumes:
+      - ./deploy/smoke/config:/etc/via:ro
+      - ./deploy/smoke/sources:/mnt/via/sources:ro
+      - via_artifacts:/var/lib/via/artifacts
+    tmpfs:
+      - /var/lib/via/workspace:mode=1777
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+
+volumes:
+  via_artifacts:

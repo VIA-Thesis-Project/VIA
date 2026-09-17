@@ -1,4 +1,4 @@
-name: B2-B5 Container Gate
+name: B2-B6 Container Gate
 
 on:
   workflow_dispatch:
@@ -9,6 +9,9 @@ on:
       - ".dockerignore"
       - "backend/**"
       - "CropSuiteLite/**"
+      - "compose.production-smoke.yaml"
+      - "deploy/smoke/**"
+      - "scripts/verify_production_compose.sh"
       - ".github/workflows/b2-container-gate.yml"
 
   push:
@@ -19,6 +22,9 @@ on:
       - ".dockerignore"
       - "backend/**"
       - "CropSuiteLite/**"
+      - "compose.production-smoke.yaml"
+      - "deploy/smoke/**"
+      - "scripts/verify_production_compose.sh"
       - ".github/workflows/b2-container-gate.yml"
 
 jobs:
@@ -38,26 +44,26 @@ jobs:
 
       - name: Build VIA image
         run: |
-          docker build --progress=plain -t via:b5 .
+          docker build --progress=plain -t via:b6 .
 
       - name: Run VIA container runtime smoke
         run: |
           docker run --rm \
-            via:b5 \
+            via:b6 \
             python /opt/via/backend/scripts/verify_container_runtime.py \
             --require-linux
 
       - name: Verify Python
         run: |
-          docker run --rm via:b5 python --version
+          docker run --rm via:b6 python --version
 
       - name: Verify Python dependency consistency
         run: |
-          docker run --rm via:b5 python -m pip check
+          docker run --rm via:b6 python -m pip check
 
       - name: Verify worker CLI command override
         run: |
-          docker run --rm via:b5 via-worker --help
+          docker run --rm via:b6 via-worker --help
 
       - name: Verify worker run fails fast without scientific configuration
         run: |
@@ -69,7 +75,7 @@ jobs:
             -e VIA_CROPSUITE_WORKSPACE= \
             -e VIA_ARTIFACTS_ROOT= \
             -e VIA_CROPSUITE_INPUT_BINDINGS= \
-            via:b5 \
+            via:b6 \
             via-worker run 2>&1)"
           status=$?
           set -e
@@ -82,7 +88,7 @@ jobs:
           set +e
           output="$(docker run --rm \
             -e VIA_DATABASE_URL=postgresql+psycopg://via:via@127.0.0.1:1/via \
-            via:b5 \
+            via:b6 \
             via-worker run 2>&1)"
           status=$?
           set -e
@@ -108,7 +114,7 @@ jobs:
             --name "$container" \
             -p 18000:8000 \
             -e VIA_DATABASE_URL=postgresql+psycopg://via:via@127.0.0.1:1/via \
-            via:b5
+            via:b6
 
           healthy=false
           for attempt in $(seq 1 30); do
@@ -130,19 +136,19 @@ jobs:
 
       - name: Verify non-root runtime
         run: |
-          docker run --rm via:b5 id
-          docker run --rm via:b5 sh -c 'test "$(id -u)" -ne 0'
+          docker run --rm via:b6 id
+          docker run --rm via:b6 sh -c 'test "$(id -u)" -ne 0'
 
       - name: Verify writable runtime paths
         run: |
-          docker run --rm via:b5 sh -c '
+          docker run --rm via:b6 sh -c '
             touch /var/lib/via/workspace/.github-write-test &&
             touch /var/lib/via/artifacts/.github-write-test
           '
 
       - name: Verify intrinsic scientific source and config targets are read-only
         run: |
-          docker run --rm via:b5 sh -c '
+          docker run --rm via:b6 sh -c '
             test -d /mnt/via/sources &&
             test -d /etc/via &&
             test ! -w /mnt/via/sources &&
@@ -170,7 +176,7 @@ jobs:
 
           docker run --rm \
             -v "$source_mount:/mnt/via/sources:ro" \
-            via:b5 \
+            via:b6 \
             sh -c '
               test "$(cat /mnt/via/sources/marker.txt)" = "source-marker" &&
               if touch /mnt/via/sources/forbidden-write; then exit 1; fi &&
@@ -198,7 +204,7 @@ jobs:
 
           docker run --rm \
             -v "$config_mount:/etc/via:ro" \
-            via:b5 \
+            via:b6 \
             sh -c '
               test "$(cat /etc/via/marker.txt)" = "config-marker" &&
               if touch /etc/via/forbidden-write; then exit 1; fi &&
@@ -225,8 +231,8 @@ jobs:
           }
           trap cleanup EXIT
 
-          via_uid="$(docker run --rm via:b5 id -u)"
-          via_gid="$(docker run --rm via:b5 id -g)"
+          via_uid="$(docker run --rm via:b6 id -u)"
+          via_gid="$(docker run --rm via:b6 id -g)"
           sudo chown "$via_uid:$via_gid" "$artifact_mount"
           marker="${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-${GITHUB_SHA}"
 
@@ -234,7 +240,7 @@ jobs:
             --name "$container_a" \
             -e B5_MARKER="$marker" \
             -v "$artifact_mount:/var/lib/via/artifacts" \
-            via:b5 \
+            via:b6 \
             sh -c 'printf "%s" "$B5_MARKER" > /var/lib/via/artifacts/b5-marker.txt'
           docker rm "$container_a"
 
@@ -242,7 +248,7 @@ jobs:
             --name "$container_b" \
             -e B5_MARKER="$marker" \
             -v "$artifact_mount:/var/lib/via/artifacts" \
-            via:b5 \
+            via:b6 \
             sh -c 'test "$(cat /var/lib/via/artifacts/b5-marker.txt)" = "$B5_MARKER"'
           docker rm "$container_b"
 
@@ -267,19 +273,19 @@ jobs:
 
           docker run \
             --name "$container_a" \
-            via:b5 \
+            via:b6 \
             sh -c 'printf workspace-marker > /var/lib/via/workspace/b5-marker.txt'
           docker rm "$container_a"
 
           docker run \
             --name "$container_b" \
-            via:b5 \
+            via:b6 \
             sh -c 'test ! -e /var/lib/via/workspace/b5-marker.txt'
           docker rm "$container_b"
 
       - name: Verify CropSuiteLite is read-only
         run: |
-          docker run --rm via:b5 sh -c '
+          docker run --rm via:b6 sh -c '
             test ! -w /opt/via/CropSuiteLite &&
             test ! -w /opt/via/CropSuiteLite/src/multicrop.py
           '
@@ -287,7 +293,7 @@ jobs:
       - name: Verify migration CLI fails fast without database configuration
         run: |
           set +e
-          output="$(docker run --rm via:b5 via-migrate upgrade 2>&1)"
+          output="$(docker run --rm via:b6 via-migrate upgrade 2>&1)"
           status=$?
           set -e
           printf '%s\n' "$output"
@@ -350,7 +356,7 @@ jobs:
               --name "$name" \
               --network "$network" \
               -e VIA_DATABASE_URL="$database_url" \
-              via:b5 \
+              via:b6 \
               via-migrate upgrade
             test "$(docker inspect -f '{{.State.Status}}' "$name")" = "exited"
             test "$(docker inspect -f '{{.State.ExitCode}}' "$name")" -eq 0
@@ -360,7 +366,7 @@ jobs:
             docker run --rm -i \
               --network "$network" \
               -e VIA_DATABASE_URL="$database_url" \
-              via:b5 \
+              via:b6 \
               python - <<'PY'
           import os
 
@@ -396,5 +402,15 @@ jobs:
 
       - name: Show image size
         run: |
-          docker image inspect via:b5 --format='Image size: {{.Size}} bytes'
-          docker images via:b5
+          docker image inspect via:b6 --format='Image size: {{.Size}} bytes'
+          docker images via:b6
+
+      - name: Validate B6 production-like Compose configuration
+        run: |
+          VIA_IMAGE=via:b6 docker compose -f compose.production-smoke.yaml config --quiet
+
+      - name: Verify production-like Compose topology
+        env:
+          VIA_IMAGE: via:b6
+        run: |
+          bash scripts/verify_production_compose.sh

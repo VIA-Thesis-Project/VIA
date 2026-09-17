@@ -157,8 +157,8 @@ The filesystem artifact implementation can prove that its root exists and is
 writable; it cannot prove storage durability. Production deployment must mount
 storage at `/var/lib/via/artifacts` whose lifecycle survives container
 replacement. B5 deliberately selects no cloud storage product and adds no
-Docker `VOLUME` instruction. B6 will wire these paths in a production-like
-Compose deployment. B7 owns provider-specific persistent storage selection.
+Docker `VOLUME` instruction. B6 wires these paths in a production-like Compose
+smoke. B7 owns provider-specific persistent storage selection.
 
 Scientific execution rejects writable workspace/artifact layouts that are equal
 to or nested inside the immutable CropSuiteLite tree, and rejects durable
@@ -200,6 +200,72 @@ single database URL consumed by Alembic through `migrations/env.py`.
 
 See `backend/.env.example` for local development and
 `backend/.env.production.example` for portable production path examples.
+
+## B6 production-like Docker Compose smoke
+
+The root `compose.production-smoke.yaml` is the provider-neutral local/CI runtime
+smoke for the B1-B5 contracts. It is deliberately not an internet-ready
+production manifest: it publishes the API only for the smoke, uses fixed
+CI-only PostgreSQL credentials, contains no TLS/ingress/provider integration,
+and selects no managed database or persistent-storage product. B7 translates
+the same runtime contract into provider-specific deployment resources.
+
+The smoke starts exactly four services with release ordering encoded by Compose
+dependency conditions:
+
+```text
+db (PostGIS healthy)
+        |
+        v
+migrate (via-migrate upgrade, exit 0)
+        |
+        +----------------+
+        |                |
+        v                v
+api (via-api)       worker (via-worker run)
+```
+
+`migrate`, `api`, and `worker` all resolve `${VIA_IMAGE:-via:b6}`. The API does
+not override the image command, so the image default `via-api` remains the API
+contract. The migration role overrides the command with the exec-form
+`["via-migrate", "upgrade"]` and is a one-shot release operation. The worker
+overrides it with `["via-worker", "run"]`. Compose waits for PostGIS TCP health,
+then for migration completion, before starting API and worker; no sleep-based
+release ordering, application-startup migration, restart loop, or provider
+orchestrator is involved.
+
+The B6 worker receives the B5 filesystem contract as actual deployment wiring:
+
+| Worker path | B6 wiring | Semantics |
+| --- | --- | --- |
+| `/opt/via/CropSuiteLite` | image content | read-only engine |
+| `/mnt/via/sources` | `deploy/smoke/sources` bind mount | read-only deployment data target |
+| `/etc/via` | `deploy/smoke/config` bind mount | read-only deployment configuration |
+| `/var/lib/via/workspace` | container tmpfs | disposable scientific workspace |
+| `/var/lib/via/artifacts` | Compose named volume | durable across worker recreation |
+
+The smoke bindings fixture exists only because worker startup validates the
+configured bindings schema before it polls PostgreSQL. The smoke queues no
+evaluation and provides no synthetic scientific dataset; the source mount is an
+empty tracked deployment target. Consequently the worker remains idle and does
+not execute CropSuiteLite or validate a source fingerprint during B6.
+
+`scripts/verify_production_compose.sh` is the runtime gate. It validates the
+Compose model, starts the topology, verifies PostGIS health and successful
+one-shot migration, dynamically proves the database revision equals the single
+Alembic head, and calls both `/health` and the database-backed `GET /projects`
+endpoint. It also checks that migration, API, and worker containers resolved to
+the same image, that engine/config/source locations are non-writable, and that
+the worker remains alive over multiple normal polling intervals without a fatal
+traceback.
+
+The same gate writes one marker to artifacts and one to workspace, force
+recreates only the worker without rerunning dependencies, then proves the named
+artifact volume retained its marker while the tmpfs workspace did not. Finally
+it stops API and worker through normal Docker Compose stop semantics and always
+runs `down -v --remove-orphans` through its cleanup trap. This exercises the B5
+durability boundary and A7 cooperative shutdown behavior without changing
+either contract.
 
 ## B2 reproducible Linux container image
 
@@ -266,18 +332,19 @@ Build from the repository root so both `backend/` and `CropSuiteLite/` are in
 the Docker build context:
 
 ```text
-docker build -t via:b5 .
-docker run --rm via:b5 python /opt/via/backend/scripts/verify_container_runtime.py --require-linux
-docker run --rm via:b5 python --version
-docker run --rm via:b5 python -m pip check
-docker run --rm via:b5 via-worker --help
-docker run --rm -e VIA_DATABASE_URL=<postgresql-url> via:b5 via-migrate upgrade
+docker build -t via:b6 .
+docker run --rm via:b6 python /opt/via/backend/scripts/verify_container_runtime.py --require-linux
+docker run --rm via:b6 python --version
+docker run --rm via:b6 python -m pip check
+docker run --rm via:b6 via-worker --help
+docker run --rm -e VIA_DATABASE_URL=<postgresql-url> via:b6 via-migrate upgrade
 ```
 
-B2-B5 do not choose a hosting provider, add scientific datasets to the image,
+B2-B6 do not choose a hosting provider, add scientific datasets to the image,
 alter CropSuiteLite scientific requirements or behavior, change artifact-storage
 identities/database semantics, or change worker lifecycle. B5 defines the
-durability and mount contract while leaving provider-specific storage to B7.
+durability and mount contract, while B6 exercises that contract locally and in
+CI and leaves provider-specific storage to B7.
 
 The Linux container workflow proves the B3 process contract, the B4 release
 migration contract, and the B5 filesystem/mount contract.
@@ -306,3 +373,11 @@ container writes a unique marker and a replacement container reads the same
 marker from the same mount. A separate pair of containers proves an unmounted
 workspace marker disappears across container replacement. These Linux Docker
 checks prove deployment behavior that unit tests cannot establish.
+
+For B6, the same workflow keeps the B2-B5 gates first and then launches the
+dedicated production-like Compose topology with the already-built `via:b6`
+image. The Compose smoke adds release-ordering, real API-to-PostgreSQL access,
+idle worker-to-PostgreSQL liveness, same-image role verification, named-volume
+artifact persistence, tmpfs workspace disposal, read-only deployment mounts,
+and normal Compose shutdown. No image is pushed and no external provider,
+registry credential, application secret, or internet deployment is required.
