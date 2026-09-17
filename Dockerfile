@@ -2,8 +2,15 @@
 
 FROM python:3.11-slim-bookworm
 
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        libexpat1 \
+    && rm -rf /var/lib/apt/lists/*
+
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
+    HOME=/tmp \
+    MPLCONFIGDIR=/tmp/matplotlib \
     VIA_CROPSUITE_ROOT=/opt/via/CropSuiteLite \
     VIA_CROPSUITE_PYTHON=/usr/local/bin/python \
     VIA_CROPSUITE_WORKSPACE=/var/lib/via/workspace \

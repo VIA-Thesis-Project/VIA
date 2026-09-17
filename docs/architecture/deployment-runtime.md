@@ -103,9 +103,17 @@ See `backend/.env.example` for local development and
 The root [`Dockerfile`](../../Dockerfile) packages the VIA backend and
 CropSuiteLite into one provider-neutral Linux image based on
 `python:3.11-slim-bookworm`. Both VIA and CropSuiteLite use the same interpreter,
-`/usr/local/bin/python`. No additional Debian runtime package is installed in B2;
-the selected scientific wheels must prove their Linux runtime requirements during
-the real image build and smoke verification.
+`/usr/local/bin/python`. B2 installs one explicitly justified Debian runtime
+package:
+
+```text
+libexpat1
+    Required at runtime by the Rasterio/GDAL wheel dependency chain.
+    Discovered by the Linux container smoke, not guessed in advance.
+```
+
+The selected scientific wheels must still prove their remaining Linux runtime
+requirements during the real image build and smoke verification.
 
 CropSuiteLite's source requirements are not rewritten. Repository inspection found
 no `tkinter`, `from tkinter`, or `import tk` usage in the VIA scientific path
@@ -142,7 +150,9 @@ disposable CropSuite execution workspace and `/var/lib/via/artifacts` is the
 writable artifact path; production still has to place the artifact path on
 durable storage. `VIA_CROPSUITE_INPUT_BINDINGS`, scientific datasets, and any
 optional source config/catalog remain deployment-provided read-only inputs and
-are intentionally not baked into the image.
+are intentionally not baked into the image. `HOME=/tmp` and
+`MPLCONFIGDIR=/tmp/matplotlib` keep Matplotlib's runtime cache/configuration in
+temporary storage for the non-root process rather than in a persistent path.
 
 Build from the repository root so both `backend/` and `CropSuiteLite/` are in
 the Docker build context:
