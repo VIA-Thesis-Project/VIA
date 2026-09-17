@@ -1,0 +1,43 @@
+#cloud-config
+package_update: true
+package_upgrade: true
+
+packages:
+  - ca-certificates
+  - curl
+  - docker.io
+  - docker-compose-v2
+  - unattended-upgrades
+
+users:
+  - default
+  - name: via-deploy
+    gecos: VIA deployment operator
+    shell: /bin/bash
+    groups:
+      - sudo
+    sudo:
+      - ALL=(ALL) NOPASSWD:ALL
+    lock_passwd: true
+
+ssh_pwauth: false
+disable_root: false
+
+write_files:
+  - path: /etc/apt/apt.conf.d/20auto-upgrades
+    permissions: "0644"
+    content: |
+      APT::Periodic::Update-Package-Lists "1";
+      APT::Periodic::Unattended-Upgrade "1";
+
+runcmd:
+  - [systemctl, enable, --now, docker]
+  - [usermod, -aG, docker, via-deploy]
+  - [systemctl, enable, --now, unattended-upgrades]
+  - [install, -d, -m, "0700", -o, via-deploy, -g, via-deploy, /home/via-deploy/.ssh]
+  - [bash, -lc, 'if [ -s /root/.ssh/authorized_keys ]; then install -m 0600 -o via-deploy -g via-deploy /root/.ssh/authorized_keys /home/via-deploy/.ssh/authorized_keys; printf "PermitRootLogin no\nPasswordAuthentication no\n" > /etc/ssh/sshd_config.d/99-via.conf; systemctl reload ssh; fi']
+  - [install, -d, -m, "0755", -o, via-deploy, -g, via-deploy, /srv/via/config]
+  - [install, -d, -m, "0755", -o, via-deploy, -g, via-deploy, /srv/via/sources]
+  - [install, -d, -m, "0770", -o, via-deploy, -g, via-deploy, /srv/via/artifacts]
+  - [install, -d, -m, "0700", -o, via-deploy, -g, via-deploy, /srv/via/backups]
+  - [install, -d, -m, "0700", -o, via-deploy, -g, via-deploy, /srv/via/backups/postgres]

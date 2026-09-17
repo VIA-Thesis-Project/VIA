@@ -1,0 +1,71 @@
+name: via
+
+services:
+  db:
+    image: postgis/postgis:16-3.5
+    environment:
+      POSTGRES_DB: ${VIA_POSTGRES_DB:?VIA_POSTGRES_DB is required}
+      POSTGRES_USER: ${VIA_POSTGRES_USER:?VIA_POSTGRES_USER is required}
+      POSTGRES_PASSWORD: ${VIA_POSTGRES_PASSWORD:?VIA_POSTGRES_PASSWORD is required}
+    volumes:
+      - via_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+    restart: unless-stopped
+
+  migrate:
+    image: ${VIA_IMAGE:?VIA_IMAGE is required}
+    command: ["via-migrate", "upgrade"]
+    environment:
+      VIA_DATABASE_URL: >-
+        postgresql+psycopg://${VIA_POSTGRES_USER:?VIA_POSTGRES_USER is required}:${VIA_POSTGRES_PASSWORD:?VIA_POSTGRES_PASSWORD is required}@db:5432/${VIA_POSTGRES_DB:?VIA_POSTGRES_DB is required}
+      VIA_FARM_MANAGEMENT_REPOSITORY: postgresql
+      VIA_ENVIRONMENTAL_INFORMATION_REPOSITORY: postgresql
+      VIA_AGROCLIMATIC_EVALUATION_REPOSITORY: postgresql
+    restart: "no"
+
+  api:
+    image: ${VIA_IMAGE:?VIA_IMAGE is required}
+    command: ["via-api"]
+    environment:
+      VIA_DATABASE_URL: >-
+        postgresql+psycopg://${VIA_POSTGRES_USER:?VIA_POSTGRES_USER is required}:${VIA_POSTGRES_PASSWORD:?VIA_POSTGRES_PASSWORD is required}@db:5432/${VIA_POSTGRES_DB:?VIA_POSTGRES_DB is required}
+      VIA_FARM_MANAGEMENT_REPOSITORY: postgresql
+      VIA_ENVIRONMENTAL_INFORMATION_REPOSITORY: postgresql
+      VIA_AGROCLIMATIC_EVALUATION_REPOSITORY: postgresql
+    ports:
+      - "127.0.0.1:${VIA_API_HOST_PORT:-8000}:8000"
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - >-
+          import urllib.request; response = urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=2); raise SystemExit(0 if response.status == 200 else 1)
+      interval: 2s
+      timeout: 5s
+      retries: 30
+    restart: unless-stopped
+
+  worker:
+    image: ${VIA_IMAGE:?VIA_IMAGE is required}
+    command: ["via-worker", "run"]
+    environment:
+      VIA_DATABASE_URL: >-
+        postgresql+psycopg://${VIA_POSTGRES_USER:?VIA_POSTGRES_USER is required}:${VIA_POSTGRES_PASSWORD:?VIA_POSTGRES_PASSWORD is required}@db:5432/${VIA_POSTGRES_DB:?VIA_POSTGRES_DB is required}
+      VIA_WORKER_BATCH_SIZE: ${VIA_WORKER_BATCH_SIZE:-1}
+      VIA_WORKER_POLL_INTERVAL_SECONDS: ${VIA_WORKER_POLL_INTERVAL_SECONDS:-5}
+    volumes:
+      - /srv/via/config:/etc/via:ro
+      - /srv/via/sources:/mnt/via/sources:ro
+      - /srv/via/artifacts:/var/lib/via/artifacts:rw
+    tmpfs:
+      - /var/lib/via/workspace:mode=1777
+    restart: unless-stopped
+
+volumes:
+  via_postgres_data:
+    name: via_postgres_data

@@ -338,6 +338,146 @@ runs `down -v --remove-orphans` through its cleanup trap. This exercises the B5
 durability boundary and A7 cooperative shutdown behavior without changing
 either contract.
 
+## B7 DigitalOcean single-Droplet deployment definition
+
+B7.1 maps the provider-neutral B1-B6 runtime contract onto one DigitalOcean
+Basic Droplet running Ubuntu 24.04 LTS. It is a deployment definition only: no
+Droplet, firewall rule, registry package, or other DigitalOcean resource has
+been created by this repository change.
+
+The initial capacity target is 1 vCPU, 2 GiB RAM, and 50 GiB SSD for an expected
+audience of fewer than five people. The deployment runs one VIA worker and keeps
+the VIA evaluation queue sequential at the worker level with
+`VIA_WORKER_BATCH_SIZE=1`. No scientific parameters or workload are reduced to
+fit that capacity. A resize to a 4 GiB Basic Droplet requires no VIA application
+architecture change.
+
+| B1-B6 contract | DigitalOcean implementation |
+| --- | --- |
+| OCI image | GHCR image tagged by the validated git SHA; digest preferred for deployment |
+| host | One Ubuntu 24.04 Basic Droplet |
+| API | `api` service in `compose.digitalocean.yaml` |
+| worker | one `worker` service running `via-worker run` |
+| migration | one-shot `migrate` service running `via-migrate upgrade` |
+| PostgreSQL/PostGIS | local `postgis/postgis:16-3.5` service with named volume `via_postgres_data` |
+| `/mnt/via/sources` | `/srv/via/sources` bind-mounted read-only |
+| `/var/lib/via/artifacts` | `/srv/via/artifacts` bind-mounted read-write |
+| `/var/lib/via/workspace` | disposable tmpfs with no persistent bind mount |
+| `/etc/via` | `/srv/via/config` bind-mounted read-only |
+
+`/srv/via/config`, `/srv/via/sources`, `/srv/via/artifacts`, and
+`/srv/via/backups` are provider-host directories. Only validated final runtime
+scientific sources belong in `/srv/via/sources`; raw Huaura caches, WISE or
+Pelletier archives, raw SoilGrids downloads, historical CropSuite outputs,
+virtual environments, repository metadata, and other development caches do not.
+`scripts/sync_digitalocean_sources.ps1` requires the operator to name the local
+source directory explicitly before copying it. It performs no automatic
+discovery of a repository data directory.
+
+PostgreSQL data lives in the Docker-managed `via_postgres_data` named volume and
+therefore survives database-container recreation and VIA image changes. Final
+scientific artifacts live directly under `/srv/via/artifacts`, so worker and
+Compose recreation do not remove them. Worker workspace remains tmpfs at
+`/var/lib/via/workspace`; no size cap is imposed before benchmark evidence
+justifies one.
+
+The authoritative release entry point is `scripts/deploy_digitalocean.sh`. It
+requires an explicit GHCR digest or full 40-character git-SHA tag and rejects
+`latest`. The release sequence is deliberately procedural rather than delegated
+to Compose dependencies:
+
+```text
+docker pull exact VIA_IMAGE
+        |
+        v
+start/check PostGIS health
+        |
+        v
+via-migrate upgrade
+        |
+    exit 0 only
+        |
+        +--------> update/start API
+        |
+        +--------> update/start worker
+        |
+        v
+verify API health + worker/image liveness
+```
+
+If migration exits non-zero, shell strict mode terminates the release before the
+API or worker is recreated with the new image. Migration remains one-shot and is
+never moved into API or worker startup. The script never runs `docker compose
+down -v` and never deletes the database volume, artifacts, sources, or backups.
+`scripts/deploy_digitalocean.ps1` is only a Windows SSH wrapper around that Linux
+entry point; it contains no duplicate release logic or SSH password.
+
+Production secrets are host-local. Copy
+`deploy/digitalocean/runtime.env.example` to `/srv/via/config/runtime.env`, fill
+the PostgreSQL values, and set mode `0600`. The PostgreSQL password is stored
+once as `VIA_POSTGRES_PASSWORD`; Compose derives the application
+`VIA_DATABASE_URL` from it for API, worker, and migration. The deployment script
+requires a URL-unreserved password of at least 24 characters so no second
+encoded password copy is needed. A long random hex secret satisfies that
+constraint. `VIA_IMAGE` is supplied per release instead of being stored in the
+runtime secret file.
+
+`.github/workflows/b7-publish-ghcr.yml` publishes to
+`ghcr.io/<owner>/<repository>:<validated-git-sha>` only after the existing
+`B2-B6 Container Gate` reports success for that exact commit. The workflow
+checks out `workflow_run.head_sha`, uses the repository `GITHUB_TOKEN` with only
+`contents: read` and `packages: write`, runs the provider contract checks, then
+builds and pushes that SHA tag. It never publishes `latest`. Deployment should
+prefer the resulting `@sha256:<digest>` reference when available.
+
+For a private GHCR package, the Droplet needs a registry credential that can
+only read packages. Authenticate Docker interactively or through a protected
+operator mechanism using a GitHub credential with `read:packages`; do not put
+that credential in Git, cloud-init, Compose, or `runtime.env`. `docker pull` in
+the deployment script is also the effective registry-access check.
+
+`infra/digitalocean/cloud-init.yaml` prepares the Ubuntu host with Docker Engine,
+Compose v2, unattended security updates, the `/srv/via` directories, and a
+non-root `via-deploy` administrator. Password SSH authentication is disabled.
+The bootstrap contains no private key; it copies the public key that the cloud
+image/provider placed in root's `authorized_keys` into the deployment user's
+account, then writes an SSH daemon override disabling direct root login only
+after that key is present for `via-deploy`. A Droplet must therefore be created
+with an operator SSH public key already supplied to DigitalOcean.
+
+The host security boundary is SSH keys only, non-root routine administration,
+no published PostgreSQL port, no worker port, and no tracked secrets. A
+DigitalOcean Cloud Firewall should restrict SSH to the operator's known source
+IP range. B7.1 does not invent that IP and does not mutate firewall rules. The
+Compose API port is bound to `127.0.0.1` on the Droplet, so direct HTTP can be
+used only for a controlled smoke through an SSH tunnel. External testers must
+not send credentials over that plaintext boundary; a later B7.2/B8 edge/domain
+step must provide HTTPS before external authenticated use. B7.1 therefore adds
+no nginx, Caddy, or Traefik service.
+
+`scripts/backup_postgres.sh` runs `pg_dump` inside the running PostGIS container
+and writes timestamped custom-format dumps plus SHA-256 sidecars to
+`/srv/via/backups/postgres`. Optional retention is applied only when the operator
+sets `VIA_BACKUP_RETENTION_DAYS`. Same-host `pg_dump` protects against logical
+mistakes and supports routine recovery, but it is not full disaster recovery.
+DigitalOcean Droplet backups/snapshots protect the VM at the infrastructure
+level, while an off-host database backup remains desirable before wider
+production use. B7.1 adds no paid object-storage dependency.
+
+DigitalOcean host monitoring should track at least memory, CPU, and disk
+utilization during the initial 2 GiB trial. Do not add an arbitrary worker
+memory limit. Resize the Droplet to 4 GiB if real evaluation workload causes an
+OOM kill, sustained swap pressure, unsafe memory headroom, or a measured total
+stack peak close to available host RAM. Those signals justify increasing host
+capacity rather than changing scientific rules or reducing the workload.
+
+`backend/tests/test_digitalocean_deployment_contract.py` statically enforces the
+provider invariants: private DB/worker ports, one explicit `VIA_IMAGE` contract,
+no `latest`, exact process commands, read-only source/config mounts, durable
+artifact/database storage, disposable workspace, release ordering, no B6 smoke
+fixture dependency, no raw Huaura path, no obvious committed credentials, and
+same-commit GHCR publication gating.
+
 ## B2 reproducible Linux container image
 
 The root [`Dockerfile`](../../Dockerfile) packages the VIA backend and
