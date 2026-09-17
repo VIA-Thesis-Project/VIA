@@ -732,9 +732,9 @@
     "semantic_hash": "f417bdcb4f71006284ab89e8ea3a5327"
   },
   "backend/pyproject.toml": {
-    "mtime": 1789306551.4750066,
-    "seen": 1789353630.8273718,
-    "ast_hash": "3d8651329a59e71eeb1e96e3b6a4fbad",
+    "mtime": 1789610656.7300687,
+    "seen": 1789611235.8901918,
+    "ast_hash": "e27cdeb737f501c0610e63ee6b695008",
     "semantic_hash": ""
   },
   "backend/src/via_backend/__init__.py": {
@@ -924,9 +924,9 @@
     "semantic_hash": "45fa1e1fde90e7b5c42d7b06d1ac67a3"
   },
   "backend/src/via_backend/main.py": {
-    "mtime": 1789605908.7980258,
-    "seen": 1789606380.2067356,
-    "ast_hash": "3e8eb70b59cd1ec344f6dc3a1dff0351",
+    "mtime": 1789610648.8118224,
+    "seen": 1789611235.8902786,
+    "ast_hash": "1ac07e91d9c321999e2c533f9594d307",
     "semantic_hash": ""
   },
   "backend/tests/test_architecture.py": {
@@ -1080,9 +1080,9 @@
     "semantic_hash": ""
   },
   "backend/tests/test_config.py": {
-    "mtime": 1789606010.4236765,
-    "seen": 1789606380.2067459,
-    "ast_hash": "027c5392135e92e6d24ae37b83acc56f",
+    "mtime": 1789610688.5191038,
+    "seen": 1789611235.8902893,
+    "ast_hash": "da288a3985d1010912be28c701f12a1f",
     "semantic_hash": ""
   },
   "backend/tests/test_farm_management_postgresql.py": {
@@ -1866,21 +1866,45 @@
     "semantic_hash": ""
   },
   "docs/architecture/deployment-runtime.md": {
-    "mtime": 1789607433.4282517,
-    "seen": 1789608128.5509236,
-    "ast_hash": "9a472db9e024164473f3a846a91110f1",
+    "mtime": 1789610787.0210989,
+    "seen": 1789611235.8903844,
+    "ast_hash": "fb66c1f1062ab375aa91d1f8b09d8c1c",
     "semantic_hash": ""
   },
   "backend/scripts/verify_container_runtime.py": {
-    "mtime": 1789607409.7068596,
-    "seen": 1789608128.5507286,
-    "ast_hash": "437f9bfbbe2405fcc3d4fe4b4246b40f",
+    "mtime": 1789610656.731065,
+    "seen": 1789611235.8901942,
+    "ast_hash": "8b24a3edd4148f1bac38eeccb0e56e56",
     "semantic_hash": ""
   },
   "backend/tests/test_container_image_contract.py": {
-    "mtime": 1789607788.4082298,
-    "seen": 1789608128.5508263,
-    "ast_hash": "e864960933d0aed8bab703f783077b0b",
+    "mtime": 1789610688.522099,
+    "seen": 1789611235.89029,
+    "ast_hash": "462f89546426e3215972b430073d4800",
+    "semantic_hash": ""
+  },
+  "backend/src/via_backend/api.py": {
+    "mtime": 1789610648.8128238,
+    "seen": 1789611235.890197,
+    "ast_hash": "83ba4e808ffe9934ed8f5d6258289941",
+    "semantic_hash": ""
+  },
+  "backend/src/via_backend/app.py": {
+    "mtime": 1789610648.8108256,
+    "seen": 1789611235.890198,
+    "ast_hash": "2c4f82ca09fd1a0867b2e396a0c6659a",
+    "semantic_hash": ""
+  },
+  "backend/tests/test_api_host.py": {
+    "mtime": 1789610688.5210996,
+    "seen": 1789611235.8902876,
+    "ast_hash": "a1fdd61fdde90f4fed7f3fa22d6bb6ce",
+    "semantic_hash": ""
+  },
+  ".github/workflows/b2-container-gate.yml": {
+    "mtime": 1789610711.1910675,
+    "seen": 1789611235.8903399,
+    "ast_hash": "87ee6dbe6fd23ff8b78c5b72ee401dd8",
     "semantic_hash": ""
   }
 }
