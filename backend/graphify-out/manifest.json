@@ -928,5 +928,17 @@
     "seen": 1789604889.6905313,
     "ast_hash": "180aecc05fb74491cad34458df334109",
     "semantic_hash": ""
+  },
+  "scripts/verify_container_runtime.py": {
+    "mtime": 1789607409.7068596,
+    "seen": 1789608134.9875998,
+    "ast_hash": "437f9bfbbe2405fcc3d4fe4b4246b40f",
+    "semantic_hash": ""
+  },
+  "tests/test_container_image_contract.py": {
+    "mtime": 1789607788.4082298,
+    "seen": 1789608134.9876957,
+    "ast_hash": "e864960933d0aed8bab703f783077b0b",
+    "semantic_hash": ""
   }
 }

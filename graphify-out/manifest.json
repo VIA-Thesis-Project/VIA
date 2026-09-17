@@ -1866,9 +1866,21 @@
     "semantic_hash": ""
   },
   "docs/architecture/deployment-runtime.md": {
-    "mtime": 1789605961.9928174,
-    "seen": 1789606380.2068563,
-    "ast_hash": "22f427d9c8ccbecb0f0cb4c2a69f91b0",
+    "mtime": 1789607433.4282517,
+    "seen": 1789608128.5509236,
+    "ast_hash": "9a472db9e024164473f3a846a91110f1",
+    "semantic_hash": ""
+  },
+  "backend/scripts/verify_container_runtime.py": {
+    "mtime": 1789607409.7068596,
+    "seen": 1789608128.5507286,
+    "ast_hash": "437f9bfbbe2405fcc3d4fe4b4246b40f",
+    "semantic_hash": ""
+  },
+  "backend/tests/test_container_image_contract.py": {
+    "mtime": 1789607788.4082298,
+    "seen": 1789608128.5508263,
+    "ast_hash": "e864960933d0aed8bab703f783077b0b",
     "semantic_hash": ""
   }
 }
