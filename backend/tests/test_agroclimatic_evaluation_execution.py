@@ -29,6 +29,9 @@ from via_backend.contexts.agroclimatic_evaluation.application import (
     ScientificExecutionTrace,
     SuitabilityScoreSummary,
 )
+from via_backend.contexts.agroclimatic_evaluation.application import (
+    ScientificSourceFingerprint as ApplicationScientificSourceFingerprint,
+)
 from via_backend.contexts.agroclimatic_evaluation.domain import (
     CropOutcome,
     CropOutcomeStatus,
@@ -42,6 +45,9 @@ from via_backend.contexts.agroclimatic_evaluation.domain import (
     ScientificTrace,
     SnapshotGeometry,
     SuitabilitySummary,
+)
+from via_backend.contexts.agroclimatic_evaluation.domain import (
+    ScientificSourceFingerprint as DomainScientificSourceFingerprint,
 )
 from via_backend.contexts.agroclimatic_evaluation.infrastructure import (
     InMemoryEvaluationRepository,
@@ -234,6 +240,16 @@ def _result(
             parameter_sha256=f"parameter-{crop_id}",
             configuration_sha256="configuration-sha256",
             source_files_unchanged=True,
+            source_fingerprints=(
+                ApplicationScientificSourceFingerprint(
+                    "/science/a-source.tif",
+                    "a" * 64,
+                ),
+                ApplicationScientificSourceFingerprint(
+                    "/science/z-source.tif",
+                    "b" * 64,
+                ),
+            ),
         ),
         artifacts=() if failed else (_artifact(crop_id),),
     )
@@ -587,6 +603,16 @@ def test_all_reliable_outcome_and_trace_fields_round_trip_in_memory() -> None:
         parameter_sha256="parameter-maize",
         configuration_sha256="configuration-sha256",
         source_files_unchanged=True,
+        source_fingerprints=(
+            DomainScientificSourceFingerprint(
+                "/science/a-source.tif",
+                "a" * 64,
+            ),
+            DomainScientificSourceFingerprint(
+                "/science/z-source.tif",
+                "b" * 64,
+            ),
+        ),
     )
 
 def test_summarizing_compares_only_non_failed_crop_outcomes() -> None:

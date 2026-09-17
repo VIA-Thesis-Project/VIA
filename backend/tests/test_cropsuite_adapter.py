@@ -295,7 +295,7 @@ def test_integrity_verifier_receives_manifest_and_sorted_source_fingerprints(
         input_integrity_verifier=RecordingVerifier(),
     )
 
-    adapter.evaluate(request)
+    result = adapter.evaluate(request)
 
     assert received == [
         (
@@ -306,6 +306,15 @@ def test_integrity_verifier_receives_manifest_and_sorted_source_fingerprints(
             ),
         )
     ]
+    assert result.trace.source_fingerprints == received[0][1]
+
+
+def test_low_level_runner_without_integrity_verifier_keeps_empty_source_trace(
+    tmp_path: Path,
+) -> None:
+    result = _adapter(tmp_path, StubRunner(_report())).evaluate(_request())
+
+    assert result.trace.source_fingerprints == ()
 
 
 @pytest.mark.parametrize(

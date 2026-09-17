@@ -169,6 +169,7 @@ class ScientificTraceResponse(BaseModel):
     parameter_sha256: str | None
     configuration_sha256: str | None
     source_files_unchanged: bool
+    source_sha256: list[str]
 
 
 class CropEvidenceResponse(BaseModel):

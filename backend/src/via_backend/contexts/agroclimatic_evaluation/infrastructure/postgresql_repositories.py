@@ -31,6 +31,7 @@ from ..domain.outcomes import (
     ScientificArtifact,
     ScientificArtifactGrid,
     ScientificArtifactRole,
+    ScientificSourceFingerprint,
     ScientificTrace,
     SuitabilitySummary,
 )
@@ -45,6 +46,7 @@ from .orm import (
     EvaluationEnvironmentalInputRequestRecord,
     EvaluationRecord,
     ScientificArtifactRecord,
+    ScientificSourceFingerprintRecord,
 )
 
 
@@ -161,6 +163,17 @@ class PostgreSQLEvaluationRepository:
                 # the same database transaction.
                 session.flush()
 
+                session.add_all(
+                    _source_fingerprint_record(
+                        evaluation_id,
+                        outcome.crop_id,
+                        position,
+                        fingerprint,
+                    )
+                    for position, fingerprint in enumerate(
+                        outcome.trace.source_fingerprints
+                    )
+                )
                 session.add_all(
                     _artifact_record(
                         evaluation_id,
@@ -627,17 +640,36 @@ def _load_outcomes(
         )
     )
 
+    source_fingerprint_records = session.scalars(
+        select(ScientificSourceFingerprintRecord)
+        .where(ScientificSourceFingerprintRecord.evaluation_id == evaluation_id)
+        .order_by(
+            ScientificSourceFingerprintRecord.crop_id,
+            ScientificSourceFingerprintRecord.position,
+        )
+    )
+
     artifacts_by_crop: dict[str, list[ScientificArtifact]] = {}
+    source_fingerprints_by_crop: dict[str, list[ScientificSourceFingerprint]] = {}
 
     for record in artifact_records:
         artifacts_by_crop.setdefault(record.crop_id, []).append(
             _artifact_from_record(record)
         )
 
+    for record in source_fingerprint_records:
+        source_fingerprints_by_crop.setdefault(record.crop_id, []).append(
+            ScientificSourceFingerprint(
+                source_reference=record.source_reference,
+                sha256=record.sha256,
+            )
+        )
+
     return tuple(
         _outcome_from_record(
             record,
             tuple(artifacts_by_crop.get(record.crop_id, ())),
+            tuple(source_fingerprints_by_crop.get(record.crop_id, ())),
         )
         for record in outcome_records
     )
@@ -693,6 +725,21 @@ def _artifact_record(
     )
 
 
+def _source_fingerprint_record(
+    evaluation_id: UUID,
+    crop_id: str,
+    position: int,
+    fingerprint: ScientificSourceFingerprint,
+) -> ScientificSourceFingerprintRecord:
+    return ScientificSourceFingerprintRecord(
+        evaluation_id=evaluation_id,
+        crop_id=crop_id,
+        position=position,
+        source_reference=fingerprint.source_reference,
+        sha256=fingerprint.sha256,
+    )
+
+
 def _artifact_from_record(
     record: ScientificArtifactRecord,
 ) -> ScientificArtifact:
@@ -724,6 +771,7 @@ def _artifact_from_record(
 def _outcome_from_record(
     record: CropOutcomeRecord,
     artifacts: tuple[ScientificArtifact, ...],
+    source_fingerprints: tuple[ScientificSourceFingerprint, ...],
 ) -> CropOutcome:
     status = CropOutcomeStatus(record.status)
     summary = (
@@ -755,6 +803,7 @@ def _outcome_from_record(
             parameter_sha256=record.parameter_sha256,
             configuration_sha256=record.configuration_sha256,
             source_files_unchanged=record.source_files_unchanged,
+            source_fingerprints=source_fingerprints,
         ),
         artifacts=artifacts,
     )

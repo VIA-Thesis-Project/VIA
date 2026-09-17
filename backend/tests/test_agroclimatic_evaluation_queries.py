@@ -21,6 +21,7 @@ from via_backend.contexts.agroclimatic_evaluation.domain import (
     Evaluation,
     EvaluationStatus,
     ParcelSnapshot,
+    ScientificSourceFingerprint,
     ScientificTrace,
     SnapshotGeometry,
     SuitabilitySummary,
@@ -88,6 +89,16 @@ def _outcome(crop_id: str, status: CropOutcomeStatus) -> CropOutcome:
             parameter_sha256=f"{crop_id}-hash",
             configuration_sha256="configuration-hash",
             source_files_unchanged=True,
+            source_fingerprints=(
+                ScientificSourceFingerprint(
+                    f"C:\\private\\science\\{crop_id}.tif",
+                    "a" * 64,
+                ),
+                ScientificSourceFingerprint(
+                    f"/tmp/engine/{crop_id}.cfg",
+                    "b" * 64,
+                ),
+            ),
         ),
     )
 
@@ -155,6 +166,7 @@ def test_query_messages_return_read_only_views_without_mutation() -> None:
     assert result_view.availability is EvaluationResultAvailability.PARTIAL
     assert [outcome.crop_id for outcome in result_view.outcomes] == ["maize"]
     assert [item.crop_id for item in evidence_view.evidence] == ["maize"]
+    assert evidence_view.evidence[0].trace.source_sha256 == ("a" * 64, "b" * 64)
 
 
 def test_finalized_public_contract_preserves_order_and_outcome_semantics() -> None:
@@ -183,6 +195,8 @@ def test_finalized_public_contract_preserves_order_and_outcome_semantics() -> No
         "no_coverage",
         "failed",
     ]
+    assert not hasattr(published.outcomes[0].trace, "source_fingerprints")
+    assert not hasattr(published.outcomes[0].trace, "source_reference")
     assert published.outcomes[0].suitability is not None
     assert published.outcomes[0].suitability.mean == 0.0
     assert published.outcomes[1].suitability is not None

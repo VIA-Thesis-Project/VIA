@@ -99,6 +99,7 @@ class ScientificExecutionTrace:
     parameter_sha256: str | None
     configuration_sha256: str | None
     source_files_unchanged: bool
+    source_fingerprints: tuple[ScientificSourceFingerprint, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)

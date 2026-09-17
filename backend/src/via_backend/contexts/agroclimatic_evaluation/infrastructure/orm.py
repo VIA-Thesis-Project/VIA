@@ -503,6 +503,54 @@ class CropOutcomeRecord(Base):
     configuration_sha256: Mapped[str | None] = mapped_column(String(128), nullable=True)
     source_files_unchanged: Mapped[bool] = mapped_column(Boolean, nullable=False)
 
+
+class ScientificSourceFingerprintRecord(Base):
+    __tablename__ = "scientific_source_fingerprints"
+    __table_args__ = (
+        CheckConstraint(
+            "position >= 0",
+            name="scientific_source_fingerprint_position_nonnegative",
+        ),
+        CheckConstraint(
+            "source_reference <> '' AND source_reference = btrim(source_reference)",
+            name="scientific_source_fingerprint_reference_nonempty_trimmed",
+        ),
+        CheckConstraint(
+            "sha256 ~ '^[0-9a-f]{64}$'",
+            name="scientific_source_fingerprint_sha256_valid",
+        ),
+        ForeignKeyConstraint(
+            ["evaluation_id", "crop_id"],
+            [
+                f"{AGROCLIMATIC_EVALUATION_SCHEMA}.crop_outcomes.evaluation_id",
+                f"{AGROCLIMATIC_EVALUATION_SCHEMA}.crop_outcomes.crop_id",
+            ],
+            name="fk_scientific_source_fingerprints_crop_outcome",
+            ondelete="CASCADE",
+        ),
+        UniqueConstraint(
+            "evaluation_id",
+            "crop_id",
+            "source_reference",
+            name="uq_scientific_source_fingerprint_reference",
+        ),
+    )
+
+    evaluation_id: Mapped[UUID] = mapped_column(
+        PostgreSQLUUID(as_uuid=True),
+        primary_key=True,
+        nullable=False,
+    )
+    crop_id: Mapped[str] = mapped_column(
+        String(120),
+        primary_key=True,
+        nullable=False,
+    )
+    position: Mapped[int] = mapped_column(Integer, primary_key=True, nullable=False)
+    source_reference: Mapped[str] = mapped_column(Text, nullable=False)
+    sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+
+
 class ScientificArtifactRecord(Base):
     __tablename__ = "scientific_artifacts"
     __table_args__ = (

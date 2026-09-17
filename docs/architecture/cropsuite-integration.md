@@ -97,25 +97,37 @@ CropSuite hashes are allowed because the engine also fingerprints configuration,
 crop parameters, masks, DEM and other scientific inputs outside a particular
 environmental DatasetVersion.
 
+The same ordered fingerprint tuple accepted by the verifier is carried through
+the Application boundary into the domain `ScientificTrace` and persisted as
+ordered child rows of the crop outcome. VIA does not recalculate those hashes.
+`source_reference` remains opaque: it is not converted to `Path`, normalized,
+resolved, stripped, or mapped to Environmental Information `storage_reference`.
+Current engine references may therefore contain host-local absolute paths.
+
 Missing bindings, identity mismatches, or absent expected hashes raise an
 `EnvironmentalInputIntegrityError` at the engine boundary. They are not converted
 to `no_coverage`, suitability zero, or a normal per-crop `failed` outcome. After
 the initial integrity gate, the existing `source_files_unchanged=False` guard
 retains its explicit scientific-failure behavior, covering mutation during the
-engine run.
+engine run. It is distinct from the durable source fingerprints, which record the
+actual pre-run source identities reported by CropSuiteLite.
 
 The worker requires `VIA_CROPSUITE_INPUT_BINDINGS`, loads and validates the JSON
 at startup, builds `ConfiguredEnvironmentalInputIntegrityVerifier`, and injects
 it into the real `CropSuiteAdapter`. Real scientific execution cannot start
-without this verifier. A5.4 does not persist the complete `source_sha256` map;
-durable full fingerprint evidence remains deferred to A6.
+without this verifier. A6 durably persists the complete verified source
+fingerprint tuple per crop. Historical outcomes with no child fingerprint rows
+hydrate as an empty tuple.
 
 Current durable trace output includes the CropSuiteLite identifier, opaque PoC execution
 reference, timestamps, elapsed time, preserved execution mode, parcel checksum,
-available crop-parameter and effective-configuration checksums, and the
-source-files-unchanged result. The environmental manifest is persisted separately
-by the evaluation aggregate. A durable engine commit/version, dependency
-versions, persisted full source-fingerprint evidence, broader evidence model, and
+available crop-parameter and effective-configuration checksums, ordered source
+fingerprints, and the source-files-unchanged result. The environmental manifest is
+persisted separately by the evaluation aggregate. The HTTP evidence endpoint
+projects only the ordered source SHA-256 values and never `source_reference`;
+Decision Support's finalized public contract is unchanged. `DatasetVersion.checksum`
+remains separate from these per-file CropSuiteLite SHA-256 values. A durable engine
+commit/version, dependency versions, broader evidence model, and
 retention policy remain deferred.
 
 ## Application orchestration and worker responsibilities

@@ -94,8 +94,26 @@ class SuitabilitySummary:
 
 
 @dataclass(frozen=True, slots=True)
+class ScientificSourceFingerprint:
+    """Opaque engine-reported scientific source identity and SHA-256."""
+
+    source_reference: str
+    sha256: str
+
+    def __post_init__(self) -> None:
+        if not self.source_reference or self.source_reference != self.source_reference.strip():
+            raise DomainValidationError(
+                "Scientific source reference must be non-empty and trimmed."
+            )
+        if _SHA256_PATTERN.fullmatch(self.sha256) is None:
+            raise DomainValidationError(
+                "Scientific source fingerprint must be lowercase hexadecimal SHA-256."
+            )
+
+
+@dataclass(frozen=True, slots=True)
 class ScientificTrace:
-    """Current reproducibility trace without engine-specific filesystem details."""
+    """Current reproducibility trace with opaque engine source evidence."""
 
     engine_identifier: str
     execution_reference: str
@@ -107,8 +125,10 @@ class ScientificTrace:
     parameter_sha256: str | None
     configuration_sha256: str | None
     source_files_unchanged: bool
+    source_fingerprints: tuple[ScientificSourceFingerprint, ...] = ()
 
     def __post_init__(self) -> None:
+        object.__setattr__(self, "source_fingerprints", tuple(self.source_fingerprints))
         if not self.engine_identifier or not self.execution_reference:
             raise DomainValidationError("Scientific trace identifiers must be non-empty.")
         if self.started_at.tzinfo is None or self.started_at.utcoffset() is None:
@@ -117,6 +137,13 @@ class ScientificTrace:
             raise DomainValidationError("Scientific trace finish time must be timezone-aware.")
         if self.elapsed_seconds < 0:
             raise DomainValidationError("Scientific trace elapsed time must be non-negative.")
+        source_references = [
+            fingerprint.source_reference for fingerprint in self.source_fingerprints
+        ]
+        if len(source_references) != len(set(source_references)):
+            raise DomainValidationError(
+                "Scientific trace cannot contain duplicate source references."
+            )
 
 
 @dataclass(frozen=True, slots=True)

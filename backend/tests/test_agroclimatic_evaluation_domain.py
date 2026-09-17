@@ -22,6 +22,8 @@ from via_backend.contexts.agroclimatic_evaluation.domain import (
     EvaluationStatus,
     InvalidEvaluationTransitionError,
     ParcelSnapshot,
+    ScientificSourceFingerprint,
+    ScientificTrace,
     SnapshotGeometry,
 )
 from via_backend.contexts.agroclimatic_evaluation.infrastructure import (
@@ -31,6 +33,63 @@ from via_backend.contexts.agroclimatic_evaluation.infrastructure import (
 NOW = datetime(2026, 9, 12, 15, 0, tzinfo=UTC)
 DATASET_ID = uuid4()
 DATASET_VERSION_ID = uuid4()
+
+
+def _scientific_trace(
+    source_fingerprints: tuple[ScientificSourceFingerprint, ...] = (),
+) -> ScientificTrace:
+    return ScientificTrace(
+        engine_identifier="CropSuiteLite",
+        execution_reference="opaque-run",
+        started_at=NOW,
+        finished_at=NOW,
+        elapsed_seconds=0.0,
+        execution_mode="sequential",
+        parcel_sha256="parcel-sha256",
+        parameter_sha256=None,
+        configuration_sha256=None,
+        source_files_unchanged=True,
+        source_fingerprints=source_fingerprints,
+    )
+
+
+def test_scientific_source_fingerprint_validates_opaque_reference_and_sha256() -> None:
+    fingerprint = ScientificSourceFingerprint("C:\\science\\soil.tif", "a" * 64)
+
+    assert fingerprint.source_reference == "C:\\science\\soil.tif"
+    assert fingerprint.sha256 == "a" * 64
+
+    with pytest.raises(DomainValidationError, match="reference"):
+        ScientificSourceFingerprint("", "a" * 64)
+    with pytest.raises(DomainValidationError, match="reference"):
+        ScientificSourceFingerprint(" /science/soil.tif ", "a" * 64)
+    with pytest.raises(DomainValidationError, match="SHA-256"):
+        ScientificSourceFingerprint("/science/soil.tif", "A" * 64)
+
+
+def test_scientific_trace_preserves_source_order_and_allows_duplicate_hashes() -> None:
+    fingerprints = (
+        ScientificSourceFingerprint("/science/z.tif", "a" * 64),
+        ScientificSourceFingerprint("/science/a.tif", "a" * 64),
+    )
+
+    trace = _scientific_trace(fingerprints)
+
+    assert trace.source_fingerprints == fingerprints
+
+
+def test_scientific_trace_rejects_duplicate_source_reference() -> None:
+    with pytest.raises(DomainValidationError, match="duplicate source references"):
+        _scientific_trace(
+            (
+                ScientificSourceFingerprint("/science/soil.tif", "a" * 64),
+                ScientificSourceFingerprint("/science/soil.tif", "b" * 64),
+            )
+        )
+
+
+def test_scientific_trace_allows_historical_empty_source_fingerprints() -> None:
+    assert _scientific_trace().source_fingerprints == ()
 
 
 def _polygon() -> dict:

@@ -230,6 +230,7 @@ class CropSuiteAdapter:
             )
             raise CropSuitabilityExecutionError(message) from error
 
+        source_fingerprints: tuple[ScientificSourceFingerprint, ...] = ()
         if self._input_integrity_verifier is not None:
             source_fingerprints = _parse_source_fingerprints(report)
             self._input_integrity_verifier.verify(
@@ -237,7 +238,11 @@ class CropSuiteAdapter:
                 source_fingerprints,
             )
 
-        result = _map_report(report, request.crop_id)
+        result = _map_report(
+            report,
+            request.crop_id,
+            source_fingerprints=source_fingerprints,
+        )
 
         if result.status is CropExecutionStatus.FAILED:
             return result
@@ -377,7 +382,12 @@ def _parse_source_fingerprints(
     return tuple(sorted(fingerprints, key=lambda item: item.source_reference))
 
 
-def _map_report(report: Mapping[str, Any], crop_id: str) -> CropSuitabilityResult:
+def _map_report(
+    report: Mapping[str, Any],
+    crop_id: str,
+    *,
+    source_fingerprints: tuple[ScientificSourceFingerprint, ...] = (),
+) -> CropSuitabilityResult:
     selected = _sequence(report, "selected_crops")
     crops = _sequence(report, "crops")
     if list(selected) != [crop_id]:
@@ -432,6 +442,7 @@ def _map_report(report: Mapping[str, Any], crop_id: str) -> CropSuitabilityResul
         parameter_sha256=_optional_string(crop, "parameter_sha256"),
         configuration_sha256=_optional_string(crop, "config_sha256"),
         source_files_unchanged=source_files_unchanged,
+        source_fingerprints=source_fingerprints,
     )
     return CropSuitabilityResult(crop_id, status, suitability, failure, trace)
 

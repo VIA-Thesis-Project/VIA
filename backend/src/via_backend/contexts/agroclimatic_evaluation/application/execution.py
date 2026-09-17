@@ -29,6 +29,9 @@ from ..domain.outcomes import (
     ScientificTrace,
     SuitabilitySummary,
 )
+from ..domain.outcomes import (
+    ScientificSourceFingerprint as DomainScientificSourceFingerprint,
+)
 from ..domain.repositories import EvaluationRepository
 from .commands import ExecuteEvaluation
 from .ports import (
@@ -291,6 +294,13 @@ def _to_outcome(
             parameter_sha256=trace.parameter_sha256,
             configuration_sha256=trace.configuration_sha256,
             source_files_unchanged=trace.source_files_unchanged,
+            source_fingerprints=tuple(
+                DomainScientificSourceFingerprint(
+                    source_reference=fingerprint.source_reference,
+                    sha256=fingerprint.sha256,
+                )
+                for fingerprint in trace.source_fingerprints
+            ),
         ),
         artifacts=tuple(
             ScientificArtifact(

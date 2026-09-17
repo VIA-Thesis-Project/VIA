@@ -22,6 +22,7 @@ from .outcomes import (
     ScientificArtifact,
     ScientificArtifactGrid,
     ScientificArtifactRole,
+    ScientificSourceFingerprint,
     ScientificTrace,
     SuitabilitySummary,
 )
@@ -45,6 +46,7 @@ __all__ = [
     "ScientificArtifact",
     "ScientificArtifactGrid",
     "ScientificArtifactRole",
+    "ScientificSourceFingerprint",
     "SnapshotGeometry",
     "SuitabilitySummary",
     "CommonSupport",

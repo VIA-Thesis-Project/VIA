@@ -24,6 +24,7 @@ from via_backend.contexts.agroclimatic_evaluation.domain import (
     Evaluation,
     EvaluationStatus,
     ParcelSnapshot,
+    ScientificSourceFingerprint,
     ScientificTrace,
     SnapshotGeometry,
     SuitabilitySummary,
@@ -154,6 +155,16 @@ def _outcome(crop_id: str, status: CropOutcomeStatus) -> CropOutcome:
             parameter_sha256=f"{crop_id}-parameter-hash",
             configuration_sha256="configuration-hash",
             source_files_unchanged=True,
+            source_fingerprints=(
+                ScientificSourceFingerprint(
+                    f"C:\\private\\science\\{crop_id}.tif",
+                    "a" * 64,
+                ),
+                ScientificSourceFingerprint(
+                    f"/tmp/engine/{crop_id}.cfg",
+                    "b" * 64,
+                ),
+            ),
         ),
     )
 
@@ -509,11 +520,42 @@ def test_evidence_exposes_only_current_safe_trace_subset() -> None:
         "parameter_sha256",
         "configuration_sha256",
         "source_files_unchanged",
+        "source_sha256",
     }
+    assert body["evidence"][0]["trace"]["source_sha256"] == ["a" * 64, "b" * 64]
     serialized = json.dumps(body).casefold()
     assert "execution_reference" not in serialized
     assert "failure_message" not in serialized
+    assert "source_reference" not in serialized
     assert "private" not in serialized
     assert "workspace" not in serialized
+    assert "tmp/engine" not in serialized
     assert "python" not in serialized
     assert "postgresql" not in serialized
+
+
+def test_evidence_serializes_historical_empty_source_hashes() -> None:
+    historical = _outcome("maize", CropOutcomeStatus.SUCCEEDED)
+    historical = replace(
+        historical,
+        trace=replace(historical.trace, source_fingerprints=()),
+    )
+    evaluation = _evaluation(
+        status=EvaluationStatus.SUCCEEDED,
+        outcomes=(
+            historical,
+            _outcome("potato", CropOutcomeStatus.SUCCEEDED),
+            _outcome("rice", CropOutcomeStatus.SUCCEEDED),
+        ),
+    )
+
+    response = asyncio.run(
+        _request(
+            _app_with(evaluation),
+            "GET",
+            f"/api/v1/evaluations/{evaluation.id}/evidence",
+        )
+    )
+
+    assert response.status_code == 200
+    assert response.json()["evidence"][0]["trace"]["source_sha256"] == []

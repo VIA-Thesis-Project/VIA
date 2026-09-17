@@ -173,6 +173,7 @@ class ScientificTraceResult:
     parameter_sha256: str | None
     configuration_sha256: str | None
     source_files_unchanged: bool
+    source_sha256: tuple[str, ...]
 
 
 @dataclass(frozen=True, slots=True)
@@ -209,6 +210,10 @@ class EvaluationEvidenceResult:
                         parameter_sha256=outcome.trace.parameter_sha256,
                         configuration_sha256=outcome.trace.configuration_sha256,
                         source_files_unchanged=outcome.trace.source_files_unchanged,
+                        source_sha256=tuple(
+                            fingerprint.sha256
+                            for fingerprint in outcome.trace.source_fingerprints
+                        ),
                     ),
                 )
                 for outcome in evaluation.outcomes

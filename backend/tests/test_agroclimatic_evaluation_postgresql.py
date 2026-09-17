@@ -12,7 +12,7 @@ from uuid import UUID, uuid4
 import pytest
 from alembic import command
 from alembic.config import Config
-from sqlalchemy import Engine, func, select, text
+from sqlalchemy import Engine, delete, func, select, text
 from sqlalchemy.exc import IntegrityError
 
 from database_test_support import require_test_database_url
@@ -36,15 +36,22 @@ from via_backend.contexts.agroclimatic_evaluation.domain import (
     ScientificArtifact,
     ScientificArtifactGrid,
     ScientificArtifactRole,
+    ScientificSourceFingerprint,
     ScientificTrace,
     SnapshotGeometry,
     SuitabilitySummary,
 )
+from via_backend.contexts.agroclimatic_evaluation.infrastructure import (
+    postgresql_repositories as repositories_module,
+)
 from via_backend.contexts.agroclimatic_evaluation.infrastructure.orm import (
+    CropOutcomeRecord,
     EvaluationCommonSupportRecord,
     EvaluationComparableCropRecord,
     EvaluationCropRecord,
     EvaluationRecord,
+    ScientificArtifactRecord,
+    ScientificSourceFingerprintRecord,
 )
 from via_backend.contexts.agroclimatic_evaluation.infrastructure.postgresql_repositories import (
     PostgreSQLEvaluationRepository,
@@ -356,6 +363,10 @@ def _succeeded_outcome(crop_id: str = "rice") -> CropOutcome:
             parameter_sha256="parameter-sha256",
             configuration_sha256="configuration-sha256",
             source_files_unchanged=True,
+            source_fingerprints=(
+                ScientificSourceFingerprint("/science/z-source.tif", "a" * 64),
+                ScientificSourceFingerprint("/science/a-source.tif", "a" * 64),
+            ),
         ),
         artifacts=(_scientific_artifact(),),
     )
@@ -406,6 +417,169 @@ def test_crop_outcome_and_trace_fields_round_trip(
     assert restored.outcomes == (outcome,)
     assert restored.outcomes[0].suitability is not None
     assert restored.outcomes[0].suitability.mean == 0.0
+    assert restored.outcomes[0].trace.source_fingerprints == outcome.trace.source_fingerprints
+
+    with sessions() as session:
+        rows = tuple(
+            session.scalars(
+                select(ScientificSourceFingerprintRecord)
+                .where(
+                    ScientificSourceFingerprintRecord.evaluation_id == evaluation.id,
+                    ScientificSourceFingerprintRecord.crop_id == outcome.crop_id,
+                )
+                .order_by(ScientificSourceFingerprintRecord.position)
+            )
+        )
+    assert [(row.position, row.source_reference, row.sha256) for row in rows] == [
+        (0, "/science/z-source.tif", "a" * 64),
+        (1, "/science/a-source.tif", "a" * 64),
+    ]
+
+
+def test_source_fingerprints_remain_owned_and_ordered_per_crop(
+    database: tuple[Engine, SessionFactory],
+) -> None:
+    _, sessions = database
+    evaluation = _evaluation()
+    repository = PostgreSQLEvaluationRepository(sessions)
+    repository.add(evaluation)
+    preparing = evaluation.prepare()
+    repository.save(preparing, expected_status=EvaluationStatus.QUEUED)
+    _start_running(repository, preparing)
+
+    rice = replace(
+        _succeeded_outcome("rice"),
+        trace=replace(
+            _succeeded_outcome("rice").trace,
+            source_fingerprints=(
+                ScientificSourceFingerprint("/rice/z.tif", "1" * 64),
+                ScientificSourceFingerprint("/rice/a.tif", "2" * 64),
+            ),
+        ),
+    )
+    maize = replace(
+        _succeeded_outcome("maize"),
+        trace=replace(
+            _succeeded_outcome("maize").trace,
+            source_fingerprints=(
+                ScientificSourceFingerprint("/maize/only.tif", "3" * 64),
+            ),
+        ),
+    )
+    repository.add_outcome(evaluation.id, rice)
+    repository.add_outcome(evaluation.id, maize)
+
+    restored = repository.get(evaluation.id)
+
+    assert restored is not None
+    assert restored.outcomes[0].trace.source_fingerprints == rice.trace.source_fingerprints
+    assert restored.outcomes[1].trace.source_fingerprints == maize.trace.source_fingerprints
+
+
+def test_historical_crop_outcome_without_source_rows_hydrates_empty_tuple(
+    database: tuple[Engine, SessionFactory],
+) -> None:
+    _, sessions = database
+    evaluation = _evaluation()
+    repository = PostgreSQLEvaluationRepository(sessions)
+    repository.add(evaluation)
+    preparing = evaluation.prepare()
+    repository.save(preparing, expected_status=EvaluationStatus.QUEUED)
+    _start_running(repository, preparing)
+    historical = _succeeded_outcome()
+    historical = replace(
+        historical,
+        trace=replace(historical.trace, source_fingerprints=()),
+    )
+
+    repository.add_outcome(evaluation.id, historical)
+    restored = repository.get(evaluation.id)
+
+    assert restored is not None
+    assert restored.outcomes[0].trace.source_fingerprints == ()
+
+
+def test_deleting_crop_outcome_cascades_source_fingerprints_and_artifacts(
+    database: tuple[Engine, SessionFactory],
+) -> None:
+    _, sessions = database
+    evaluation = _evaluation()
+    repository = PostgreSQLEvaluationRepository(sessions)
+    repository.add(evaluation)
+    preparing = evaluation.prepare()
+    repository.save(preparing, expected_status=EvaluationStatus.QUEUED)
+    _start_running(repository, preparing)
+    outcome = _succeeded_outcome()
+    repository.add_outcome(evaluation.id, outcome)
+
+    with sessions.begin() as session:
+        session.execute(
+            delete(CropOutcomeRecord).where(
+                CropOutcomeRecord.evaluation_id == evaluation.id,
+                CropOutcomeRecord.crop_id == outcome.crop_id,
+            )
+        )
+
+    with sessions() as session:
+        fingerprint_count = session.scalar(
+            select(func.count())
+            .select_from(ScientificSourceFingerprintRecord)
+            .where(ScientificSourceFingerprintRecord.evaluation_id == evaluation.id)
+        )
+        artifact_count = session.scalar(
+            select(func.count())
+            .select_from(ScientificArtifactRecord)
+            .where(ScientificArtifactRecord.evaluation_id == evaluation.id)
+        )
+
+    assert fingerprint_count == 0
+    assert artifact_count == 0
+
+
+def test_invalid_source_fingerprint_row_rolls_back_complete_outcome_transaction(
+    database: tuple[Engine, SessionFactory],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _, sessions = database
+    evaluation = _evaluation()
+    repository = PostgreSQLEvaluationRepository(sessions)
+    repository.add(evaluation)
+    preparing = evaluation.prepare()
+    repository.save(preparing, expected_status=EvaluationStatus.QUEUED)
+    _start_running(repository, preparing)
+    outcome = _succeeded_outcome()
+    original = repositories_module._source_fingerprint_record
+
+    def invalid_record(*args, **kwargs):
+        record = original(*args, **kwargs)
+        record.sha256 = "INVALID"
+        return record
+
+    monkeypatch.setattr(repositories_module, "_source_fingerprint_record", invalid_record)
+
+    with pytest.raises(EvaluationConflictError):
+        repository.add_outcome(evaluation.id, outcome)
+
+    with sessions() as session:
+        outcome_count = session.scalar(
+            select(func.count())
+            .select_from(CropOutcomeRecord)
+            .where(CropOutcomeRecord.evaluation_id == evaluation.id)
+        )
+        fingerprint_count = session.scalar(
+            select(func.count())
+            .select_from(ScientificSourceFingerprintRecord)
+            .where(ScientificSourceFingerprintRecord.evaluation_id == evaluation.id)
+        )
+        artifact_count = session.scalar(
+            select(func.count())
+            .select_from(ScientificArtifactRecord)
+            .where(ScientificArtifactRecord.evaluation_id == evaluation.id)
+        )
+
+    assert outcome_count == 0
+    assert fingerprint_count == 0
+    assert artifact_count == 0
 
 
 def test_duplicate_crop_outcome_is_rejected_by_database(
