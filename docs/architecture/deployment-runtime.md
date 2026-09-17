@@ -98,22 +98,65 @@ not production runtime variables.
 See `backend/.env.example` for local development and
 `backend/.env.production.example` for portable production path examples.
 
-## Deferred B2 container concerns
+## B2 reproducible Linux container image
 
-B2 must prove the complete Linux packaging/runtime rather than assuming the VIA
-API dependency set is sufficient for scientific execution:
+The root [`Dockerfile`](../../Dockerfile) packages the VIA backend and
+CropSuiteLite into one provider-neutral Linux image based on
+`python:3.11-slim-bookworm`. Both VIA and CropSuiteLite use the same interpreter,
+`/usr/local/bin/python`. No additional Debian runtime package is installed in B2;
+the selected scientific wheels must prove their Linux runtime requirements during
+the real image build and smoke verification.
 
-- `backend` requires Python 3.11 or newer.
-- CropSuiteLite has its own `requirements.txt`.
-- The scientific stack includes rasterio, pyproj, shapely, cartopy, netCDF4,
-  scipy, numba, xarray, rio-cogeo, dask, and related dependencies.
-- CropSuiteLite requirements currently include `tk`.
-- The container build must prove Linux installation and importability of the
-  scientific stack.
-- `VIA_CROPSUITE_PYTHON` must identify the interpreter containing the complete
-  CropSuiteLite scientific dependency set.
-- One image with two process types is acceptable only when that image contains
-  both VIA and the complete scientific runtime.
+CropSuiteLite's source requirements are not rewritten. Repository inspection found
+no `tkinter`, `from tkinter`, or `import tk` usage in the VIA scientific path
+(`src.multicrop` and the engine code it launches). The `tk` line is therefore a
+non-portable packaging artifact for this runtime and only that exact line is
+excluded from the container installation. No other scientific dependency or
+version is changed.
 
-B1 does not alter CropSuiteLite requirements, artifact-storage implementation,
-worker lifecycle semantics, or migration behavior.
+The build runs
+[`backend/scripts/verify_container_runtime.py`](../../backend/scripts/verify_container_runtime.py)
+as the final non-root `via` user and fails unless all of the following are true:
+
+- the build is running on Linux with Python 3.11 or newer;
+- `VIA_CROPSUITE_PYTHON` is the interpreter executing the verification;
+- `via_backend` and the worker module import successfully;
+- both `via-backend` and `via-worker` are installed on `PATH`;
+- the scientific stack imports successfully, including rasterio, pyproj,
+  shapely, cartopy, netCDF4, scipy, numba, xarray, rio-cogeo, dask,
+  scikit-image, and related dependencies;
+- `python -m pip check` succeeds;
+- the expected CropSuiteLite entrypoint/source files exist and `src.multicrop`
+  imports using the same scientific interpreter;
+- the runtime UID is not root;
+- `/opt/via/CropSuiteLite` is not writable by the runtime user; and
+- `/var/lib/via/workspace` and `/var/lib/via/artifacts` are writable by that user.
+
+The image intentionally defines no VIA `CMD` or `ENTRYPOINT`. Production API and
+worker commands and orchestration belong to B3. Schema migration remains a
+separate release operation and is not run by image startup.
+
+Runtime processes use the non-root `via` user. `/opt/via/CropSuiteLite` and the
+backend code remain image-owned read-only inputs. `/var/lib/via/workspace` is the
+disposable CropSuite execution workspace and `/var/lib/via/artifacts` is the
+writable artifact path; production still has to place the artifact path on
+durable storage. `VIA_CROPSUITE_INPUT_BINDINGS`, scientific datasets, and any
+optional source config/catalog remain deployment-provided read-only inputs and
+are intentionally not baked into the image.
+
+Build from the repository root so both `backend/` and `CropSuiteLite/` are in
+the Docker build context:
+
+```text
+docker build -t via:b2 .
+docker run --rm via:b2 python /opt/via/backend/scripts/verify_container_runtime.py --require-linux
+docker run --rm via:b2 python --version
+docker run --rm via:b2 python -m pip check
+docker run --rm via:b2 via-worker --help
+```
+
+B2 does not choose a hosting provider, add scientific datasets to the image,
+alter CropSuiteLite scientific requirements or behavior, change artifact-storage
+semantics, or change worker lifecycle and migration behavior. B3 still owns
+production process commands/orchestration, and B5 still owns durable artifact
+storage mounting/configuration.
