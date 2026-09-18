@@ -732,9 +732,9 @@
     "semantic_hash": "f417bdcb4f71006284ab89e8ea3a5327"
   },
   "backend/pyproject.toml": {
-    "mtime": 1789756368.249581,
-    "seen": 1789758727.3573134,
-    "ast_hash": "41e52e77a002089ca8a5a16f6192989c",
+    "mtime": 1789774926.053326,
+    "seen": 1789775611.4200673,
+    "ast_hash": "1fc5384fee03956b31580eaf81acad49",
     "semantic_hash": ""
   },
   "backend/src/via_backend/__init__.py": {
@@ -1056,9 +1056,9 @@
     "semantic_hash": "147774db32a5f22008dac63554067cac"
   },
   "backend/src/via_backend/config.py": {
-    "mtime": 1789756368.2485976,
-    "seen": 1789758727.3573203,
-    "ast_hash": "0885d14a68a5cdcef86cc11344563cbe",
+    "mtime": 1789774926.0491452,
+    "seen": 1789775611.4200811,
+    "ast_hash": "40e81aa820bc7b0f0bbe1b4e688b3aa4",
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/farm_management/infrastructure/database.py": {
@@ -1080,9 +1080,9 @@
     "semantic_hash": ""
   },
   "backend/tests/test_config.py": {
-    "mtime": 1789758635.6416867,
-    "seen": 1789758727.3574307,
-    "ast_hash": "c30e613e139a1d094fc42928e73005ef",
+    "mtime": 1789775492.1904254,
+    "seen": 1789775611.4203496,
+    "ast_hash": "a43ca393aaee2a6ed60c0899fc6c86d6",
     "semantic_hash": ""
   },
   "backend/tests/test_farm_management_postgresql.py": {
@@ -1890,9 +1890,9 @@
     "semantic_hash": ""
   },
   "backend/src/via_backend/app.py": {
-    "mtime": 1789757171.7738543,
-    "seen": 1789758727.3573194,
-    "ast_hash": "9f0a610ccbb8423edd2e469aa3dd7ad0",
+    "mtime": 1789774926.0507123,
+    "seen": 1789775611.4200797,
+    "ast_hash": "f825817fe3cb715e58502ccb82115760",
     "semantic_hash": ""
   },
   "backend/tests/test_api_host.py": {
@@ -2070,9 +2070,9 @@
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/decision_support/infrastructure/knowledge_manifest.py": {
-    "mtime": 1789755016.9825406,
-    "seen": 1789758727.3573663,
-    "ast_hash": "f5144a1dc7fc8656322fb01266abd0ba",
+    "mtime": 1789774926.0491452,
+    "seen": 1789775611.420168,
+    "ast_hash": "e246b81f3177e95a6de174546c7a1725",
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/decision_support/infrastructure/openai_knowledge.py": {
@@ -2100,9 +2100,9 @@
     "semantic_hash": ""
   },
   "backend/tests/test_agronomic_knowledge.py": {
-    "mtime": 1789760874.5383756,
-    "seen": 1789760994.5092447,
-    "ast_hash": "dd5b945c41eacded775bc8b757aefa2b",
+    "mtime": 1789775492.1894195,
+    "seen": 1789775611.4203374,
+    "ast_hash": "076bdccaabef7bfc0397be164debcfa0",
     "semantic_hash": ""
   },
   "backend/tests/test_agronomic_knowledge_http.py": {
@@ -2118,20 +2118,32 @@
     "semantic_hash": ""
   },
   "knowledge/README.md": {
-    "mtime": 1789756898.032458,
-    "seen": 1789758727.357579,
-    "ast_hash": "b9c96e9c9818c7627cd50edce1521ebd",
+    "mtime": 1789774926.0553255,
+    "seen": 1789775611.4206948,
+    "ast_hash": "dcea444181c09b4ba9ba28a927b972e8",
     "semantic_hash": ""
   },
-  "knowledge/corpus.yaml": {
-    "mtime": 1789756898.02798,
-    "seen": 1789758727.3575795,
-    "ast_hash": "2abc1cee1a1b48fc999338742d4c563b",
+  "backend/src/via_backend/resources/__init__.py": {
+    "mtime": 1789774926.0563235,
+    "seen": 1789775611.4203062,
+    "ast_hash": "f9a3fa85f2b4325fec2919774dea921f",
     "semantic_hash": ""
   },
-  "knowledge/taxonomy.yaml": {
-    "mtime": 1789757886.8270998,
-    "seen": 1789758727.3575802,
+  "backend/src/via_backend/resources/knowledge/__init__.py": {
+    "mtime": 1789774926.0583332,
+    "seen": 1789775611.420309,
+    "ast_hash": "4139baf8f67afcde6df1842f288fd82b",
+    "semantic_hash": ""
+  },
+  "backend/src/via_backend/resources/knowledge/corpus.yaml": {
+    "mtime": 1789774926.061334,
+    "seen": 1789775611.4205785,
+    "ast_hash": "aecfd59cc0c6003b16e036f59022b278",
+    "semantic_hash": ""
+  },
+  "backend/src/via_backend/resources/knowledge/taxonomy.yaml": {
+    "mtime": 1789774926.0666907,
+    "seen": 1789775611.4205801,
     "ast_hash": "915dd7f7863cc1036da26bcdf26ddba4",
     "semantic_hash": ""
   }
