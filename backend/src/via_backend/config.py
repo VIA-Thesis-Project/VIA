@@ -10,10 +10,6 @@ from typing import Literal, cast
 
 RepositoryBackend = Literal["memory", "postgresql"]
 
-_REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
-_DEFAULT_KNOWLEDGE_MANIFEST = _REPOSITORY_ROOT / "knowledge" / "corpus.yaml"
-_DEFAULT_KNOWLEDGE_TAXONOMY = _REPOSITORY_ROOT / "knowledge" / "taxonomy.yaml"
-
 
 @dataclass(frozen=True, slots=True)
 class Settings:
@@ -24,8 +20,8 @@ class Settings:
     agroclimatic_evaluation_repository: RepositoryBackend = "memory"
     database_url: str | None = None
     knowledge_source_dir: Path | None = None
-    knowledge_manifest: Path = _DEFAULT_KNOWLEDGE_MANIFEST
-    knowledge_taxonomy: Path = _DEFAULT_KNOWLEDGE_TAXONOMY
+    knowledge_manifest: Path | None = None
+    knowledge_taxonomy: Path | None = None
     openai_api_key: str | None = None
     openai_embedding_model: str = "text-embedding-3-small"
     openai_embedding_dimensions: int = 1536
@@ -111,11 +107,11 @@ class Settings:
             ),
             database_url=database_url,
             knowledge_source_dir=_optional_path("VIA_KNOWLEDGE_SOURCE_DIR"),
-            knowledge_manifest=Path(
-                os.getenv("VIA_KNOWLEDGE_MANIFEST", str(_DEFAULT_KNOWLEDGE_MANIFEST))
+            knowledge_manifest=_optional_path_alias(
+                "VIA_KNOWLEDGE_MANIFEST_PATH", "VIA_KNOWLEDGE_MANIFEST"
             ),
-            knowledge_taxonomy=Path(
-                os.getenv("VIA_KNOWLEDGE_TAXONOMY", str(_DEFAULT_KNOWLEDGE_TAXONOMY))
+            knowledge_taxonomy=_optional_path_alias(
+                "VIA_KNOWLEDGE_TAXONOMY_PATH", "VIA_KNOWLEDGE_TAXONOMY"
             ),
             openai_api_key=os.getenv("VIA_OPENAI_API_KEY") or None,
             openai_embedding_model=os.getenv(
@@ -255,6 +251,14 @@ def _is_same_or_within(path: Path, parent: Path) -> bool:
 def _optional_path(name: str) -> Path | None:
     value = os.getenv(name)
     return Path(value) if value else None
+
+
+def _optional_path_alias(*names: str) -> Path | None:
+    for name in names:
+        value = os.getenv(name)
+        if value:
+            return Path(value)
+    return None
 
 
 def _environment_float(name: str, default: float) -> float:

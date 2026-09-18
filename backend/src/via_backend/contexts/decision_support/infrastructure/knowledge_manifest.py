@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from importlib.resources import files
 from pathlib import Path
 from typing import Any
 
@@ -16,12 +17,16 @@ class ManifestValidationError(ValueError):
 
 
 class YamlFilesystemKnowledgeSourceCatalog:
-    def __init__(self, manifest_path: Path, source_dir: Path) -> None:
+    def __init__(
+        self,
+        manifest_path: Path | None = None,
+        source_dir: Path | None = None,
+    ) -> None:
         self._manifest_path = manifest_path
         self._source_dir = source_dir
 
     def load_manifest(self) -> CorpusManifest:
-        data = _load_yaml_mapping(self._manifest_path)
+        data = _load_yaml_mapping(self._manifest_path, "corpus.yaml")
         raw_sources = data.get("sources")
         if not isinstance(raw_sources, list) or not raw_sources:
             raise ManifestValidationError("corpus.yaml must contain a non-empty sources list.")
@@ -35,6 +40,10 @@ class YamlFilesystemKnowledgeSourceCatalog:
         )
 
     def read_source(self, source: CorpusSource) -> bytes:
+        if self._source_dir is None:
+            raise RuntimeError(
+                "VIA_KNOWLEDGE_SOURCE_DIR is required to read external knowledge sources."
+            )
         relative = Path(source.relative_path)
         if relative.is_absolute() or ".." in relative.parts:
             raise ManifestValidationError("Knowledge relative_path must stay below source dir.")
@@ -47,8 +56,8 @@ class YamlFilesystemKnowledgeSourceCatalog:
         return resolved.read_bytes()
 
 
-def load_taxonomy(path: Path) -> Taxonomy:
-    data = _load_yaml_mapping(path)
+def load_taxonomy(path: Path | None = None) -> Taxonomy:
+    data = _load_yaml_mapping(path, "taxonomy.yaml")
     return Taxonomy(
         version=_required_string(data, "taxonomy_version"),
         factors=_term_mapping(data.get("factors"), "factors"),
@@ -90,10 +99,17 @@ def _parse_source(value: object) -> CorpusSource:
     )
 
 
-def _load_yaml_mapping(path: Path) -> dict[str, Any]:
-    loaded = yaml.safe_load(path.read_text(encoding="utf-8"))
+def _load_yaml_mapping(path: Path | None, default_resource: str) -> dict[str, Any]:
+    if path is None:
+        resource = files("via_backend.resources.knowledge").joinpath(default_resource)
+        text = resource.read_text(encoding="utf-8")
+        source_name = resource.name
+    else:
+        text = path.read_text(encoding="utf-8")
+        source_name = path.name
+    loaded = yaml.safe_load(text)
     if not isinstance(loaded, dict):
-        raise ManifestValidationError(f"{path.name} must contain a YAML mapping.")
+        raise ManifestValidationError(f"{source_name} must contain a YAML mapping.")
     return loaded
 
 

@@ -136,10 +136,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         prefix="/api/v1",
     )
     if sessions is not None:
-        source_dir = settings.knowledge_source_dir or settings.knowledge_manifest.parent
         knowledge_catalog = YamlFilesystemKnowledgeSourceCatalog(
             settings.knowledge_manifest,
-            source_dir,
+            settings.knowledge_source_dir,
         )
         corpus_manifest = knowledge_catalog.load_manifest()
         taxonomy = load_taxonomy(settings.knowledge_taxonomy)

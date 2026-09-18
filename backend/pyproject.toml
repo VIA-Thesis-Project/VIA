@@ -38,6 +38,9 @@ via-backend = "via_backend.__main__:main"
 [tool.setuptools.packages.find]
 where = ["src"]
 
+[tool.setuptools.package-data]
+"via_backend.resources.knowledge" = ["*.yaml"]
+
 [tool.pytest.ini_options]
 addopts = "-q"
 markers = [

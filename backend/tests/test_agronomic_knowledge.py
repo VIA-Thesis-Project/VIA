@@ -455,8 +455,18 @@ sources:
         catalog.read_source(catalog.load_manifest().sources[0])
 
 
+def test_packaged_manifest_loads_without_external_source_directory() -> None:
+    catalog = YamlFilesystemKnowledgeSourceCatalog()
+    manifest = catalog.load_manifest()
+
+    assert manifest.corpus_version == "2026-09-18"
+    assert manifest.sources
+    with pytest.raises(RuntimeError, match="VIA_KNOWLEDGE_SOURCE_DIR"):
+        catalog.read_source(manifest.sources[0])
+
+
 def test_repo_taxonomy_covers_known_and_future_factors() -> None:
-    taxonomy = load_taxonomy(ROOT / "knowledge" / "taxonomy.yaml")
+    taxonomy = load_taxonomy()
     assert "déficit hídrico" in taxonomy.expand_factor("precipitation")
     assert "profundidad efectiva" in taxonomy.expand_factor("parameter_soildepth")
     assert "maíz amarillo duro" in taxonomy.expand_crop("maize")
