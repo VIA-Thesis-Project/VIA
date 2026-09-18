@@ -94,6 +94,8 @@ if collect_artifact_metadata:
             stripped = line.strip()
             if not stripped:
                 continue
+            if stripped.casefold() == "value - limiting factor":
+                continue
             parts = stripped.split(" - ", 1)
             if len(parts) != 2:
                 warnings.append(

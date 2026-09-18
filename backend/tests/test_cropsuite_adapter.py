@@ -786,9 +786,10 @@ def _write_limitation_engine(
     values: list[list[int]],
     areas: list[list[float]],
     info_lines: tuple[str, ...] = (
+        "value - limiting factor",
         "0 - temperature",
         "1 - precipitation",
-        "2 - crop failure frequency",
+        "2 - climate variability",
         "3 - photoperiod",
         "4 - soil ph",
     ),
@@ -927,6 +928,7 @@ def test_real_execution_extracts_same_run_limiting_factor_evidence(tmp_path: Pat
 
     assert result.status is CropExecutionStatus.SUCCEEDED
     assert result.limitation_evidence.availability is LimitationEvidenceAvailability.AVAILABLE
+    assert result.limitation_evidence.warnings == ()
     factors = {factor.raw_code: factor for factor in result.limitation_evidence.factors}
     assert {code: factor.factor_code for code, factor in factors.items()} == {
         0: "temperature",
@@ -949,6 +951,84 @@ def test_real_execution_extracts_same_run_limiting_factor_evidence(tmp_path: Pat
         ScientificArtifactRole.CROP_SUITABILITY,
         ScientificArtifactRole.CROP_LIMITING_FACTOR,
     }
+
+
+def test_real_inf_header_does_not_warn_for_fixed_precipitation_code(tmp_path: Path) -> None:
+    request = _request()
+    _write_limitation_engine(
+        tmp_path / "engine",
+        values=[[1]],
+        areas=[[25.0]],
+        info_lines=(
+            "value - limiting factor",
+            "0 - temperature",
+            "1 - precipitation",
+            "2 - climate variability",
+            "3 - photoperiod",
+        ),
+    )
+
+    result = _real_limitation_adapter(tmp_path, request).evaluate(request)
+
+    evidence = result.limitation_evidence
+    assert evidence.availability is LimitationEvidenceAvailability.AVAILABLE
+    assert evidence.reason is None
+    assert evidence.warnings == ()
+    assert len(evidence.factors) == 1
+    assert evidence.factors[0].raw_code == 1
+    assert evidence.factors[0].factor_code == "precipitation"
+
+
+def test_real_inf_dynamic_code_is_derived_from_same_run_mapping(tmp_path: Path) -> None:
+    request = _request()
+    _write_limitation_engine(
+        tmp_path / "engine",
+        values=[[12]],
+        areas=[[25.0]],
+        info_lines=(
+            "value - limiting factor",
+            "0 - temperature",
+            "1 - precipitation",
+            "2 - climate variability",
+            "3 - photoperiod",
+            "12 - soildepth",
+        ),
+    )
+
+    result = _real_limitation_adapter(tmp_path, request).evaluate(request)
+
+    evidence = result.limitation_evidence
+    assert evidence.availability is LimitationEvidenceAvailability.AVAILABLE
+    assert evidence.reason is None
+    assert evidence.warnings == ()
+    assert len(evidence.factors) == 1
+    assert evidence.factors[0].raw_code == 12
+    assert evidence.factors[0].factor_code == "parameter_soildepth"
+    assert evidence.factors[0].label == "soildepth"
+
+
+def test_real_inf_invalid_mapping_code_remains_a_real_warning(tmp_path: Path) -> None:
+    request = _request()
+    _write_limitation_engine(
+        tmp_path / "engine",
+        values=[[1]],
+        areas=[[25.0]],
+        info_lines=(
+            "value - limiting factor",
+            "0 - temperature",
+            "1 - precipitation",
+            "2 - climate variability",
+            "3 - photoperiod",
+            "invalid - soildepth",
+        ),
+    )
+
+    result = _real_limitation_adapter(tmp_path, request).evaluate(request)
+
+    evidence = result.limitation_evidence
+    assert evidence.availability is LimitationEvidenceAvailability.PARTIAL
+    assert evidence.reason == "limiting_factor_evidence_warnings"
+    assert evidence.warnings == ("limiting_factor_inf_invalid_code:6",)
 
 
 def test_real_execution_allows_tied_dominant_limiting_factors(tmp_path: Path) -> None:
