@@ -16,7 +16,7 @@ from via_backend.contexts.agroclimatic_evaluation.application import (
     ResourceConflictError,
     WorkerRunSummary,
 )
-from via_backend.contexts.agroclimatic_evaluation.domain import EvaluationStatus
+from via_backend.contexts.agroclimatic_evaluation.domain import EvaluationStatus, WaterRegime
 
 
 def test_shutdown_handler_only_requests_cooperative_stop(
@@ -109,6 +109,9 @@ def test_active_cli_emits_only_safe_stable_fields(
         created_at=datetime(2026, 9, 16, 18, 0, tzinfo=UTC),
         requested_crop_count=3,
         completed_crop_count=1,
+        requested_water_regimes=(WaterRegime.RAINFED, WaterRegime.IRRIGATED),
+        requested_execution_count=6,
+        completed_execution_count=1,
     )
     observed_limits: list[int] = []
 
@@ -129,6 +132,9 @@ def test_active_cli_emits_only_safe_stable_fields(
         "created_at": "2026-09-16T18:00:00+00:00",
         "requested_crop_count": 3,
         "completed_crop_count": 1,
+        "requested_water_regimes": ["rainfed", "irrigated"],
+        "requested_execution_count": 6,
+        "completed_execution_count": 1,
     }
     assert "secret-password" not in output
     assert "source_reference" not in output

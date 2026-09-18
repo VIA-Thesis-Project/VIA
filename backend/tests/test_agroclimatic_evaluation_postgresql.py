@@ -42,6 +42,7 @@ from via_backend.contexts.agroclimatic_evaluation.domain import (
     ScientificTrace,
     SnapshotGeometry,
     SuitabilitySummary,
+    WaterRegime,
 )
 from via_backend.contexts.agroclimatic_evaluation.infrastructure import (
     postgresql_repositories as repositories_module,
@@ -180,6 +181,7 @@ def _evaluation(
     geometry: dict | None = None,
     *,
     references: tuple[EnvironmentalInputReference, ...] | None = None,
+    water_regimes: tuple[WaterRegime, ...] = (WaterRegime.RAINFED,),
 ) -> Evaluation:
     references = _references() if references is None else references
     return Evaluation(
@@ -196,6 +198,7 @@ def _evaluation(
         status=EvaluationStatus.QUEUED,
         created_at=NOW,
         environmental_input_references=references,
+        requested_water_regimes=water_regimes,
     )
 
 
@@ -240,8 +243,8 @@ def _persist_in_status(
         return running
 
     current = running
-    for crop_id in current.requested_crops:
-        outcome = _succeeded_outcome(crop_id)
+    for crop_id, water_regime in current.execution_matrix:
+        outcome = _succeeded_outcome(crop_id, water_regime=water_regime)
         repository.add_outcome(current.id, outcome)
         current = current.record_outcome(outcome)
 
@@ -250,7 +253,22 @@ def _persist_in_status(
     if status is EvaluationStatus.SUMMARIZING:
         return summarizing
 
-    succeeded = summarizing.succeed()
+    current_summary = summarizing
+    for water_regime in evaluation.requested_water_regimes:
+        current_summary = current_summary.record_common_support(
+            CommonSupport(
+                status=CommonSupportStatus.COMPARABLE,
+                method="area_weighted_mean_on_common_valid_cells",
+                area_crs="EPSG:6933",
+                parcel_area_m2=100.0,
+                common_valid_area_m2=100.0,
+                common_coverage_fraction=1.0,
+                eligible_crops=evaluation.requested_crops,
+                excluded_without_coverage=(),
+            ),
+            water_regime=water_regime,
+        )
+    succeeded = current_summary.succeed()
     repository.save(succeeded, expected_status=EvaluationStatus.SUMMARIZING)
     return succeeded
 
@@ -383,7 +401,11 @@ def test_evaluation_schema_has_no_cross_context_foreign_keys(
     assert referenced_schemas <= {"agroclimatic_evaluation"}
 
 
-def _succeeded_outcome(crop_id: str = "rice") -> CropOutcome:
+def _succeeded_outcome(
+    crop_id: str = "rice",
+    *,
+    water_regime: WaterRegime = WaterRegime.RAINFED,
+) -> CropOutcome:
     return CropOutcome(
         crop_id=crop_id,
         status=CropOutcomeStatus.SUCCEEDED,
@@ -413,15 +435,19 @@ def _succeeded_outcome(crop_id: str = "rice") -> CropOutcome:
                 ScientificSourceFingerprint("/science/a-source.tif", "a" * 64),
             ),
         ),
-        artifacts=(_scientific_artifact(),),
+        artifacts=(_scientific_artifact(water_regime=water_regime),),
+        water_regime=water_regime,
     )
 
-def _scientific_artifact() -> ScientificArtifact:
+def _scientific_artifact(
+    *,
+    water_regime: WaterRegime = WaterRegime.RAINFED,
+) -> ScientificArtifact:
     return ScientificArtifact(
         role=ScientificArtifactRole.CROP_SUITABILITY,
         storage_reference=(
             "evaluations/00000000-0000-0000-0000-000000000001/"
-            "crops/maize/crop_suitability.tif"
+            f"scenarios/{water_regime.value}/crops/maize/crop_suitability.tif"
         ),
         sha256="a" * 64,
         media_type="image/tiff",
@@ -642,6 +668,35 @@ def test_duplicate_crop_outcome_is_rejected_by_database(
 
     with pytest.raises(EvaluationConflictError):
         repository.add_outcome(evaluation.id, outcome)
+
+
+def test_crop_outcome_identity_includes_water_regime(
+    database: tuple[Engine, SessionFactory],
+) -> None:
+    _, sessions = database
+    evaluation = _evaluation(
+        water_regimes=(WaterRegime.RAINFED, WaterRegime.IRRIGATED),
+    )
+    repository = PostgreSQLEvaluationRepository(sessions)
+    repository.add(evaluation)
+    preparing = evaluation.prepare()
+    repository.save(preparing, expected_status=EvaluationStatus.QUEUED)
+    _start_running(repository, preparing)
+    rainfed = _succeeded_outcome("rice", water_regime=WaterRegime.RAINFED)
+    irrigated = _succeeded_outcome("rice", water_regime=WaterRegime.IRRIGATED)
+
+    repository.add_outcome(evaluation.id, rainfed)
+    repository.add_outcome(evaluation.id, irrigated)
+
+    restored = repository.get(evaluation.id)
+    assert restored is not None
+    assert [(outcome.crop_id, outcome.water_regime) for outcome in restored.outcomes] == [
+        ("rice", WaterRegime.RAINFED),
+        ("rice", WaterRegime.IRRIGATED),
+    ]
+
+    with pytest.raises(EvaluationConflictError):
+        repository.add_outcome(evaluation.id, irrigated)
 
 
 def test_queued_discovery_filters_orders_and_limits(
@@ -1053,9 +1108,21 @@ def test_common_support_float_overshoot_is_normalized_before_persistence(
         ).one()
 
     assert support.common_valid_area_m2 == parcel_area
-    assert persisted.parcel_area_m2 == parcel_area
-    assert persisted.common_valid_area_m2 == parcel_area
-    assert persisted.common_coverage_fraction == 1.0
+    assert persisted.parcel_area_m2 == pytest.approx(
+        parcel_area,
+        rel=0,
+        abs=1e-9,
+    )
+    assert persisted.common_valid_area_m2 == pytest.approx(
+        parcel_area,
+        rel=0,
+        abs=1e-9,
+    )
+    assert persisted.common_coverage_fraction == pytest.approx(
+        1.0,
+        rel=0,
+        abs=1e-12,
+    )
 
 
 def test_legacy_common_support_without_comparable_crops_still_round_trips(
@@ -1144,6 +1211,7 @@ def test_comparison_persistence_rolls_back_final_state_atomically_on_conflict(
         session.add(
             EvaluationComparableCropRecord(
                 evaluation_id=evaluation.id,
+                water_regime=WaterRegime.RAINFED,
                 crop_id="rice",
                 position=0,
                 mean=1.0,

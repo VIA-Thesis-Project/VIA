@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import configparser
 import json
 import re
+import shutil
 import subprocess
 import tempfile
 from collections.abc import Callable, Mapping
@@ -26,6 +28,7 @@ from ..application.ports import (
     ScientificSourceFingerprint,
     SuitabilityScoreSummary,
 )
+from ..domain.water_regime import WaterRegime
 from .scientific_artifact_store import (
     ScientificArtifactStorageError,
     ScientificArtifactStore,
@@ -34,6 +37,7 @@ from .scientific_artifact_store import (
 EngineRunner = Callable[..., Mapping[str, Any]]
 _SAFE_CROP_ID = re.compile(r"^[A-Za-z0-9_-]+$")
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
+_DEFAULT_SOURCE_CONFIG = "config_access_esm1_5_ssp126_2021_2040.ini"
 
 _SCIENTIFIC_BRIDGE = """
 from __future__ import annotations
@@ -136,7 +140,7 @@ class CropSuiteAdapter:
         workspace_root: Path,
         source_config: Path | None = None,
         catalog: Path | None = None,
-        max_workers: int = 2,
+        max_workers: int = 1,
         python_executable: Path | None = None,
         runner: EngineRunner | None = None,
         artifact_store: ScientificArtifactStore | None = None,
@@ -155,7 +159,11 @@ class CropSuiteAdapter:
                 "CropSuite execution workspace must be outside the engine source tree."
             )
 
-        self._source_config = source_config.resolve() if source_config else None
+        self._source_config = (
+            source_config.resolve()
+            if source_config is not None
+            else (self._engine_root / _DEFAULT_SOURCE_CONFIG).resolve()
+        )
         self._catalog = catalog.resolve() if catalog else None
         self._max_workers = max_workers
         self._artifact_store = artifact_store
@@ -184,7 +192,10 @@ class CropSuiteAdapter:
         self._workspace_root.mkdir(parents=True, exist_ok=True)
         request_workspace = Path(
             tempfile.mkdtemp(
-                prefix=f"{request.evaluation_id}_{request.crop_id}_",
+                prefix=(
+                    f"{request.evaluation_id}_{request.crop_id}_"
+                    f"{request.water_regime.value}_"
+                ),
                 dir=self._workspace_root,
             )
         )
@@ -202,14 +213,19 @@ class CropSuiteAdapter:
             encoding="utf-8",
         )
 
+        scenario_config = _materialize_scenario_config(
+            base_config=self._source_config,
+            request_workspace=request_workspace,
+            water_regime=request.water_regime,
+        )
+
         arguments: dict[str, Any] = {
             "crops": (request.crop_id,),
             "parcel_path": parcel_path,
             "output_root": request_workspace / "outputs",
             "max_workers": self._max_workers,
+            "source_config": scenario_config,
         }
-        if self._source_config is not None:
-            arguments["source_config"] = self._source_config
         if self._catalog is not None:
             arguments["catalog"] = self._catalog
 
@@ -241,6 +257,7 @@ class CropSuiteAdapter:
         result = _map_report(
             report,
             request.crop_id,
+            request.water_regime,
             source_fingerprints=source_fingerprints,
         )
 
@@ -255,6 +272,7 @@ class CropSuiteAdapter:
                 report=report,
                 crop_id=request.crop_id,
                 evaluation_id=str(request.evaluation_id),
+                water_regime=request.water_regime,
                 request_workspace=request_workspace,
                 artifact_store=self._artifact_store,
             )
@@ -270,6 +288,7 @@ class CropSuiteAdapter:
             failure=result.failure,
             trace=result.trace,
             artifacts=(artifact,),
+            water_regime=result.water_regime,
         )
 
     def _run_scientific_process(
@@ -385,6 +404,7 @@ def _parse_source_fingerprints(
 def _map_report(
     report: Mapping[str, Any],
     crop_id: str,
+    water_regime: WaterRegime = WaterRegime.RAINFED,
     *,
     source_fingerprints: tuple[ScientificSourceFingerprint, ...] = (),
 ) -> CropSuitabilityResult:
@@ -444,13 +464,21 @@ def _map_report(
         source_files_unchanged=source_files_unchanged,
         source_fingerprints=source_fingerprints,
     )
-    return CropSuitabilityResult(crop_id, status, suitability, failure, trace)
+    return CropSuitabilityResult(
+        crop_id=crop_id,
+        status=status,
+        suitability=suitability,
+        failure=failure,
+        trace=trace,
+        water_regime=water_regime,
+    )
 
 def _publish_crop_suitability_artifact(
     *,
     report: Mapping[str, Any],
     crop_id: str,
     evaluation_id: str,
+    water_regime: WaterRegime,
     request_workspace: Path,
     artifact_store: ScientificArtifactStore,
 ) -> ScientificArtifactDescriptor:
@@ -517,7 +545,8 @@ def _publish_crop_suitability_artifact(
     )
 
     storage_reference = (
-        f"evaluations/{evaluation_id}/crops/{crop_id}/crop_suitability.tif"
+        f"evaluations/{evaluation_id}/scenarios/{water_regime.value}/"
+        f"crops/{crop_id}/crop_suitability.tif"
     )
 
     published = artifact_store.publish(
@@ -534,6 +563,48 @@ def _publish_crop_suitability_artifact(
         size_bytes=published.size_bytes,
         grid=grid,
     )
+
+
+def _materialize_scenario_config(
+    *,
+    base_config: Path,
+    request_workspace: Path,
+    water_regime: WaterRegime,
+) -> Path:
+    if not base_config.is_file():
+        raise CropSuitabilityExecutionError(
+            f"CropSuite base configuration was not found at {base_config}."
+        )
+
+    generated = request_workspace / "cropsuite-scenario.ini"
+    shutil.copy2(base_config, generated)
+
+    parser = configparser.ConfigParser(interpolation=None)
+    try:
+        with generated.open("r", encoding="utf-8") as source:
+            parser.read_file(source)
+    except (OSError, configparser.Error) as error:
+        raise CropSuitabilityExecutionError(
+            "CropSuite base configuration could not be parsed."
+        ) from error
+
+    if not parser.has_section("options"):
+        parser.add_section("options")
+    parser.set(
+        "options",
+        "irrigation",
+        "0" if water_regime is WaterRegime.RAINFED else "1",
+    )
+
+    try:
+        with generated.open("w", encoding="utf-8", newline="\n") as target:
+            parser.write(target, space_around_delimiters=True)
+    except OSError as error:
+        raise CropSuitabilityExecutionError(
+            "CropSuite scenario configuration could not be materialized."
+        ) from error
+
+    return generated
 
 def _map_summary(summary: Mapping[str, Any]) -> SuitabilityScoreSummary:
     return SuitabilityScoreSummary(

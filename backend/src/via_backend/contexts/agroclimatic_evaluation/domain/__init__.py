@@ -28,6 +28,7 @@ from .outcomes import (
 )
 from .repositories import EvaluationRepository
 from .snapshot import ParcelSnapshot, SnapshotGeometry
+from .water_regime import WaterRegime
 
 __all__ = [
     "CropOutcome",
@@ -51,5 +52,6 @@ __all__ = [
     "SuitabilitySummary",
     "CommonSupport",
     "CommonSupportStatus",
-    "ComparableCrop"
+    "ComparableCrop",
+    "WaterRegime",
 ]

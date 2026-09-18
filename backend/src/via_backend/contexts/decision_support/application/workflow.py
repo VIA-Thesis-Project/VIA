@@ -54,6 +54,7 @@ class DecisionSupportWorkflow:
             EvaluateDecisionSupport(
                 evaluation_id=query.evaluation_id,
                 policy=snapshot.reference,
+                water_regime=query.water_regime,
             ),
             policy,
         )

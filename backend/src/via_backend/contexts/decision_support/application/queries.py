@@ -4,6 +4,8 @@ from dataclasses import dataclass
 from enum import StrEnum
 from uuid import UUID
 
+from via_backend.contexts.agroclimatic_evaluation.application.public import WaterRegime
+
 from ..domain.models import PolicyReference, ViabilityPolicySnapshot
 
 
@@ -13,6 +15,7 @@ class EvaluateDecisionSupport:
 
     evaluation_id: UUID
     policy: PolicyReference
+    water_regime: WaterRegime = WaterRegime.RAINFED
 
 
 class ViabilityPolicySelectionMode(StrEnum):
@@ -66,3 +69,4 @@ class EvaluateConfiguredDecisionSupport:
 
     evaluation_id: UUID
     policy_selection: ViabilityPolicySelection
+    water_regime: WaterRegime = WaterRegime.RAINFED

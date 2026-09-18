@@ -10,6 +10,7 @@ from uuid import UUID
 from ..domain.comparison import CommonSupportStatus
 from ..domain.models import Evaluation, EvaluationStatus
 from ..domain.outcomes import CropOutcomeStatus
+from ..domain.water_regime import WaterRegime
 
 
 class EvaluationResultAvailability(StrEnum):
@@ -29,6 +30,9 @@ class EvaluationStatusResult:
     requested_crops: tuple[str, ...]
     requested_crop_count: int
     completed_crop_count: int
+    requested_water_regimes: tuple[WaterRegime, ...]
+    requested_execution_count: int
+    completed_execution_count: int
     created_at: datetime
     project_id: UUID
     parcel_id: UUID
@@ -45,6 +49,9 @@ class EvaluationStatusResult:
             requested_crops=evaluation.requested_crops,
             requested_crop_count=len(evaluation.requested_crops),
             completed_crop_count=len(evaluation.outcomes),
+            requested_water_regimes=evaluation.requested_water_regimes,
+            requested_execution_count=len(evaluation.execution_matrix),
+            completed_execution_count=len(evaluation.outcomes),
             created_at=evaluation.created_at,
             project_id=snapshot.project_id,
             parcel_id=snapshot.parcel_id,
@@ -70,6 +77,7 @@ class PersistedCropOutcomeResult:
     crop_id: str
     status: CropOutcomeStatus
     suitability: SuitabilitySummaryResult | None
+    water_regime: WaterRegime = WaterRegime.RAINFED
 
 @dataclass(frozen=True, slots=True)
 class CommonSupportReadResult:
@@ -89,6 +97,20 @@ class ComparableCropReadResult:
     mean: float
     rank: int
 
+
+@dataclass(frozen=True, slots=True)
+class ScenarioReadResult:
+    """One independently summarized water-regime scenario.
+
+    Irrigated means sufficient irrigation is assumed for scientific evaluation; it
+    does not verify infrastructure or actual water availability.
+    """
+
+    water_regime: WaterRegime
+    outcomes: tuple[PersistedCropOutcomeResult, ...]
+    common_support: CommonSupportReadResult
+    comparable_crops: tuple[ComparableCropReadResult, ...]
+
 @dataclass(frozen=True, slots=True)
 class EvaluationReadResult:
     evaluation_id: UUID
@@ -97,9 +119,13 @@ class EvaluationReadResult:
     requested_crops: tuple[str, ...]
     requested_crop_count: int
     completed_crop_count: int
+    requested_water_regimes: tuple[WaterRegime, ...]
+    requested_execution_count: int
+    completed_execution_count: int
     outcomes: tuple[PersistedCropOutcomeResult, ...]
     common_support: CommonSupportReadResult | None
     comparable_crops: tuple[ComparableCropReadResult, ...]
+    scenarios: tuple[ScenarioReadResult, ...]
 
     @classmethod
     def from_domain(cls, evaluation: Evaluation) -> EvaluationReadResult:
@@ -112,6 +138,9 @@ class EvaluationReadResult:
             requested_crops=evaluation.requested_crops,
             requested_crop_count=len(evaluation.requested_crops),
             completed_crop_count=len(evaluation.outcomes),
+            requested_water_regimes=evaluation.requested_water_regimes,
+            requested_execution_count=len(evaluation.execution_matrix),
+            completed_execution_count=len(evaluation.outcomes),
             outcomes=tuple(
                 PersistedCropOutcomeResult(
                     crop_id=outcome.crop_id,
@@ -131,6 +160,7 @@ class EvaluationReadResult:
                         if outcome.suitability is not None
                         else None
                     ),
+                    water_regime=outcome.water_regime,
                 )
                 for outcome in evaluation.outcomes
             ),
@@ -160,6 +190,58 @@ class EvaluationReadResult:
                 )
                 for crop in evaluation.comparable_crops
             ),
+            scenarios=tuple(
+                ScenarioReadResult(
+                    water_regime=scenario.water_regime,
+                    outcomes=tuple(
+                        PersistedCropOutcomeResult(
+                            crop_id=outcome.crop_id,
+                            status=outcome.status,
+                            suitability=(
+                                SuitabilitySummaryResult(
+                                    mean=outcome.suitability.mean,
+                                    minimum=outcome.suitability.minimum,
+                                    maximum=outcome.suitability.maximum,
+                                    valid_cells=outcome.suitability.valid_cells,
+                                    valid_area_m2=outcome.suitability.valid_area_m2,
+                                    coverage_fraction=outcome.suitability.coverage_fraction,
+                                    zero_suitability_area_m2=(
+                                        outcome.suitability.zero_suitability_area_m2
+                                    ),
+                                )
+                                if outcome.suitability is not None
+                                else None
+                            ),
+                            water_regime=outcome.water_regime,
+                        )
+                        for outcome in evaluation.outcomes
+                        if outcome.water_regime is scenario.water_regime
+                    ),
+                    common_support=CommonSupportReadResult(
+                        status=scenario.common_support.status,
+                        method=scenario.common_support.method,
+                        area_crs=scenario.common_support.area_crs,
+                        parcel_area_m2=scenario.common_support.parcel_area_m2,
+                        common_valid_area_m2=scenario.common_support.common_valid_area_m2,
+                        common_coverage_fraction=(
+                            scenario.common_support.common_coverage_fraction
+                        ),
+                        eligible_crops=scenario.common_support.eligible_crops,
+                        excluded_without_coverage=(
+                            scenario.common_support.excluded_without_coverage
+                        ),
+                    ),
+                    comparable_crops=tuple(
+                        ComparableCropReadResult(
+                            crop_id=crop.crop_id,
+                            mean=crop.mean,
+                            rank=crop.rank,
+                        )
+                        for crop in scenario.comparable_crops
+                    ),
+                )
+                for scenario in evaluation.scenarios
+            ),
         )
 
 @dataclass(frozen=True, slots=True)
@@ -181,6 +263,7 @@ class CropEvidenceResult:
     crop_id: str
     status: CropOutcomeStatus
     trace: ScientificTraceResult
+    water_regime: WaterRegime = WaterRegime.RAINFED
 
 
 @dataclass(frozen=True, slots=True)
@@ -200,6 +283,7 @@ class EvaluationEvidenceResult:
                 CropEvidenceResult(
                     crop_id=outcome.crop_id,
                     status=outcome.status,
+                    water_regime=outcome.water_regime,
                     trace=ScientificTraceResult(
                         engine_identifier=outcome.trace.engine_identifier,
                         started_at=outcome.trace.started_at,

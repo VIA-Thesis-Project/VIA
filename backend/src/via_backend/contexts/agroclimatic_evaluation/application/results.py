@@ -10,6 +10,7 @@ from uuid import UUID
 
 from ..domain.models import Evaluation, EvaluationStatus
 from ..domain.outcomes import CropOutcomeStatus
+from ..domain.water_regime import WaterRegime
 
 
 @dataclass(frozen=True, slots=True)
@@ -29,6 +30,7 @@ class CropOutcomeResult:
     mean: float | None
     failure_message: str | None
     execution_reference: str
+    water_regime: WaterRegime = WaterRegime.RAINFED
 
 
 @dataclass(frozen=True, slots=True)
@@ -38,6 +40,9 @@ class ActiveEvaluationResult:
     created_at: datetime
     requested_crop_count: int
     completed_crop_count: int
+    requested_water_regimes: tuple[WaterRegime, ...]
+    requested_execution_count: int
+    completed_execution_count: int
 
     @classmethod
     def from_domain(cls, evaluation: Evaluation) -> ActiveEvaluationResult:
@@ -47,6 +52,9 @@ class ActiveEvaluationResult:
             created_at=evaluation.created_at,
             requested_crop_count=len(evaluation.requested_crops),
             completed_crop_count=len(evaluation.outcomes),
+            requested_water_regimes=evaluation.requested_water_regimes,
+            requested_execution_count=len(evaluation.execution_matrix),
+            completed_execution_count=len(evaluation.outcomes),
         )
 
 
@@ -55,6 +63,7 @@ class EvaluationResult:
     id: UUID
     parcel_snapshot: ParcelSnapshotResult
     requested_crops: tuple[str, ...]
+    requested_water_regimes: tuple[WaterRegime, ...]
     status: EvaluationStatus
     created_at: datetime
     outcomes: tuple[CropOutcomeResult, ...]
@@ -74,6 +83,7 @@ class EvaluationResult:
                 captured_at=snapshot.captured_at,
             ),
             requested_crops=evaluation.requested_crops,
+            requested_water_regimes=evaluation.requested_water_regimes,
             status=evaluation.status,
             created_at=evaluation.created_at,
             outcomes=tuple(
@@ -87,6 +97,7 @@ class EvaluationResult:
                     ),
                     failure_message=outcome.failure_message,
                     execution_reference=outcome.trace.execution_reference,
+                    water_regime=outcome.water_regime,
                 )
                 for outcome in evaluation.outcomes
             ),

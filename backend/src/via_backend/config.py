@@ -95,7 +95,7 @@ class WorkerSettings:
     cropsuite_catalog: Path | None = None
     poll_interval_seconds: float = 5.0
     batch_size: int = 1
-    cropsuite_max_workers: int = 2
+    cropsuite_max_workers: int = 1
 
     def __post_init__(self) -> None:
         if not self.database_url:
@@ -165,7 +165,7 @@ class WorkerSettings:
             cropsuite_catalog=_optional_path("VIA_CROPSUITE_CATALOG"),
             poll_interval_seconds=_environment_float("VIA_WORKER_POLL_INTERVAL_SECONDS", 5.0),
             batch_size=_environment_integer("VIA_WORKER_BATCH_SIZE", 1),
-            cropsuite_max_workers=_environment_integer("VIA_CROPSUITE_MAX_WORKERS", 2),
+            cropsuite_max_workers=_environment_integer("VIA_CROPSUITE_MAX_WORKERS", 1),
         )
 
 

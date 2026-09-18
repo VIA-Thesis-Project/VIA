@@ -36,6 +36,12 @@ from via_backend.contexts.agroclimatic_evaluation.application import (
     SuitabilityScoreSummary,
 )
 from via_backend.contexts.agroclimatic_evaluation.domain import (
+    CommonSupport as DomainCommonSupport,
+)
+from via_backend.contexts.agroclimatic_evaluation.domain import (
+    CommonSupportStatus as DomainCommonSupportStatus,
+)
+from via_backend.contexts.agroclimatic_evaluation.domain import (
     CropOutcome,
     CropOutcomeStatus,
     EnvironmentalInputManifest,
@@ -47,6 +53,7 @@ from via_backend.contexts.agroclimatic_evaluation.domain import (
     ScientificTrace,
     SnapshotGeometry,
     SuitabilitySummary,
+    WaterRegime,
 )
 from via_backend.contexts.agroclimatic_evaluation.infrastructure import (
     InMemoryEvaluationRepository,
@@ -186,11 +193,13 @@ def _evaluation(
     evaluation_id: UUID | None = None,
     created_at: datetime = NOW,
     crops: tuple[str, ...] = ("maize",),
+    water_regimes: tuple[WaterRegime, ...] = (WaterRegime.RAINFED,),
 ) -> Evaluation:
     return Evaluation(
         id=evaluation_id or uuid4(),
         parcel_snapshot=_snapshot(),
         requested_crops=crops,
+        requested_water_regimes=water_regimes,
         status=EvaluationStatus.QUEUED,
         created_at=created_at,
         environmental_input_references=(_reference(),),
@@ -654,7 +663,10 @@ def test_run_forever_waits_after_non_full_batch() -> None:
     assert waits == [2.5]
 
 
-def _outcome() -> CropOutcome:
+def _outcome(
+    *,
+    water_regime: WaterRegime = WaterRegime.RAINFED,
+) -> CropOutcome:
     return CropOutcome(
         crop_id="maize",
         status=CropOutcomeStatus.SUCCEEDED,
@@ -680,6 +692,7 @@ def _outcome() -> CropOutcome:
             None,
             True,
         ),
+        water_regime=water_regime,
     )
 
 
@@ -715,6 +728,18 @@ def _evaluation_in_status(
         return (
             running
             .start_summarizing()
+            .record_common_support(
+                DomainCommonSupport(
+                    status=DomainCommonSupportStatus.COMPARABLE,
+                    method="area_weighted_mean_on_common_valid_cells",
+                    area_crs="EPSG:6933",
+                    parcel_area_m2=25.0,
+                    common_valid_area_m2=25.0,
+                    common_coverage_fraction=1.0,
+                    eligible_crops=("maize",),
+                    excluded_without_coverage=(),
+                )
+            )
             .succeed()
         )
 
@@ -812,6 +837,39 @@ def test_explicit_recovery_fails_active_evaluation_and_preserves_outcomes(
         restored.outcomes
         == evaluation.outcomes
     )
+
+
+def test_recovery_preserves_partial_two_regime_execution_without_duplication() -> None:
+    repository = InMemoryEvaluationRepository()
+    evaluation = (
+        _evaluation(
+            water_regimes=(WaterRegime.RAINFED, WaterRegime.IRRIGATED),
+        )
+        .prepare()
+        .attach_environmental_input_manifest(_manifest())
+        .start_running()
+        .record_outcome(_outcome(water_regime=WaterRegime.RAINFED))
+    )
+    repository.add(evaluation)
+
+    AgroclimaticEvaluationRecoveryService(repository).recover_evaluation(
+        RecoverEvaluation(
+            evaluation.id,
+            EvaluationStatus.RUNNING,
+            "worker process terminated",
+        )
+    )
+
+    restored = repository.get(evaluation.id)
+    assert restored is not None
+    assert restored.status is EvaluationStatus.FAILED
+    assert restored.requested_water_regimes == (
+        WaterRegime.RAINFED,
+        WaterRegime.IRRIGATED,
+    )
+    assert [(outcome.crop_id, outcome.water_regime) for outcome in restored.outcomes] == [
+        ("maize", WaterRegime.RAINFED),
+    ]
 
 
 @pytest.mark.parametrize(

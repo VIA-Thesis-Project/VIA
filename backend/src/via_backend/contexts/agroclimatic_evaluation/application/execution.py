@@ -33,6 +33,7 @@ from ..domain.outcomes import (
     ScientificSourceFingerprint as DomainScientificSourceFingerprint,
 )
 from ..domain.repositories import EvaluationRepository
+from ..domain.water_regime import WaterRegime
 from .commands import ExecuteEvaluation
 from .ports import (
     CommonSupportResult,
@@ -119,19 +120,20 @@ class AgroclimaticEvaluationExecutionService:
 
             current = running
 
-            for crop_id in current.requested_crops:
+            for crop_id, water_regime in current.execution_matrix:
                 result = self._engine.evaluate(
                     CropSuitabilityRequest(
                         evaluation_id=current.id,
                         parcel_snapshot=current.parcel_snapshot,
                         crop_id=crop_id,
                         environmental_input_manifest=manifest,
+                        water_regime=water_regime,
                     )
                 )
 
-                if result.crop_id != crop_id:
+                if result.crop_id != crop_id or result.water_regime is not water_regime:
                     raise InvalidEngineOutputError(
-                        "Engine result did not preserve the requested crop identity."
+                        "Engine result did not preserve the requested scenario identity."
                     )
 
                 outcome = _to_outcome(result)
@@ -154,19 +156,22 @@ class AgroclimaticEvaluationExecutionService:
 
             current = summarizing
 
-            comparison_result = self._comparison_engine.compare(
-                _comparison_request(current)
-            )
+            summarized = current
+            for water_regime in current.requested_water_regimes:
+                comparison_result = self._comparison_engine.compare(
+                    _comparison_request(summarized, water_regime)
+                )
 
-            summarized = current.record_comparison(
-                common_support=_to_common_support(
-                    comparison_result.common_support
-                ),
-                comparable_crops=tuple(
-                    _to_comparable_crop(crop)
-                    for crop in comparison_result.comparable_crops
-                ),
-            )
+                summarized = summarized.record_comparison(
+                    common_support=_to_common_support(
+                        comparison_result.common_support
+                    ),
+                    comparable_crops=tuple(
+                        _to_comparable_crop(crop)
+                        for crop in comparison_result.comparable_crops
+                    ),
+                    water_regime=water_regime,
+                )
 
             succeeded = summarized.succeed()
 
@@ -264,6 +269,7 @@ def _to_outcome(
 
     return CropOutcome(
         crop_id=result.crop_id,
+        water_regime=result.water_regime,
         status=CropOutcomeStatus(result.status.value),
         suitability=(
             SuitabilitySummary(
@@ -326,10 +332,13 @@ def _to_outcome(
 
 def _comparison_request(
     evaluation: Evaluation,
+    water_regime: WaterRegime = WaterRegime.RAINFED,
 ) -> CropComparisonRequest:
     crops: list[CropComparisonInput] = []
 
     for outcome in evaluation.outcomes:
+        if outcome.water_regime is not water_regime:
+            continue
         if outcome.status is CropOutcomeStatus.FAILED:
             continue
 
@@ -374,6 +383,7 @@ def _comparison_request(
         evaluation_id=evaluation.id,
         parcel_snapshot=evaluation.parcel_snapshot,
         crops=tuple(crops),
+        water_regime=water_regime,
     )
 
 

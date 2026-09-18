@@ -27,6 +27,8 @@ class InMemoryEvaluationRepository:
                 or current.status is not expected_status
                 or current.parcel_snapshot != evaluation.parcel_snapshot
                 or current.requested_crops != evaluation.requested_crops
+                or current.requested_water_regimes
+                != evaluation.requested_water_regimes
                 or current.created_at != evaluation.created_at
                 or current.environmental_input_references
                 != evaluation.environmental_input_references
@@ -36,6 +38,8 @@ class InMemoryEvaluationRepository:
                     != evaluation.environmental_input_manifest
                 )
                 or current.outcomes != evaluation.outcomes
+                or current.scenarios
+                != evaluation.scenarios[: len(current.scenarios)]
             ):
                 raise EvaluationConflictError(
                     f"Evaluation {evaluation.id} changed before it could be saved."

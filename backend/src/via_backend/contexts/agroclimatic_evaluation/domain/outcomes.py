@@ -9,6 +9,7 @@ from datetime import datetime
 from enum import StrEnum
 
 from .errors import DomainValidationError
+from .water_regime import WaterRegime
 
 
 class CropOutcomeStatus(StrEnum):
@@ -155,9 +156,15 @@ class CropOutcome:
     suitability: SuitabilitySummary | None
     failure_message: str | None
     trace: ScientificTrace
+    water_regime: WaterRegime = WaterRegime.RAINFED
     artifacts: tuple[ScientificArtifact, ...] = ()
 
     def __post_init__(self) -> None:
+        try:
+            water_regime = WaterRegime(self.water_regime)
+        except ValueError as error:
+            raise DomainValidationError("Outcome water regime is not supported.") from error
+        object.__setattr__(self, "water_regime", water_regime)
         if not self.crop_id or self.crop_id != self.crop_id.strip():
             raise DomainValidationError("Outcome crop identifier must be non-empty and trimmed.")
         if self.status is CropOutcomeStatus.FAILED:

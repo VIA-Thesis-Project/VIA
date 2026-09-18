@@ -10,6 +10,7 @@ from uuid import UUID
 
 from ..domain.environmental_inputs import EnvironmentalInputManifest
 from ..domain.snapshot import ParcelSnapshot
+from ..domain.water_regime import WaterRegime
 
 
 class CropExecutionStatus(StrEnum):
@@ -28,6 +29,7 @@ class CropSuitabilityRequest:
     parcel_snapshot: ParcelSnapshot
     crop_id: str
     environmental_input_manifest: EnvironmentalInputManifest
+    water_regime: WaterRegime = WaterRegime.RAINFED
 
 
 @dataclass(frozen=True, slots=True)
@@ -112,6 +114,7 @@ class CropSuitabilityResult:
     failure: ScientificExecutionFailure | None
     trace: ScientificExecutionTrace
     artifacts: tuple[ScientificArtifactDescriptor, ...] = ()
+    water_regime: WaterRegime = WaterRegime.RAINFED
 
 class CommonSupportStatus(StrEnum):
     """Scientific common-support outcome across evaluated crops."""
@@ -136,6 +139,7 @@ class CropComparisonRequest:
     evaluation_id: UUID
     parcel_snapshot: ParcelSnapshot
     crops: tuple[CropComparisonInput, ...]
+    water_regime: WaterRegime = WaterRegime.RAINFED
 
 
 @dataclass(frozen=True, slots=True)

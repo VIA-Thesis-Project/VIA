@@ -12,6 +12,7 @@ from ..domain.models import Evaluation, EvaluationStatus
 from ..domain.outcomes import CropOutcome
 from ..domain.repositories import EvaluationRepository
 from ..domain.snapshot import ParcelSnapshot, SnapshotGeometry
+from ..domain.water_regime import WaterRegime as DomainWaterRegime
 from .commands import RequestEvaluation
 from .public import (
     FinalizedCommonSupport,
@@ -23,6 +24,9 @@ from .public import (
     FinalizedScientificTrace,
     FinalizedSuitabilitySummary,
     GetFinalizedEvaluationResult,
+)
+from .public import (
+    WaterRegime as PublishedWaterRegime,
 )
 from .queries import (
     GetEvaluation,
@@ -83,6 +87,7 @@ class AgroclimaticEvaluationService:
                 id=self._new_id(),
                 parcel_snapshot=snapshot,
                 requested_crops=command.requested_crops,
+                requested_water_regimes=command.requested_water_regimes,
                 status=EvaluationStatus.QUEUED,
                 created_at=self._clock(),
                 environmental_input_references=tuple(
@@ -121,9 +126,22 @@ class AgroclimaticEvaluationService:
                 f"Evaluation {evaluation.id} does not have a finalized result."
             )
         snapshot = evaluation.parcel_snapshot
-        common_support = evaluation.common_support
+        water_regime = DomainWaterRegime(query.water_regime.value)
+        scenario = evaluation.scenario_for(water_regime)
+        legacy_rainfed_result = (
+            water_regime is DomainWaterRegime.RAINFED
+            and evaluation.requested_water_regimes == (DomainWaterRegime.RAINFED,)
+            and not evaluation.scenarios
+        )
+        if scenario is None and not legacy_rainfed_result:
+            raise ResourceConflictError(
+                f"Evaluation {evaluation.id} does not have finalized "
+                f"{water_regime.value} evidence."
+            )
+        common_support = scenario.common_support if scenario is not None else None
         return FinalizedEvaluationResult(
             evaluation_id=evaluation.id,
+            water_regime=PublishedWaterRegime(water_regime.value),
             requested_crops=evaluation.requested_crops,
             project_id=snapshot.project_id,
             parcel_id=snapshot.parcel_id,
@@ -133,6 +151,7 @@ class AgroclimaticEvaluationService:
             outcomes=tuple(
                 _to_finalized_crop_outcome(outcome)
                 for outcome in evaluation.outcomes
+                if outcome.water_regime is water_regime
             ),
             common_support=(
                 FinalizedCommonSupport(
@@ -160,7 +179,7 @@ class AgroclimaticEvaluationService:
                     mean=crop.mean,
                     rank=crop.rank,
                 )
-                for crop in evaluation.comparable_crops
+                for crop in (scenario.comparable_crops if scenario is not None else ())
             ),
         )
 
@@ -185,6 +204,7 @@ def _to_finalized_crop_outcome(outcome: CropOutcome) -> FinalizedCropOutcome:
     trace = outcome.trace
     return FinalizedCropOutcome(
         crop_id=outcome.crop_id,
+        water_regime=PublishedWaterRegime(outcome.water_regime.value),
         status=FinalizedCropOutcomeStatus(outcome.status.value),
         suitability=(
             FinalizedSuitabilitySummary(

@@ -30,6 +30,7 @@ from ..application.service import (
 from ..domain.comparison import CommonSupportStatus
 from ..domain.models import EvaluationStatus
 from ..domain.outcomes import CropOutcomeStatus
+from ..domain.water_regime import WaterRegime
 
 
 class _RequestModel(BaseModel):
@@ -59,6 +60,10 @@ class EnvironmentalInputReferenceBody(_RequestModel):
 class RequestEvaluationBody(_RequestModel):
     parcel_snapshot: ParcelSnapshotBody
     requested_crops: list[str] = Field(min_length=1)
+    water_regimes: list[WaterRegime] = Field(
+        default_factory=lambda: [WaterRegime.RAINFED],
+        min_length=1,
+    )
     environmental_inputs: list[EnvironmentalInputReferenceBody] = Field(min_length=1)
 
 
@@ -84,6 +89,7 @@ class EvaluationResponse(BaseModel):
     id: UUID
     parcel_snapshot: ParcelSnapshotResponse
     requested_crops: list[str]
+    requested_water_regimes: list[WaterRegime]
     status: EvaluationStatus
     created_at: datetime
 
@@ -96,6 +102,9 @@ class EvaluationStatusResponse(BaseModel):
     requested_crops: list[str]
     requested_crop_count: int
     completed_crop_count: int
+    requested_water_regimes: list[WaterRegime]
+    requested_execution_count: int
+    completed_execution_count: int
     created_at: datetime
     project_id: UUID
     parcel_id: UUID
@@ -120,6 +129,7 @@ class CropOutcomeResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     crop_id: str
+    water_regime: WaterRegime
     status: CropOutcomeStatus
     suitability: SuitabilitySummaryResponse | None
 
@@ -143,6 +153,15 @@ class ComparableCropResponse(BaseModel):
     mean: float
     rank: int
 
+
+class ScenarioResultResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    water_regime: WaterRegime
+    outcomes: list[CropOutcomeResponse]
+    common_support: CommonSupportResponse
+    comparable_crops: list[ComparableCropResponse]
+
 class EvaluationResultResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -152,9 +171,13 @@ class EvaluationResultResponse(BaseModel):
     requested_crops: list[str]
     requested_crop_count: int
     completed_crop_count: int
+    requested_water_regimes: list[WaterRegime]
+    requested_execution_count: int
+    completed_execution_count: int
     outcomes: list[CropOutcomeResponse]
     common_support: CommonSupportResponse | None
     comparable_crops: list[ComparableCropResponse]
+    scenarios: list[ScenarioResultResponse]
 
 
 class ScientificTraceResponse(BaseModel):
@@ -176,6 +199,7 @@ class CropEvidenceResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     crop_id: str
+    water_regime: WaterRegime
     status: CropOutcomeStatus
     trace: ScientificTraceResponse
 
@@ -212,6 +236,7 @@ def create_router(service: AgroclimaticEvaluationService) -> APIRouter:
                     captured_at=snapshot.captured_at,
                 ),
                 requested_crops=tuple(body.requested_crops),
+                requested_water_regimes=tuple(body.water_regimes),
                 environmental_inputs=tuple(
                     EnvironmentalInputReferenceInput(
                         input_key=item.input_key,

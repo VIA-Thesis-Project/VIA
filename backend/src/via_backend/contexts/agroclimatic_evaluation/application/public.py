@@ -9,6 +9,13 @@ from typing import Protocol, runtime_checkable
 from uuid import UUID
 
 
+class WaterRegime(StrEnum):
+    """Published water-regime values shared with consumer bounded contexts."""
+
+    RAINFED = "rainfed"
+    IRRIGATED = "irrigated"
+
+
 class FinalizedCropOutcomeStatus(StrEnum):
     SUCCEEDED = "succeeded"
     NO_COVERAGE = "no_coverage"
@@ -18,6 +25,7 @@ class FinalizedCropOutcomeStatus(StrEnum):
 @dataclass(frozen=True, slots=True)
 class GetFinalizedEvaluationResult:
     evaluation_id: UUID
+    water_regime: WaterRegime = WaterRegime.RAINFED
 
 
 @dataclass(frozen=True, slots=True)
@@ -50,11 +58,13 @@ class FinalizedCropOutcome:
     status: FinalizedCropOutcomeStatus
     suitability: FinalizedSuitabilitySummary | None
     trace: FinalizedScientificTrace
+    water_regime: WaterRegime = WaterRegime.RAINFED
 
 
 @dataclass(frozen=True, slots=True)
 class FinalizedEvaluationResult:
     evaluation_id: UUID
+    water_regime: WaterRegime
     requested_crops: tuple[str, ...]
     project_id: UUID
     parcel_id: UUID

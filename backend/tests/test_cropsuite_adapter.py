@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import configparser
 import hashlib
 import json
 import sys
+from dataclasses import replace
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -27,6 +29,7 @@ from via_backend.contexts.agroclimatic_evaluation.domain import (
     EnvironmentalInputSnapshot,
     ParcelSnapshot,
     SnapshotGeometry,
+    WaterRegime,
 )
 from via_backend.contexts.agroclimatic_evaluation.infrastructure.cropsuite_adapter import (
     CropSuiteAdapter,
@@ -42,6 +45,21 @@ from via_backend.contexts.agroclimatic_evaluation.infrastructure.scientific_inpu
 SOURCE_A = "a" * 64
 SOURCE_B = "b" * 64
 SOURCE_C = "c" * 64
+
+
+def _write_base_config(engine_root: Path) -> Path:
+    engine_root.mkdir(parents=True, exist_ok=True)
+    source_config = engine_root / "config_access_esm1_5_ssp126_2021_2040.ini"
+    source_config.write_text(
+        "[options]\nirrigation = 0\nunchanged = keep-me\n",
+        encoding="utf-8",
+    )
+    return source_config
+
+
+@pytest.fixture(autouse=True)
+def _default_base_config(tmp_path: Path) -> None:
+    _write_base_config(tmp_path / "engine")
 
 
 class StubRunner:
@@ -95,7 +113,12 @@ def _environmental_input_manifest() -> EnvironmentalInputManifest:
     )
 
 
-def _request(kind: str = "Polygon", crop_id: str = "maize") -> CropSuitabilityRequest:
+def _request(
+    kind: str = "Polygon",
+    crop_id: str = "maize",
+    *,
+    water_regime: WaterRegime = WaterRegime.RAINFED,
+) -> CropSuitabilityRequest:
     return CropSuitabilityRequest(
         evaluation_id=uuid4(),
         parcel_snapshot=ParcelSnapshot(
@@ -108,6 +131,7 @@ def _request(kind: str = "Polygon", crop_id: str = "maize") -> CropSuitabilityRe
         ),
         crop_id=crop_id,
         environmental_input_manifest=_environmental_input_manifest(),
+        water_regime=water_regime,
     )
 
 
@@ -417,6 +441,7 @@ def test_workspace_cannot_be_inside_scientific_source_tree(tmp_path: Path) -> No
 
 def test_adapter_artifacts_do_not_modify_source_crop_parameters(tmp_path: Path) -> None:
     engine_root = tmp_path / "CropSuiteLite"
+    _write_base_config(engine_root)
     catalog = engine_root / "plant_params" / "available"
     catalog.mkdir(parents=True)
     parameter = catalog / "maize.inf"
@@ -434,6 +459,56 @@ def test_adapter_artifacts_do_not_modify_source_crop_parameters(tmp_path: Path) 
 
     assert hashlib.sha256(parameter.read_bytes()).hexdigest() == before
     assert runner.calls[0]["catalog"] == catalog.resolve()
+
+
+def test_adapter_materializes_isolated_water_regime_configs(tmp_path: Path) -> None:
+    engine_root = tmp_path / "engine"
+    base_config = _write_base_config(engine_root)
+    before = base_config.read_bytes()
+    generated_hashes: list[str] = []
+    config_paths: list[Path] = []
+
+    def runner(**arguments: Any) -> dict[str, Any]:
+        source_config = Path(arguments["source_config"])
+        config_paths.append(source_config)
+        configuration_sha256 = hashlib.sha256(source_config.read_bytes()).hexdigest()
+        generated_hashes.append(configuration_sha256)
+        report = _report()
+        report["crops"][0]["config_sha256"] = configuration_sha256
+        return report
+
+    adapter = CropSuiteAdapter(
+        engine_root=engine_root,
+        workspace_root=tmp_path / "workspace",
+        runner=runner,
+    )
+    rainfed_request = _request(water_regime=WaterRegime.RAINFED)
+    irrigated_request = replace(
+        rainfed_request,
+        water_regime=WaterRegime.IRRIGATED,
+    )
+
+    rainfed = adapter.evaluate(rainfed_request)
+    irrigated = adapter.evaluate(irrigated_request)
+
+    assert len(config_paths) == 2
+    assert config_paths[0] != config_paths[1]
+
+    irrigation_values: list[str] = []
+    for generated in config_paths:
+        parser = configparser.ConfigParser(interpolation=None)
+        parser.read(generated, encoding="utf-8")
+        irrigation_values.append(parser.get("options", "irrigation"))
+        assert parser.get("options", "unchanged") == "keep-me"
+
+    assert irrigation_values == ["0", "1"]
+    assert base_config.read_bytes() == before
+    assert generated_hashes[0] != generated_hashes[1]
+    assert rainfed.trace.configuration_sha256 == generated_hashes[0]
+    assert irrigated.trace.configuration_sha256 == generated_hashes[1]
+    assert rainfed.water_regime is WaterRegime.RAINFED
+    assert irrigated.water_regime is WaterRegime.IRRIGATED
+
 
 def test_real_execution_requires_explicit_scientific_python(tmp_path: Path) -> None:
     manifest = _environmental_input_manifest()
@@ -607,6 +682,58 @@ def test_adapter_publishes_durable_crop_suitability_artifact(
         *artifact.storage_reference.split("/")
     )
     assert durable_path.read_bytes() == content
+
+
+def test_scenario_artifact_paths_do_not_collide(tmp_path: Path) -> None:
+    content = b"scenario-geotiff-content"
+    checksum = hashlib.sha256(content).hexdigest()
+
+    def runner(**arguments: Any) -> dict[str, Any]:
+        output_root = Path(arguments["output_root"])
+        result_directory = output_root / "engine-result"
+        result_directory.mkdir(parents=True)
+        (result_directory / "crop_suitability.tif").write_bytes(content)
+
+        report = _report()
+        crop = report["crops"][0]
+        crop["result_directory"] = str(result_directory)
+        crop["via_artifact"] = {
+            "sha256": checksum,
+            "grid": {
+                "crs": "EPSG:4326",
+                "width": 1,
+                "height": 1,
+                "transform": [1.0, 0.0, 0.0, 0.0, -1.0, 0.0],
+                "nodata": -1.0,
+            },
+        }
+        return report
+
+    adapter = CropSuiteAdapter(
+        engine_root=tmp_path / "engine",
+        workspace_root=tmp_path / "workspace",
+        runner=runner,
+        artifact_store=FilesystemScientificArtifactStore(tmp_path / "artifacts"),
+    )
+    rainfed_request = _request(water_regime=WaterRegime.RAINFED)
+    irrigated_request = replace(
+        rainfed_request,
+        water_regime=WaterRegime.IRRIGATED,
+    )
+
+    rainfed = adapter.evaluate(rainfed_request)
+    irrigated = adapter.evaluate(irrigated_request)
+
+    assert rainfed.artifacts[0].storage_reference == (
+        f"evaluations/{rainfed_request.evaluation_id}/scenarios/rainfed/"
+        "crops/maize/crop_suitability.tif"
+    )
+    assert irrigated.artifacts[0].storage_reference == (
+        f"evaluations/{rainfed_request.evaluation_id}/scenarios/irrigated/"
+        "crops/maize/crop_suitability.tif"
+    )
+    assert rainfed.artifacts[0].storage_reference != irrigated.artifacts[0].storage_reference
+
 
 def test_adapter_rejects_artifact_outside_request_workspace(
     tmp_path: Path,

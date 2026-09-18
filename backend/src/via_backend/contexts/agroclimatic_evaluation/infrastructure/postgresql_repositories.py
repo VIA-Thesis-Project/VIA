@@ -24,7 +24,7 @@ from ..domain.environmental_inputs import (
     EnvironmentalInputSnapshot,
 )
 from ..domain.errors import EvaluationConflictError
-from ..domain.models import Evaluation, EvaluationStatus
+from ..domain.models import Evaluation, EvaluationScenarioResult, EvaluationStatus
 from ..domain.outcomes import (
     CropOutcome,
     CropOutcomeStatus,
@@ -36,6 +36,7 @@ from ..domain.outcomes import (
     SuitabilitySummary,
 )
 from ..domain.snapshot import ParcelSnapshot, SnapshotGeometry
+from ..domain.water_regime import WaterRegime
 from .orm import (
     CropOutcomeRecord,
     EvaluationCommonSupportRecord,
@@ -45,6 +46,7 @@ from .orm import (
     EvaluationEnvironmentalInputRecord,
     EvaluationEnvironmentalInputRequestRecord,
     EvaluationRecord,
+    EvaluationWaterRegimeRecord,
     ScientificArtifactRecord,
     ScientificSourceFingerprintRecord,
 )
@@ -87,6 +89,16 @@ class PostgreSQLEvaluationRepository:
                         crop_id=crop_id,
                     )
                     for position, crop_id in enumerate(evaluation.requested_crops)
+                )
+                session.add_all(
+                    EvaluationWaterRegimeRecord(
+                        evaluation_id=evaluation.id,
+                        position=position,
+                        water_regime=water_regime.value,
+                    )
+                    for position, water_regime in enumerate(
+                        evaluation.requested_water_regimes
+                    )
                 )
                 session.add_all(
                     EvaluationEnvironmentalInputRequestRecord(
@@ -133,14 +145,7 @@ class PostgreSQLEvaluationRepository:
                     )
 
                 _persist_environmental_input_manifest(session, evaluation)
-                _persist_common_support(
-                    session,
-                    evaluation,
-                )
-                _persist_comparable_crops(
-                    session,
-                    evaluation,
-                )
+                _persist_scenarios(session, evaluation)
         except IntegrityError as error:
             raise EvaluationConflictError(
                 f"Evaluation {evaluation.id} conflicts with persisted evaluation data."
@@ -167,6 +172,7 @@ class PostgreSQLEvaluationRepository:
                     _source_fingerprint_record(
                         evaluation_id,
                         outcome.crop_id,
+                        outcome.water_regime,
                         position,
                         fingerprint,
                     )
@@ -178,13 +184,15 @@ class PostgreSQLEvaluationRepository:
                     _artifact_record(
                         evaluation_id,
                         outcome.crop_id,
+                        outcome.water_regime,
                         artifact,
                     )
                     for artifact in outcome.artifacts
                 )
         except IntegrityError as error:
             raise EvaluationConflictError(
-                f"Evaluation {evaluation_id} already has an outcome for {outcome.crop_id}."
+                f"Evaluation {evaluation_id} already has an outcome for "
+                f"{outcome.crop_id} under {outcome.water_regime.value}."
             ) from error
 
     def get(self, evaluation_id: UUID) -> Evaluation | None:
@@ -201,6 +209,7 @@ class PostgreSQLEvaluationRepository:
                     .order_by(EvaluationCropRecord.position)
                 )
             )
+            water_regimes = _load_requested_water_regimes(session, evaluation_id)
             outcomes = _load_outcomes(session, evaluation_id)
             environmental_input_references = _load_environmental_input_references(
                 session,
@@ -217,15 +226,9 @@ class PostgreSQLEvaluationRepository:
                 crops,
                 environmental_input_references,
                 environmental_input_manifest,
+                water_regimes,
                 outcomes,
-                _load_common_support(
-                    session,
-                    evaluation_id,
-                ),
-                _load_comparable_crops(
-                    session,
-                    evaluation_id,
-                ),
+                _load_scenarios(session, evaluation_id, water_regimes),
             )
 
     def list_queued_ids(self, *, limit: int) -> tuple[UUID, ...]:
@@ -265,6 +268,7 @@ class PostgreSQLEvaluationRepository:
                         .order_by(EvaluationCropRecord.position)
                     )
                 )
+                water_regimes = _load_requested_water_regimes(session, record.id)
                 evaluations.append(
                     _evaluation_from_row(
                         record,
@@ -272,9 +276,9 @@ class PostgreSQLEvaluationRepository:
                         crops,
                         _load_environmental_input_references(session, record.id),
                         _load_environmental_input_manifest(session, record.id),
+                        water_regimes,
                         _load_outcomes(session, record.id),
-                        _load_common_support(session, record.id),
-                        _load_comparable_crops(session, record.id),
+                        _load_scenarios(session, record.id, water_regimes),
                     )
                 )
             return tuple(evaluations)
@@ -293,6 +297,7 @@ class PostgreSQLEvaluationRepository:
                         .order_by(EvaluationCropRecord.position)
                     )
                 )
+                water_regimes = _load_requested_water_regimes(session, record.id)
                 evaluations.append(
                     _evaluation_from_row(
                         record,
@@ -300,9 +305,9 @@ class PostgreSQLEvaluationRepository:
                         crops,
                         _load_environmental_input_references(session, record.id),
                         _load_environmental_input_manifest(session, record.id),
+                        water_regimes,
                         _load_outcomes(session, record.id),
-                        _load_common_support(session, record.id),
-                        _load_comparable_crops(session, record.id),
+                        _load_scenarios(session, record.id, water_regimes),
                     )
                 )
             return tuple(evaluations)
@@ -321,9 +326,9 @@ def _evaluation_from_row(
     crops: tuple[str, ...],
     environmental_input_references: tuple[EnvironmentalInputReference, ...],
     environmental_input_manifest: EnvironmentalInputManifest | None,
+    water_regimes: tuple[WaterRegime, ...],
     outcomes: tuple[CropOutcome, ...],
-    common_support: CommonSupport | None,
-    comparable_crops: tuple[ComparableCrop, ...],
+    scenarios: tuple[EvaluationScenarioResult, ...],
 ) -> Evaluation:
     stored_geometry = json.loads(geometry_json)
     if record.snapshot_geometry_kind == "Polygon":
@@ -348,11 +353,23 @@ def _evaluation_from_row(
         created_at=record.created_at,
         environmental_input_references=environmental_input_references,
         environmental_input_manifest=environmental_input_manifest,
+        requested_water_regimes=water_regimes,
         outcomes=outcomes,
-        common_support=common_support,
-        comparable_crops=comparable_crops,
+        scenarios=scenarios,
         failure_reason=record.failure_reason,
     )
+
+
+def _load_requested_water_regimes(
+    session: Session,
+    evaluation_id: UUID,
+) -> tuple[WaterRegime, ...]:
+    records = session.scalars(
+        select(EvaluationWaterRegimeRecord)
+        .where(EvaluationWaterRegimeRecord.evaluation_id == evaluation_id)
+        .order_by(EvaluationWaterRegimeRecord.position)
+    )
+    return tuple(WaterRegime(record.water_regime) for record in records)
 
 
 def _load_environmental_input_references(
@@ -475,57 +492,101 @@ def _persist_environmental_input_manifest(
         for position, item in enumerate(manifest.inputs)
     )
 
-def _persist_common_support(
-    session: Session,
-    evaluation: Evaluation,
-) -> None:
-    common_support = evaluation.common_support
+def _persist_scenarios(session: Session, evaluation: Evaluation) -> None:
+    for scenario in evaluation.scenarios:
+        existing_common_support = session.get(
+            EvaluationCommonSupportRecord,
+            (evaluation.id, scenario.water_regime.value),
+        )
+        if existing_common_support is None:
+            session.add(
+                _common_support_record(
+                    evaluation.id,
+                    scenario.water_regime,
+                    scenario.common_support,
+                )
+            )
+        elif _common_support_from_record(existing_common_support) != scenario.common_support:
+            raise EvaluationConflictError(
+                f"Evaluation {evaluation.id} already has different common-support "
+                f"data for {scenario.water_regime.value}."
+            )
 
-    if common_support is None:
-        return
-
-    existing = session.get(
-        EvaluationCommonSupportRecord,
-        evaluation.id,
-    )
-
-    if existing is None:
-        session.add(
-            _common_support_record(
-                evaluation.id,
-                common_support,
+        existing_comparable_crops = tuple(
+            session.scalars(
+                select(EvaluationComparableCropRecord)
+                .where(
+                    EvaluationComparableCropRecord.evaluation_id == evaluation.id,
+                    EvaluationComparableCropRecord.water_regime
+                    == scenario.water_regime.value,
+                )
+                .order_by(EvaluationComparableCropRecord.position)
             )
         )
-        return
-
-    if _common_support_from_record(existing) != common_support:
-        raise EvaluationConflictError(
-            f"Evaluation {evaluation.id} already has different "
-            "common-support data."
+        restored = tuple(
+            _comparable_crop_from_record(record)
+            for record in existing_comparable_crops
         )
+        if existing_comparable_crops:
+            if restored != scenario.comparable_crops:
+                raise EvaluationConflictError(
+                    f"Evaluation {evaluation.id} already has different comparable-crop "
+                    f"data for {scenario.water_regime.value}."
+                )
+        elif scenario.comparable_crops:
+            session.add_all(
+                _comparable_crop_record(
+                    evaluation.id,
+                    scenario.water_regime,
+                    position,
+                    crop,
+                )
+                for position, crop in enumerate(scenario.comparable_crops)
+            )
 
 
-def _load_common_support(
+def _load_scenarios(
     session: Session,
     evaluation_id: UUID,
-) -> CommonSupport | None:
-    record = session.get(
-        EvaluationCommonSupportRecord,
-        evaluation_id,
-    )
-
-    if record is None:
-        return None
-
-    return _common_support_from_record(record)
+    requested_water_regimes: tuple[WaterRegime, ...],
+) -> tuple[EvaluationScenarioResult, ...]:
+    scenarios: list[EvaluationScenarioResult] = []
+    for water_regime in requested_water_regimes:
+        common_support_record = session.get(
+            EvaluationCommonSupportRecord,
+            (evaluation_id, water_regime.value),
+        )
+        if common_support_record is None:
+            continue
+        comparable_records = session.scalars(
+            select(EvaluationComparableCropRecord)
+            .where(
+                EvaluationComparableCropRecord.evaluation_id == evaluation_id,
+                EvaluationComparableCropRecord.water_regime == water_regime.value,
+            )
+            .order_by(EvaluationComparableCropRecord.position)
+        )
+        scenarios.append(
+            EvaluationScenarioResult(
+                water_regime=water_regime,
+                common_support=_common_support_from_record(common_support_record),
+                comparable_crops=tuple(
+                    _comparable_crop_from_record(record)
+                    for record in comparable_records
+                ),
+            )
+        )
+    return tuple(scenarios)
 
 
 def _common_support_record(
     evaluation_id: UUID,
+    water_regime: WaterRegime,
     common_support: CommonSupport,
 ) -> EvaluationCommonSupportRecord:
     return EvaluationCommonSupportRecord(
         evaluation_id=evaluation_id,
+        water_regime=water_regime.value,
         status=common_support.status.value,
         method=common_support.method,
         area_crs=common_support.area_crs,
@@ -556,80 +617,16 @@ def _common_support_from_record(
     )
 
 
-def _persist_comparable_crops(
-    session: Session,
-    evaluation: Evaluation,
-) -> None:
-    comparable_crops = evaluation.comparable_crops
-
-    existing = tuple(
-        session.scalars(
-            select(EvaluationComparableCropRecord)
-            .where(
-                EvaluationComparableCropRecord.evaluation_id
-                == evaluation.id
-            )
-            .order_by(EvaluationComparableCropRecord.position)
-        )
-    )
-
-    if not comparable_crops:
-        if existing:
-            raise EvaluationConflictError(
-                f"Evaluation {evaluation.id} already has comparable-crop data."
-            )
-        return
-
-    if not existing:
-        session.add_all(
-            _comparable_crop_record(
-                evaluation.id,
-                position,
-                crop,
-            )
-            for position, crop in enumerate(comparable_crops)
-        )
-        return
-
-    restored = tuple(
-        _comparable_crop_from_record(record)
-        for record in existing
-    )
-
-    if restored != comparable_crops:
-        raise EvaluationConflictError(
-            f"Evaluation {evaluation.id} already has different "
-            "comparable-crop data."
-        )
-
-
-def _load_comparable_crops(
-    session: Session,
-    evaluation_id: UUID,
-) -> tuple[ComparableCrop, ...]:
-    records = session.scalars(
-        select(EvaluationComparableCropRecord)
-        .where(
-            EvaluationComparableCropRecord.evaluation_id
-            == evaluation_id
-        )
-        .order_by(EvaluationComparableCropRecord.position)
-    )
-
-    return tuple(
-        _comparable_crop_from_record(record)
-        for record in records
-    )
-
-
 def _comparable_crop_record(
     evaluation_id: UUID,
+    water_regime: WaterRegime,
     position: int,
     crop: ComparableCrop,
 ) -> EvaluationComparableCropRecord:
     return EvaluationComparableCropRecord(
         evaluation_id=evaluation_id,
         crop_id=crop.crop_id,
+        water_regime=water_regime.value,
         position=position,
         mean=crop.mean,
         rank=crop.rank,
@@ -664,8 +661,22 @@ def _load_outcomes(
                     == CropOutcomeRecord.crop_id
                 ),
             )
+            .join(
+                EvaluationWaterRegimeRecord,
+                (
+                    EvaluationWaterRegimeRecord.evaluation_id
+                    == CropOutcomeRecord.evaluation_id
+                )
+                & (
+                    EvaluationWaterRegimeRecord.water_regime
+                    == CropOutcomeRecord.water_regime
+                ),
+            )
             .where(CropOutcomeRecord.evaluation_id == evaluation_id)
-            .order_by(EvaluationCropRecord.position)
+            .order_by(
+                EvaluationCropRecord.position,
+                EvaluationWaterRegimeRecord.position,
+            )
         )
     )
 
@@ -674,6 +685,7 @@ def _load_outcomes(
         .where(ScientificArtifactRecord.evaluation_id == evaluation_id)
         .order_by(
             ScientificArtifactRecord.crop_id,
+            ScientificArtifactRecord.water_regime,
             ScientificArtifactRecord.role,
         )
     )
@@ -683,20 +695,27 @@ def _load_outcomes(
         .where(ScientificSourceFingerprintRecord.evaluation_id == evaluation_id)
         .order_by(
             ScientificSourceFingerprintRecord.crop_id,
+            ScientificSourceFingerprintRecord.water_regime,
             ScientificSourceFingerprintRecord.position,
         )
     )
 
-    artifacts_by_crop: dict[str, list[ScientificArtifact]] = {}
-    source_fingerprints_by_crop: dict[str, list[ScientificSourceFingerprint]] = {}
+    artifacts_by_execution: dict[
+        tuple[str, WaterRegime], list[ScientificArtifact]
+    ] = {}
+    source_fingerprints_by_execution: dict[
+        tuple[str, WaterRegime], list[ScientificSourceFingerprint]
+    ] = {}
 
     for record in artifact_records:
-        artifacts_by_crop.setdefault(record.crop_id, []).append(
+        key = (record.crop_id, WaterRegime(record.water_regime))
+        artifacts_by_execution.setdefault(key, []).append(
             _artifact_from_record(record)
         )
 
     for record in source_fingerprint_records:
-        source_fingerprints_by_crop.setdefault(record.crop_id, []).append(
+        key = (record.crop_id, WaterRegime(record.water_regime))
+        source_fingerprints_by_execution.setdefault(key, []).append(
             ScientificSourceFingerprint(
                 source_reference=record.source_reference,
                 sha256=record.sha256,
@@ -706,8 +725,18 @@ def _load_outcomes(
     return tuple(
         _outcome_from_record(
             record,
-            tuple(artifacts_by_crop.get(record.crop_id, ())),
-            tuple(source_fingerprints_by_crop.get(record.crop_id, ())),
+            tuple(
+                artifacts_by_execution.get(
+                    (record.crop_id, WaterRegime(record.water_regime)),
+                    (),
+                )
+            ),
+            tuple(
+                source_fingerprints_by_execution.get(
+                    (record.crop_id, WaterRegime(record.water_regime)),
+                    (),
+                )
+            ),
         )
         for record in outcome_records
     )
@@ -719,6 +748,7 @@ def _outcome_record(evaluation_id: UUID, outcome: CropOutcome) -> CropOutcomeRec
     return CropOutcomeRecord(
         evaluation_id=evaluation_id,
         crop_id=outcome.crop_id,
+        water_regime=outcome.water_regime.value,
         status=outcome.status.value,
         suitability_mean=summary.mean if summary is not None else None,
         suitability_minimum=summary.minimum if summary is not None else None,
@@ -745,11 +775,13 @@ def _outcome_record(evaluation_id: UUID, outcome: CropOutcome) -> CropOutcomeRec
 def _artifact_record(
     evaluation_id: UUID,
     crop_id: str,
+    water_regime: WaterRegime,
     artifact: ScientificArtifact,
 ) -> ScientificArtifactRecord:
     return ScientificArtifactRecord(
         evaluation_id=evaluation_id,
         crop_id=crop_id,
+        water_regime=water_regime.value,
         role=artifact.role.value,
         storage_reference=artifact.storage_reference,
         sha256=artifact.sha256,
@@ -766,12 +798,14 @@ def _artifact_record(
 def _source_fingerprint_record(
     evaluation_id: UUID,
     crop_id: str,
+    water_regime: WaterRegime,
     position: int,
     fingerprint: ScientificSourceFingerprint,
 ) -> ScientificSourceFingerprintRecord:
     return ScientificSourceFingerprintRecord(
         evaluation_id=evaluation_id,
         crop_id=crop_id,
+        water_regime=water_regime.value,
         position=position,
         source_reference=fingerprint.source_reference,
         sha256=fingerprint.sha256,
@@ -827,6 +861,7 @@ def _outcome_from_record(
     )
     return CropOutcome(
         crop_id=record.crop_id,
+        water_regime=WaterRegime(record.water_regime),
         status=status,
         suitability=summary,
         failure_message=record.failure_message,

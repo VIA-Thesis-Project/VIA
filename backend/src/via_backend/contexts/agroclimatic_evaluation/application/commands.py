@@ -9,6 +9,7 @@ from typing import Any
 from uuid import UUID
 
 from ..domain.models import EvaluationStatus
+from ..domain.water_regime import WaterRegime
 
 
 @dataclass(frozen=True, slots=True)
@@ -35,6 +36,7 @@ class RequestEvaluation:
     parcel_snapshot: ParcelSnapshotInput
     requested_crops: tuple[str, ...]
     environmental_inputs: tuple[EnvironmentalInputReferenceInput, ...]
+    requested_water_regimes: tuple[WaterRegime, ...] = (WaterRegime.RAINFED,)
 
 
 @dataclass(frozen=True, slots=True)

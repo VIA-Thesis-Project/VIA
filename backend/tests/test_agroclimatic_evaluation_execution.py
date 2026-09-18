@@ -45,6 +45,7 @@ from via_backend.contexts.agroclimatic_evaluation.domain import (
     ScientificTrace,
     SnapshotGeometry,
     SuitabilitySummary,
+    WaterRegime,
 )
 from via_backend.contexts.agroclimatic_evaluation.domain import (
     ScientificSourceFingerprint as DomainScientificSourceFingerprint,
@@ -163,6 +164,7 @@ def _evaluation(
     crops: tuple[str, ...] = ("maize", "potato", "rice"),
     *,
     references: tuple[EnvironmentalInputReference, ...] | None = None,
+    water_regimes: tuple[WaterRegime, ...] = (WaterRegime.RAINFED,),
 ) -> Evaluation:
     return Evaluation(
         id=uuid4(),
@@ -171,13 +173,18 @@ def _evaluation(
         status=EvaluationStatus.QUEUED,
         created_at=NOW,
         environmental_input_references=references or (_reference(),),
+        requested_water_regimes=water_regimes,
     )
 
-def _artifact(crop_id: str) -> ScientificArtifactDescriptor:
+def _artifact(
+    crop_id: str,
+    water_regime: WaterRegime = WaterRegime.RAINFED,
+) -> ScientificArtifactDescriptor:
     return ScientificArtifactDescriptor(
         role=ScientificArtifactRole.CROP_SUITABILITY,
         storage_reference=(
-            f"evaluations/fake/crops/{crop_id}/crop_suitability.tif"
+            f"evaluations/fake/scenarios/{water_regime.value}/"
+            f"crops/{crop_id}/crop_suitability.tif"
         ),
         sha256="a" * 64,
         media_type="image/tiff",
@@ -203,6 +210,7 @@ def _result(
     status: CropExecutionStatus = CropExecutionStatus.SUCCEEDED,
     *,
     mean: float | None = 72.5,
+    water_regime: WaterRegime = WaterRegime.RAINFED,
 ) -> CropSuitabilityResult:
     failed = status is CropExecutionStatus.FAILED
     suitability = (
@@ -251,7 +259,8 @@ def _result(
                 ),
             ),
         ),
-        artifacts=() if failed else (_artifact(crop_id),),
+        artifacts=() if failed else (_artifact(crop_id, water_regime),),
+        water_regime=water_regime,
     )
 
 
@@ -410,6 +419,81 @@ def test_executes_one_request_per_crop_in_deterministic_order() -> None:
         EvaluationStatus.SUMMARIZING,
         EvaluationStatus.SUCCEEDED,
     ]
+
+
+def test_executes_two_crops_across_two_regimes_in_crop_major_order() -> None:
+    evaluation = _evaluation(
+        ("maize", "potato"),
+        water_regimes=(WaterRegime.RAINFED, WaterRegime.IRRIGATED),
+    )
+    repository = RecordingRepository()
+    repository.add(evaluation)
+    engine = FakeEngine([
+        _result("maize", water_regime=WaterRegime.RAINFED),
+        _result("maize", water_regime=WaterRegime.IRRIGATED),
+        _result("potato", water_regime=WaterRegime.RAINFED),
+        _result("potato", water_regime=WaterRegime.IRRIGATED),
+    ])
+    comparison = FakeComparisonEngine()
+
+    AgroclimaticEvaluationExecutionService(
+        repository,
+        engine,
+        comparison,
+        _environmental_information_for(evaluation),
+        clock=lambda: RESOLVED_AT,
+    ).execute_evaluation(ExecuteEvaluation(evaluation.id))
+
+    assert [(request.crop_id, request.water_regime) for request in engine.requests] == [
+        ("maize", WaterRegime.RAINFED),
+        ("maize", WaterRegime.IRRIGATED),
+        ("potato", WaterRegime.RAINFED),
+        ("potato", WaterRegime.IRRIGATED),
+    ]
+    assert [request.water_regime for request in comparison.requests] == [
+        WaterRegime.RAINFED,
+        WaterRegime.IRRIGATED,
+    ]
+
+
+def test_common_support_and_rankings_are_independent_per_regime() -> None:
+    evaluation = _evaluation(
+        ("maize", "potato"),
+        water_regimes=(WaterRegime.RAINFED, WaterRegime.IRRIGATED),
+    )
+    repository = RecordingRepository()
+    repository.add(evaluation)
+    engine = FakeEngine([
+        _result("maize", CropExecutionStatus.FAILED, water_regime=WaterRegime.RAINFED),
+        _result("maize", water_regime=WaterRegime.IRRIGATED),
+        _result("potato", water_regime=WaterRegime.RAINFED),
+        _result("potato", water_regime=WaterRegime.IRRIGATED),
+    ])
+    comparison = FakeComparisonEngine()
+
+    AgroclimaticEvaluationExecutionService(
+        repository,
+        engine,
+        comparison,
+        _environmental_information_for(evaluation),
+        clock=lambda: RESOLVED_AT,
+    ).execute_evaluation(ExecuteEvaluation(evaluation.id))
+
+    assert [tuple(crop.crop_id for crop in request.crops) for request in comparison.requests] == [
+        ("potato",),
+        ("maize", "potato"),
+    ]
+    restored = repository.get(evaluation.id)
+    assert restored is not None
+    assert restored.scenarios[0].water_regime is WaterRegime.RAINFED
+    assert restored.scenarios[0].common_support.eligible_crops == ("potato",)
+    assert tuple(crop.crop_id for crop in restored.scenarios[0].comparable_crops) == ("potato",)
+    assert restored.scenarios[1].water_regime is WaterRegime.IRRIGATED
+    assert restored.scenarios[1].common_support.eligible_crops == ("maize", "potato")
+    assert tuple(crop.crop_id for crop in restored.scenarios[1].comparable_crops) == (
+        "maize",
+        "potato",
+    )
 
 
 @pytest.mark.parametrize(

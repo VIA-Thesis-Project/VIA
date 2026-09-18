@@ -179,6 +179,11 @@ def _print_active_evaluations(evaluations: Sequence[ActiveEvaluationResult]) -> 
                     "created_at": evaluation.created_at.isoformat(),
                     "requested_crop_count": evaluation.requested_crop_count,
                     "completed_crop_count": evaluation.completed_crop_count,
+                    "requested_water_regimes": [
+                        regime.value for regime in evaluation.requested_water_regimes
+                    ],
+                    "requested_execution_count": evaluation.requested_execution_count,
+                    "completed_execution_count": evaluation.completed_execution_count,
                 }
             )
         )

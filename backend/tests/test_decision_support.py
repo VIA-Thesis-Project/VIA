@@ -14,6 +14,7 @@ from via_backend.contexts.agroclimatic_evaluation.application.public import (
     FinalizedComparableCrop,
     FinalizedEvaluationResult,
     GetFinalizedEvaluationResult,
+    WaterRegime,
 )
 from via_backend.contexts.decision_support.application import (
     DecisionSupportService,
@@ -267,6 +268,7 @@ def _finalized_result(
 ) -> FinalizedEvaluationResult:
     return FinalizedEvaluationResult(
         evaluation_id=uuid4(),
+        water_regime=WaterRegime.RAINFED,
         requested_crops=("maize", "potato", "rice"),
         project_id=uuid4(),
         parcel_id=uuid4(),

@@ -47,7 +47,10 @@ class DecisionSupportService:
 
     def prepare_evidence(self, query: EvaluateDecisionSupport) -> DecisionEvidence:
         finalized = self._finalized_results.get_finalized_evaluation_result(
-            GetFinalizedEvaluationResult(query.evaluation_id)
+            GetFinalizedEvaluationResult(
+                evaluation_id=query.evaluation_id,
+                water_regime=query.water_regime,
+            )
         )
         return _translate_evidence(finalized, query)
 

@@ -28,6 +28,7 @@ from via_backend.contexts.agroclimatic_evaluation.domain import (
     ScientificTrace,
     SnapshotGeometry,
     SuitabilitySummary,
+    WaterRegime,
 )
 from via_backend.contexts.agroclimatic_evaluation.infrastructure import (
     InMemoryEvaluationRepository,
@@ -93,6 +94,7 @@ def _evaluation(
     status: EvaluationStatus = EvaluationStatus.QUEUED,
     outcomes: tuple[CropOutcome, ...] = (),
     failure_reason: str | None = None,
+    requested_water_regimes: tuple[WaterRegime, ...] = (WaterRegime.RAINFED,),
 ) -> Evaluation:
     return Evaluation(
         id=uuid4(),
@@ -107,12 +109,18 @@ def _evaluation(
         requested_crops=("maize", "potato", "rice"),
         status=status,
         created_at=NOW,
+        requested_water_regimes=requested_water_regimes,
         outcomes=outcomes,
         failure_reason=failure_reason,
     )
 
 
-def _outcome(crop_id: str, status: CropOutcomeStatus) -> CropOutcome:
+def _outcome(
+    crop_id: str,
+    status: CropOutcomeStatus,
+    *,
+    water_regime: WaterRegime = WaterRegime.RAINFED,
+) -> CropOutcome:
     if status is CropOutcomeStatus.SUCCEEDED:
         suitability = SuitabilitySummary(
             mean=0.0,
@@ -166,6 +174,7 @@ def _outcome(crop_id: str, status: CropOutcomeStatus) -> CropOutcome:
                 ),
             ),
         ),
+        water_regime=water_regime,
     )
 
 
@@ -178,13 +187,12 @@ def _completed_outcomes() -> tuple[CropOutcome, ...]:
 
 def _evaluation_with_comparison() -> Evaluation:
     evaluation = _evaluation(
-        status=EvaluationStatus.SUCCEEDED,
+        status=EvaluationStatus.SUMMARIZING,
         outcomes=_completed_outcomes(),
     )
 
-    return replace(
-        evaluation,
-        common_support=CommonSupport(
+    return evaluation.record_comparison(
+        CommonSupport(
             status=CommonSupportStatus.COMPARABLE,
             method="area_weighted_mean_on_common_valid_cells",
             area_crs="EPSG:6933",
@@ -194,14 +202,14 @@ def _evaluation_with_comparison() -> Evaluation:
             eligible_crops=("maize",),
             excluded_without_coverage=("potato",),
         ),
-        comparable_crops=(
+        (
             ComparableCrop(
                 crop_id="maize",
                 mean=0.0,
                 rank=1,
             ),
         ),
-    )
+    ).succeed()
 
 def test_final_result_exposes_common_support_and_comparable_crops() -> None:
     evaluation = _evaluation_with_comparison()
@@ -255,6 +263,7 @@ def test_create_get_and_list_evaluation() -> None:
             created = created_response.json()
             assert created["status"] == "queued"
             assert created["requested_crops"] == ["maize", "potato", "rice"]
+            assert created["requested_water_regimes"] == ["rainfed"]
             assert created["parcel_snapshot"] == body["parcel_snapshot"]
 
             status_response = await client.get(f"/api/v1/evaluations/{created['id']}")
@@ -264,10 +273,34 @@ def test_create_get_and_list_evaluation() -> None:
             assert status_view["status"] == "queued"
             assert status_view["requested_crop_count"] == 3
             assert status_view["completed_crop_count"] == 0
+            assert status_view["requested_water_regimes"] == ["rainfed"]
+            assert status_view["requested_execution_count"] == 3
+            assert status_view["completed_execution_count"] == 0
             assert "progress_percentage" not in status_view
 
             listed = await client.get("/api/v1/evaluations")
             assert listed.json() == [created]
+
+    asyncio.run(scenario())
+
+
+def test_create_evaluation_accepts_explicit_two_regime_matrix() -> None:
+    async def scenario() -> None:
+        transport = ASGITransport(app=_test_app())
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            body = _body()
+            body["water_regimes"] = ["rainfed", "irrigated"]
+
+            created_response = await client.post("/api/v1/evaluations", json=body)
+            assert created_response.status_code == 201
+            created = created_response.json()
+            assert created["requested_water_regimes"] == ["rainfed", "irrigated"]
+
+            status_response = await client.get(f"/api/v1/evaluations/{created['id']}")
+            assert status_response.status_code == 200
+            status_view = status_response.json()
+            assert status_view["requested_execution_count"] == 6
+            assert status_view["completed_execution_count"] == 0
 
     asyncio.run(scenario())
 
@@ -509,6 +542,11 @@ def test_evidence_exposes_only_current_safe_trace_subset() -> None:
         "maize",
         "potato",
         "rice",
+    ]
+    assert [item["water_regime"] for item in body["evidence"]] == [
+        "rainfed",
+        "rainfed",
+        "rainfed",
     ]
     assert set(body["evidence"][0]["trace"]) == {
         "engine_identifier",

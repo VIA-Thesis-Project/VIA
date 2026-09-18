@@ -71,6 +71,34 @@ class EvaluationRecord(Base):
     failure_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
 
 
+class EvaluationWaterRegimeRecord(Base):
+    __tablename__ = "evaluation_water_regimes"
+    __table_args__ = (
+        CheckConstraint("position >= 0", name="water_regime_position_nonnegative"),
+        CheckConstraint(
+            "water_regime IN ('rainfed', 'irrigated')",
+            name="water_regime_supported",
+        ),
+        UniqueConstraint(
+            "evaluation_id",
+            "water_regime",
+            name="uq_evaluation_water_regimes_regime",
+        ),
+    )
+
+    evaluation_id: Mapped[UUID] = mapped_column(
+        PostgreSQLUUID(as_uuid=True),
+        ForeignKey(
+            f"{AGROCLIMATIC_EVALUATION_SCHEMA}.evaluations.id",
+            ondelete="CASCADE",
+        ),
+        primary_key=True,
+        nullable=False,
+    )
+    position: Mapped[int] = mapped_column(Integer, primary_key=True, nullable=False)
+    water_regime: Mapped[str] = mapped_column(String(16), nullable=False)
+
+
 class EvaluationEnvironmentalInputRequestRecord(Base):
     __tablename__ = "evaluation_environmental_input_requests"
     __table_args__ = (
@@ -310,6 +338,19 @@ class EvaluationCommonSupportRecord(Base):
             "AND common_coverage_fraction = 0)",
             name="common_support_no_common_has_zero_area",
         ),
+        CheckConstraint(
+            "water_regime IN ('rainfed', 'irrigated')",
+            name="common_support_water_regime_supported",
+        ),
+        ForeignKeyConstraint(
+            ["evaluation_id", "water_regime"],
+            [
+                f"{AGROCLIMATIC_EVALUATION_SCHEMA}.evaluation_water_regimes.evaluation_id",
+                f"{AGROCLIMATIC_EVALUATION_SCHEMA}.evaluation_water_regimes.water_regime",
+            ],
+            name="fk_common_support_requested_water_regime",
+            ondelete="CASCADE",
+        ),
     )
 
     evaluation_id: Mapped[UUID] = mapped_column(
@@ -318,6 +359,11 @@ class EvaluationCommonSupportRecord(Base):
             f"{AGROCLIMATIC_EVALUATION_SCHEMA}.evaluations.id",
             ondelete="CASCADE",
         ),
+        primary_key=True,
+        nullable=False,
+    )
+    water_regime: Mapped[str] = mapped_column(
+        String(16),
         primary_key=True,
         nullable=False,
     )
@@ -401,8 +447,13 @@ class EvaluationComparableCropRecord(Base):
             "rank >= 1",
             name="comparable_crop_rank_positive",
         ),
+        CheckConstraint(
+            "water_regime IN ('rainfed', 'irrigated')",
+            name="comparable_crop_water_regime_supported",
+        ),
         UniqueConstraint(
             "evaluation_id",
+            "water_regime",
             "position",
             name="uq_evaluation_comparable_crops_position",
         ),
@@ -415,6 +466,15 @@ class EvaluationComparableCropRecord(Base):
             name="fk_evaluation_comparable_crops_requested_crop",
             ondelete="CASCADE",
         ),
+        ForeignKeyConstraint(
+            ["evaluation_id", "water_regime"],
+            [
+                f"{AGROCLIMATIC_EVALUATION_SCHEMA}.evaluation_water_regimes.evaluation_id",
+                f"{AGROCLIMATIC_EVALUATION_SCHEMA}.evaluation_water_regimes.water_regime",
+            ],
+            name="fk_comparable_crops_requested_water_regime",
+            ondelete="CASCADE",
+        ),
     )
 
     evaluation_id: Mapped[UUID] = mapped_column(
@@ -424,6 +484,11 @@ class EvaluationComparableCropRecord(Base):
     )
     crop_id: Mapped[str] = mapped_column(
         String(120),
+        primary_key=True,
+        nullable=False,
+    )
+    water_regime: Mapped[str] = mapped_column(
+        String(16),
         primary_key=True,
         nullable=False,
     )
@@ -457,6 +522,10 @@ class CropOutcomeRecord(Base):
             name="crop_outcome_coverage_fraction_valid",
         ),
         CheckConstraint(
+            "water_regime IN ('rainfed', 'irrigated')",
+            name="crop_outcome_water_regime_supported",
+        ),
+        CheckConstraint(
             "(status = 'failed' AND failure_message IS NOT NULL "
             "AND suitability_mean IS NULL AND suitability_minimum IS NULL "
             "AND suitability_maximum IS NULL AND valid_cells IS NULL "
@@ -477,12 +546,22 @@ class CropOutcomeRecord(Base):
             name="fk_crop_outcomes_requested_crop",
             ondelete="CASCADE",
         ),
+        ForeignKeyConstraint(
+            ["evaluation_id", "water_regime"],
+            [
+                f"{AGROCLIMATIC_EVALUATION_SCHEMA}.evaluation_water_regimes.evaluation_id",
+                f"{AGROCLIMATIC_EVALUATION_SCHEMA}.evaluation_water_regimes.water_regime",
+            ],
+            name="fk_crop_outcomes_requested_water_regime",
+            ondelete="CASCADE",
+        ),
     )
 
     evaluation_id: Mapped[UUID] = mapped_column(
         PostgreSQLUUID(as_uuid=True), primary_key=True, nullable=False
     )
     crop_id: Mapped[str] = mapped_column(String(120), primary_key=True, nullable=False)
+    water_regime: Mapped[str] = mapped_column(String(16), primary_key=True, nullable=False)
     status: Mapped[str] = mapped_column(String(32), nullable=False)
     suitability_mean: Mapped[float | None] = mapped_column(Float, nullable=True)
     suitability_minimum: Mapped[float | None] = mapped_column(Float, nullable=True)
@@ -519,11 +598,16 @@ class ScientificSourceFingerprintRecord(Base):
             "sha256 ~ '^[0-9a-f]{64}$'",
             name="scientific_source_fingerprint_sha256_valid",
         ),
+        CheckConstraint(
+            "water_regime IN ('rainfed', 'irrigated')",
+            name="scientific_source_fingerprint_water_regime_supported",
+        ),
         ForeignKeyConstraint(
-            ["evaluation_id", "crop_id"],
+            ["evaluation_id", "crop_id", "water_regime"],
             [
                 f"{AGROCLIMATIC_EVALUATION_SCHEMA}.crop_outcomes.evaluation_id",
                 f"{AGROCLIMATIC_EVALUATION_SCHEMA}.crop_outcomes.crop_id",
+                f"{AGROCLIMATIC_EVALUATION_SCHEMA}.crop_outcomes.water_regime",
             ],
             name="fk_scientific_source_fingerprints_crop_outcome",
             ondelete="CASCADE",
@@ -531,6 +615,7 @@ class ScientificSourceFingerprintRecord(Base):
         UniqueConstraint(
             "evaluation_id",
             "crop_id",
+            "water_regime",
             "source_reference",
             name="uq_scientific_source_fingerprint_reference",
         ),
@@ -543,6 +628,11 @@ class ScientificSourceFingerprintRecord(Base):
     )
     crop_id: Mapped[str] = mapped_column(
         String(120),
+        primary_key=True,
+        nullable=False,
+    )
+    water_regime: Mapped[str] = mapped_column(
+        String(16),
         primary_key=True,
         nullable=False,
     )
@@ -592,11 +682,16 @@ class ScientificArtifactRecord(Base):
             "AND jsonb_array_length(transform) = 6",
             name="scientific_artifact_transform_six_coefficients",
         ),
+        CheckConstraint(
+            "water_regime IN ('rainfed', 'irrigated')",
+            name="scientific_artifact_water_regime_supported",
+        ),
         ForeignKeyConstraint(
-            ["evaluation_id", "crop_id"],
+            ["evaluation_id", "crop_id", "water_regime"],
             [
                 f"{AGROCLIMATIC_EVALUATION_SCHEMA}.crop_outcomes.evaluation_id",
                 f"{AGROCLIMATIC_EVALUATION_SCHEMA}.crop_outcomes.crop_id",
+                f"{AGROCLIMATIC_EVALUATION_SCHEMA}.crop_outcomes.water_regime",
             ],
             name="fk_scientific_artifacts_crop_outcome",
             ondelete="CASCADE",
@@ -610,6 +705,11 @@ class ScientificArtifactRecord(Base):
     )
     crop_id: Mapped[str] = mapped_column(
         String(120),
+        primary_key=True,
+        nullable=False,
+    )
+    water_regime: Mapped[str] = mapped_column(
+        String(16),
         primary_key=True,
         nullable=False,
     )

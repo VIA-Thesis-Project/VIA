@@ -17,6 +17,7 @@ from .environmental_inputs import EnvironmentalInputManifest, EnvironmentalInput
 from .errors import DomainValidationError, InvalidEvaluationTransitionError
 from .outcomes import CropOutcome, CropOutcomeStatus
 from .snapshot import ParcelSnapshot
+from .water_regime import WaterRegime
 
 
 class EvaluationStatus(StrEnum):
@@ -32,6 +33,26 @@ class EvaluationStatus(StrEnum):
 
 
 @dataclass(frozen=True, slots=True)
+class EvaluationScenarioResult:
+    """Per-water-regime scientific comparison kept separate from other scenarios."""
+
+    water_regime: WaterRegime
+    common_support: CommonSupport
+    comparable_crops: tuple[ComparableCrop, ...] = ()
+
+    def __post_init__(self) -> None:
+        try:
+            regime = WaterRegime(self.water_regime)
+        except ValueError as error:
+            raise DomainValidationError("Evaluation water regime is not supported.") from error
+        crops = tuple(self.comparable_crops)
+        if crops or self.common_support.status is not CommonSupportStatus.COMPARABLE:
+            validate_comparable_crops(self.common_support, crops)
+        object.__setattr__(self, "water_regime", regime)
+        object.__setattr__(self, "comparable_crops", crops)
+
+
+@dataclass(frozen=True, slots=True)
 class Evaluation:
     """An immutable multicrop evaluation and its scientific outcomes."""
 
@@ -42,9 +63,9 @@ class Evaluation:
     created_at: datetime
     environmental_input_references: tuple[EnvironmentalInputReference, ...] = ()
     environmental_input_manifest: EnvironmentalInputManifest | None = None
+    requested_water_regimes: tuple[WaterRegime, ...] = (WaterRegime.RAINFED,)
     outcomes: tuple[CropOutcome, ...] = ()
-    common_support: CommonSupport | None = None
-    comparable_crops: tuple[ComparableCrop, ...] = ()
+    scenarios: tuple[EvaluationScenarioResult, ...] = ()
     failure_reason: str | None = None
 
     def __post_init__(self) -> None:
@@ -64,6 +85,18 @@ class Evaluation:
                 )
         if len(set(crops)) != len(crops):
             raise DomainValidationError("Requested crop identifiers must be unique.")
+        if isinstance(self.requested_water_regimes, (str, bytes)):
+            raise DomainValidationError("Requested water regimes must be a collection.")
+        try:
+            water_regimes = tuple(
+                WaterRegime(regime) for regime in self.requested_water_regimes
+            )
+        except ValueError as error:
+            raise DomainValidationError("Requested water regime is not supported.") from error
+        if not water_regimes:
+            raise DomainValidationError("At least one water regime must be requested.")
+        if len(set(water_regimes)) != len(water_regimes):
+            raise DomainValidationError("Requested water regimes must be unique.")
         if self.created_at.tzinfo is None or self.created_at.utcoffset() is None:
             raise DomainValidationError("Evaluation creation time must be timezone-aware.")
 
@@ -99,18 +132,26 @@ class Evaluation:
                     "Environmental input manifest must exactly match requested references in order."
                 )
         outcomes = tuple(self.outcomes)
-        outcome_crops = tuple(outcome.crop_id for outcome in outcomes)
-        if outcome_crops != crops[: len(outcome_crops)]:
+        execution_matrix = tuple(
+            (crop_id, water_regime)
+            for crop_id in crops
+            for water_regime in water_regimes
+        )
+        outcome_identities = tuple(
+            (outcome.crop_id, outcome.water_regime) for outcome in outcomes
+        )
+        if outcome_identities != execution_matrix[: len(outcome_identities)]:
             raise DomainValidationError(
-                "Crop outcomes must be a unique ordered prefix of requested crops."
+                "Crop outcomes must be a unique ordered prefix of the execution matrix."
             )
         if self.status in {EvaluationStatus.QUEUED, EvaluationStatus.PREPARING} and outcomes:
             raise DomainValidationError("An evaluation cannot have outcomes before running.")
         if self.status in {EvaluationStatus.SUMMARIZING, EvaluationStatus.SUCCEEDED} and (
-            outcome_crops != crops
+            outcome_identities != execution_matrix
         ):
             raise DomainValidationError(
-                "Summarizing and succeeded evaluations require one outcome per requested crop."
+                "Summarizing and succeeded evaluations require one outcome per "
+                "requested scenario execution."
             )
         if self.status is EvaluationStatus.FAILED:
             if not self.failure_reason:
@@ -120,34 +161,58 @@ class Evaluation:
                 "Only a failed evaluation may retain an orchestration failure reason."
             )
 
-        comparable_crops = tuple(self.comparable_crops)
-
-        if comparable_crops:
-            if self.common_support is None:
-                raise DomainValidationError(
-                    "Comparable crop results require common support."
-                )
-
-            validate_comparable_crops(
-                self.common_support,
-                comparable_crops,
+        scenarios = tuple(self.scenarios)
+        scenario_regimes = tuple(scenario.water_regime for scenario in scenarios)
+        if scenario_regimes != water_regimes[: len(scenario_regimes)]:
+            raise DomainValidationError(
+                "Scenario comparisons must follow requested water-regime order."
             )
-        object.__setattr__(
-            self,
-            "comparable_crops",
-            comparable_crops,
-        )
+        if (
+            self.status is EvaluationStatus.SUCCEEDED
+            and scenarios
+            and scenario_regimes != water_regimes
+        ):
+            raise DomainValidationError(
+                "A succeeded evaluation requires one comparison per requested water regime."
+            )
         object.__setattr__(self, "requested_crops", crops)
+        object.__setattr__(self, "requested_water_regimes", water_regimes)
         object.__setattr__(self, "outcomes", outcomes)
+        object.__setattr__(self, "scenarios", scenarios)
         if self.status in {
             EvaluationStatus.QUEUED,
             EvaluationStatus.PREPARING,
             EvaluationStatus.RUNNING,
             EvaluationStatus.CANCELLED,
-        } and self.common_support is not None:
+        } and scenarios:
             raise DomainValidationError(
-            "Common support cannot exist before summarizing."
+                "Scenario comparisons cannot exist before summarizing."
+            )
+
+    @property
+    def execution_matrix(self) -> tuple[tuple[str, WaterRegime], ...]:
+        return tuple(
+            (crop_id, water_regime)
+            for crop_id in self.requested_crops
+            for water_regime in self.requested_water_regimes
         )
+
+    def scenario_for(self, water_regime: WaterRegime) -> EvaluationScenarioResult | None:
+        regime = WaterRegime(water_regime)
+        return next(
+            (scenario for scenario in self.scenarios if scenario.water_regime is regime),
+            None,
+        )
+
+    @property
+    def common_support(self) -> CommonSupport | None:
+        scenario = self.scenario_for(WaterRegime.RAINFED)
+        return scenario.common_support if scenario is not None else None
+
+    @property
+    def comparable_crops(self) -> tuple[ComparableCrop, ...]:
+        scenario = self.scenario_for(WaterRegime.RAINFED)
+        return scenario.comparable_crops if scenario is not None else ()
 
     def prepare(self) -> Evaluation:
         return self._transition(EvaluationStatus.QUEUED, EvaluationStatus.PREPARING)
@@ -183,13 +248,14 @@ class Evaluation:
                 "Crop outcomes can only be recorded while an evaluation is running."
             )
         expected_index = len(self.outcomes)
-        if expected_index >= len(self.requested_crops):
+        execution_matrix = self.execution_matrix
+        if expected_index >= len(execution_matrix):
             raise InvalidEvaluationTransitionError(
-                "Every requested crop already has an outcome."
+                "Every requested scenario execution already has an outcome."
             )
-        if outcome.crop_id != self.requested_crops[expected_index]:
+        if (outcome.crop_id, outcome.water_regime) != execution_matrix[expected_index]:
             raise InvalidEvaluationTransitionError(
-                "Crop outcomes must follow the deterministic requested-crop order."
+                "Crop outcomes must follow deterministic crop-major water-regime order."
             )
         return replace(self, outcomes=(*self.outcomes, outcome))
 
@@ -199,21 +265,27 @@ class Evaluation:
     def record_common_support(
         self,
         common_support: CommonSupport,
+        *,
+        water_regime: WaterRegime = WaterRegime.RAINFED,
     ) -> Evaluation:
         if self.status is not EvaluationStatus.SUMMARIZING:
             raise InvalidEvaluationTransitionError(
                 "Common support can only be recorded while summarizing."
             )
 
-        if self.common_support is not None:
+        regime = WaterRegime(water_regime)
+        if regime not in self.requested_water_regimes:
+            raise DomainValidationError("Water regime was not requested for this evaluation.")
+        if self.scenario_for(regime) is not None:
             raise InvalidEvaluationTransitionError(
-                "Common support has already been recorded."
+                "Common support has already been recorded for this water regime."
             )
 
         comparable_crops = tuple(
             outcome.crop_id
             for outcome in self.outcomes
-            if outcome.status is not CropOutcomeStatus.FAILED
+            if outcome.water_regime is regime
+            and outcome.status is not CropOutcomeStatus.FAILED
         )
 
         reported = (
@@ -246,22 +318,33 @@ class Evaluation:
 
         return replace(
             self,
-            common_support=common_support,
+            scenarios=(
+                *self.scenarios,
+                EvaluationScenarioResult(
+                    water_regime=regime,
+                    common_support=common_support,
+                ),
+            ),
         )
 
     def record_comparison(
         self,
         common_support: CommonSupport,
         comparable_crops: tuple[ComparableCrop, ...],
+        *,
+        water_regime: WaterRegime = WaterRegime.RAINFED,
     ) -> Evaluation:
         if self.status is not EvaluationStatus.SUMMARIZING:
             raise InvalidEvaluationTransitionError(
                 "Scientific comparison can only be recorded while summarizing."
             )
 
-        if self.common_support is not None:
+        regime = WaterRegime(water_regime)
+        if regime not in self.requested_water_regimes:
+            raise DomainValidationError("Water regime was not requested for this evaluation.")
+        if self.scenario_for(regime) is not None:
             raise InvalidEvaluationTransitionError(
-                "Scientific comparison has already been recorded."
+                "Scientific comparison has already been recorded for this water regime."
             )
 
         crops = tuple(comparable_crops)
@@ -271,16 +354,53 @@ class Evaluation:
             crops,
         )
 
-        with_support = self.record_common_support(
-            common_support
+        comparable_outcomes = tuple(
+            outcome.crop_id
+            for outcome in self.outcomes
+            if outcome.water_regime is regime
+            and outcome.status is not CropOutcomeStatus.FAILED
         )
+        reported = (
+            *common_support.eligible_crops,
+            *common_support.excluded_without_coverage,
+        )
+        if set(reported) != set(comparable_outcomes):
+            raise DomainValidationError(
+                "Common support must partition every non-failed crop outcome."
+            )
+        if (
+            common_support.status is CommonSupportStatus.NO_SUCCESSFUL_CROPS
+            and comparable_outcomes
+        ):
+            raise DomainValidationError(
+                "No-successful-crops requires every crop outcome to have failed."
+            )
+        if (
+            common_support.status is not CommonSupportStatus.NO_SUCCESSFUL_CROPS
+            and not comparable_outcomes
+        ):
+            raise DomainValidationError(
+                "A spatial comparison requires at least one non-failed crop."
+            )
 
         return replace(
-            with_support,
-            comparable_crops=crops,
+            self,
+            scenarios=(
+                *self.scenarios,
+                EvaluationScenarioResult(
+                    water_regime=regime,
+                    common_support=common_support,
+                    comparable_crops=crops,
+                ),
+            ),
         )
-    
+
     def succeed(self) -> Evaluation:
+        scenario_regimes = tuple(scenario.water_regime for scenario in self.scenarios)
+        if scenario_regimes != self.requested_water_regimes:
+            raise InvalidEvaluationTransitionError(
+                "Evaluation cannot succeed before every requested scenario is summarized."
+            )
         return self._transition(EvaluationStatus.SUMMARIZING, EvaluationStatus.SUCCEEDED)
 
     def fail(self, reason: str) -> Evaluation:
