@@ -36,6 +36,20 @@ def test_development_settings_can_fall_back_to_memory(monkeypatch: pytest.Monkey
     assert settings.agroclimatic_evaluation_repository == "memory"
 
 
+def test_knowledge_path_overrides_take_precedence_over_legacy_names(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("VIA_KNOWLEDGE_MANIFEST", "C:/legacy/corpus.yaml")
+    monkeypatch.setenv("VIA_KNOWLEDGE_TAXONOMY", "C:/legacy/taxonomy.yaml")
+    monkeypatch.setenv("VIA_KNOWLEDGE_MANIFEST_PATH", "C:/configured/corpus.yaml")
+    monkeypatch.setenv("VIA_KNOWLEDGE_TAXONOMY_PATH", "C:/configured/taxonomy.yaml")
+
+    settings = Settings.from_env()
+
+    assert settings.knowledge_manifest == Path("C:/configured/corpus.yaml")
+    assert settings.knowledge_taxonomy == Path("C:/configured/taxonomy.yaml")
+
+
 def test_production_settings_accept_postgresql_repositories_and_database_url() -> None:
     settings = Settings(
         farm_management_repository="postgresql",
