@@ -18,9 +18,12 @@ from .public import (
     FinalizedCommonSupport,
     FinalizedCommonSupportStatus,
     FinalizedComparableCrop,
+    FinalizedCropLimitationEvidence,
     FinalizedCropOutcome,
     FinalizedCropOutcomeStatus,
     FinalizedEvaluationResult,
+    FinalizedLimitationEvidenceAvailability,
+    FinalizedLimitingFactorEvidence,
     FinalizedScientificTrace,
     FinalizedSuitabilitySummary,
     GetFinalizedEvaluationResult,
@@ -31,11 +34,13 @@ from .public import (
 from .queries import (
     GetEvaluation,
     GetEvaluationEvidence,
+    GetEvaluationLimitations,
     GetEvaluationResult,
     ListEvaluations,
 )
 from .read_models import (
     EvaluationEvidenceResult,
+    EvaluationLimitationsResult,
     EvaluationReadResult,
     EvaluationStatusResult,
 )
@@ -116,6 +121,13 @@ class AgroclimaticEvaluationService:
 
     def get_evaluation_evidence(self, query: GetEvaluationEvidence) -> EvaluationEvidenceResult:
         return EvaluationEvidenceResult.from_domain(self._get_evaluation(query.evaluation_id))
+
+    def get_evaluation_limitations(
+        self, query: GetEvaluationLimitations
+    ) -> EvaluationLimitationsResult:
+        return EvaluationLimitationsResult.from_domain(
+            self._get_evaluation(query.evaluation_id)
+        )
 
     def get_finalized_evaluation_result(
         self, query: GetFinalizedEvaluationResult
@@ -229,5 +241,26 @@ def _to_finalized_crop_outcome(outcome: CropOutcome) -> FinalizedCropOutcome:
             parameter_sha256=trace.parameter_sha256,
             configuration_sha256=trace.configuration_sha256,
             source_files_unchanged=trace.source_files_unchanged,
+        ),
+        limitation_evidence=FinalizedCropLimitationEvidence(
+            availability=FinalizedLimitationEvidenceAvailability(
+                outcome.limitation_evidence.availability.value
+            ),
+            reason=outcome.limitation_evidence.reason,
+            warnings=outcome.limitation_evidence.warnings,
+            factors=tuple(
+                FinalizedLimitingFactorEvidence(
+                    factor_code=factor.factor_code,
+                    label=factor.label,
+                    raw_code=factor.raw_code,
+                    affected_cells=factor.affected_cells,
+                    affected_area_m2=factor.affected_area_m2,
+                    affected_fraction=factor.affected_fraction,
+                    dominant=factor.dominant,
+                    source_storage_reference=factor.source_storage_reference,
+                    source_sha256=factor.source_sha256,
+                )
+                for factor in outcome.limitation_evidence.factors
+            ),
         ),
     )

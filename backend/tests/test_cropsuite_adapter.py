@@ -21,6 +21,7 @@ from via_backend.contexts.agroclimatic_evaluation.application.ports import (
     EnvironmentalInputIntegrityError,
     ICropSuitabilityEngine,
     InvalidEngineOutputError,
+    LimitationEvidenceAvailability,
     ScientificArtifactRole,
     ScientificSourceFingerprint,
 )
@@ -777,3 +778,254 @@ def test_adapter_rejects_artifact_outside_request_workspace(
         match="escapes the request workspace",
     ):
         adapter.evaluate(_request())
+
+
+def _write_limitation_engine(
+    engine_root: Path,
+    *,
+    values: list[list[int]],
+    areas: list[list[float]],
+    info_lines: tuple[str, ...] = (
+        "0 - temperature",
+        "1 - precipitation",
+        "2 - crop failure frequency",
+        "3 - photoperiod",
+        "4 - soil ph",
+    ),
+    include_limitation_artifact: bool = True,
+    vary_by_irrigation: bool = False,
+) -> None:
+    source_root = engine_root / "src"
+    source_root.mkdir(parents=True, exist_ok=True)
+    (source_root / "__init__.py").write_text("", encoding="utf-8")
+    source = f'''\
+from pathlib import Path
+import configparser
+import numpy as np
+import rasterio
+from rasterio.transform import from_origin
+
+VALUES = np.array({values!r}, dtype="int16")
+AREAS = np.array({areas!r}, dtype="float64")
+INFO_LINES = {list(info_lines)!r}
+INCLUDE_LIMITATION_ARTIFACT = {include_limitation_artifact!r}
+VARY_BY_IRRIGATION = {vary_by_irrigation!r}
+
+
+def load_geometry(path):
+    return Path(path)
+
+
+def cell_areas(geometry, shape, transform, crs):
+    del geometry, transform, crs
+    assert tuple(shape) == tuple(AREAS.shape)
+    return AREAS.copy(), float(AREAS.sum())
+
+
+def _write_raster(path, data):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with rasterio.open(
+        path,
+        "w",
+        driver="GTiff",
+        height=data.shape[0],
+        width=data.shape[1],
+        count=1,
+        dtype="int16",
+        crs="EPSG:4326",
+        transform=from_origin(-77.5, -11.0, 0.01, 0.01),
+        nodata=-1,
+    ) as dataset:
+        dataset.write(data, 1)
+
+
+def run_evaluation(
+    crops,
+    parcel_path,
+    output_root=None,
+    source_config=None,
+    catalog=None,
+    max_workers=2,
+    progress=None,
+):
+    del parcel_path, catalog, max_workers, progress
+    output_root = Path(output_root)
+    result_directory = output_root / "engine-result"
+    values = VALUES.copy()
+    if VARY_BY_IRRIGATION:
+        parser = configparser.ConfigParser()
+        parser.read(source_config, encoding="utf-8")
+        irrigation = parser.getint("options", "irrigation")
+        values[:] = 1 if irrigation else 0
+
+    _write_raster(
+        result_directory / "crop_suitability.tif",
+        np.full(values.shape, 72, dtype="int16"),
+    )
+    if INCLUDE_LIMITATION_ARTIFACT:
+        _write_raster(result_directory / "crop_limiting_factor.tif", values)
+        (result_directory / "limiting_factor.inf").write_text(
+            "\\n".join(INFO_LINES) + "\\n",
+            encoding="utf-8",
+        )
+
+    return {{
+        "evaluation_id": "fake_scientific_process",
+        "created_at": "2026-09-17T12:00:00+00:00",
+        "finished_at": "2026-09-17T12:00:01+00:00",
+        "selected_crops": list(crops),
+        "execution": "sequential_isolated_processes",
+        "parcel_sha256": "parcel-sha256",
+        "source_sha256": {{
+            "/science/environment.tif": "{'a' * 64}"
+        }},
+        "source_files_unchanged": True,
+        "crops": [{{
+            "id": crops[0],
+            "status": "succeeded",
+            "parameter_sha256": "parameter-sha256",
+            "config_sha256": "configuration-sha256",
+            "elapsed_seconds": 0.1,
+            "result_directory": str(result_directory),
+            "scores": {{
+                "crop_suitability": {{
+                    "mean": 72.0,
+                    "minimum": 72.0,
+                    "maximum": 72.0,
+                    "valid_cells": int(values.size),
+                    "valid_area_m2": float(AREAS[AREAS > 0].sum()),
+                    "coverage_fraction": 1.0,
+                    "zero_suitability_area_m2": 0.0,
+                }}
+            }},
+        }}],
+    }}
+'''
+    (source_root / "multicrop.py").write_text(source, encoding="utf-8")
+
+
+def _real_limitation_adapter(tmp_path: Path, request: CropSuitabilityRequest) -> CropSuiteAdapter:
+    return CropSuiteAdapter(
+        engine_root=tmp_path / "engine",
+        workspace_root=tmp_path / "workspace",
+        python_executable=Path(sys.executable),
+        max_workers=1,
+        input_integrity_verifier=_integrity_verifier(request.environmental_input_manifest),
+        artifact_store=FilesystemScientificArtifactStore(tmp_path / "artifacts"),
+    )
+
+
+def test_real_execution_extracts_same_run_limiting_factor_evidence(tmp_path: Path) -> None:
+    request = _request()
+    _write_limitation_engine(
+        tmp_path / "engine",
+        values=[[0, 1, 2], [3, 4, -1]],
+        areas=[[10.0, 20.0, 30.0], [40.0, 50.0, 999.0]],
+    )
+
+    result = _real_limitation_adapter(tmp_path, request).evaluate(request)
+
+    assert result.status is CropExecutionStatus.SUCCEEDED
+    assert result.limitation_evidence.availability is LimitationEvidenceAvailability.AVAILABLE
+    factors = {factor.raw_code: factor for factor in result.limitation_evidence.factors}
+    assert {code: factor.factor_code for code, factor in factors.items()} == {
+        0: "temperature",
+        1: "precipitation",
+        2: "crop_failure_frequency",
+        3: "photoperiod",
+        4: "parameter_soil_ph",
+    }
+    assert factors[4].affected_area_m2 == pytest.approx(50.0)
+    assert factors[4].affected_fraction == pytest.approx(50.0 / 150.0)
+    assert factors[4].dominant is True
+    assert sum(f.affected_fraction for f in factors.values()) == pytest.approx(1.0)
+    assert all(f.source_sha256 == factors[4].source_sha256 for f in factors.values())
+    assert len(factors[4].source_sha256) == 64
+    assert factors[4].source_storage_reference == (
+        f"evaluations/{request.evaluation_id}/scenarios/rainfed/"
+        "crops/maize/crop_limiting_factor.tif"
+    )
+    assert {artifact.role for artifact in result.artifacts} == {
+        ScientificArtifactRole.CROP_SUITABILITY,
+        ScientificArtifactRole.CROP_LIMITING_FACTOR,
+    }
+
+
+def test_real_execution_allows_tied_dominant_limiting_factors(tmp_path: Path) -> None:
+    request = _request()
+    _write_limitation_engine(
+        tmp_path / "engine",
+        values=[[0, 1]],
+        areas=[[25.0, 25.0]],
+    )
+
+    result = _real_limitation_adapter(tmp_path, request).evaluate(request)
+
+    assert [
+        factor.raw_code
+        for factor in result.limitation_evidence.factors
+        if factor.dominant
+    ] == [0, 1]
+
+
+def test_real_execution_preserves_unknown_raw_limiting_factor(tmp_path: Path) -> None:
+    request = _request()
+    _write_limitation_engine(
+        tmp_path / "engine",
+        values=[[99]],
+        areas=[[25.0]],
+        info_lines=("0 - temperature",),
+    )
+
+    result = _real_limitation_adapter(tmp_path, request).evaluate(request)
+
+    evidence = result.limitation_evidence
+    assert evidence.availability is LimitationEvidenceAvailability.PARTIAL
+    assert evidence.reason == "limiting_factor_evidence_warnings"
+    assert evidence.warnings == ("unsupported_limiting_factor_raw_code:99",)
+    assert len(evidence.factors) == 1
+    factor = evidence.factors[0]
+    assert factor.raw_code == 99
+    assert factor.factor_code == "unknown_raw_99"
+    assert factor.label == "unsupported_raw_code_99"
+
+
+def test_missing_limiting_factor_artifact_does_not_fail_suitability(tmp_path: Path) -> None:
+    request = _request()
+    _write_limitation_engine(
+        tmp_path / "engine",
+        values=[[0]],
+        areas=[[25.0]],
+        include_limitation_artifact=False,
+    )
+
+    result = _real_limitation_adapter(tmp_path, request).evaluate(request)
+
+    assert result.status is CropExecutionStatus.SUCCEEDED
+    assert result.suitability is not None
+    assert result.limitation_evidence.availability is LimitationEvidenceAvailability.UNAVAILABLE
+    assert result.limitation_evidence.reason == "crop_limiting_factor_artifact_missing"
+    assert [artifact.role for artifact in result.artifacts] == [
+        ScientificArtifactRole.CROP_SUITABILITY
+    ]
+
+
+def test_rainfed_and_irrigated_limitation_evidence_are_independent(tmp_path: Path) -> None:
+    rainfed_request = _request(water_regime=WaterRegime.RAINFED)
+    irrigated_request = replace(rainfed_request, water_regime=WaterRegime.IRRIGATED)
+    _write_limitation_engine(
+        tmp_path / "engine",
+        values=[[0]],
+        areas=[[25.0]],
+        vary_by_irrigation=True,
+    )
+    adapter = _real_limitation_adapter(tmp_path, rainfed_request)
+
+    rainfed = adapter.evaluate(rainfed_request)
+    irrigated = adapter.evaluate(irrigated_request)
+
+    assert rainfed.limitation_evidence.factors[0].factor_code == "temperature"
+    assert irrigated.limitation_evidence.factors[0].factor_code == "precipitation"
+    assert rainfed.limitation_evidence.factors[0].source_storage_reference != (
+        irrigated.limitation_evidence.factors[0].source_storage_reference
+    )

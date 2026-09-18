@@ -26,8 +26,11 @@ from ..domain.environmental_inputs import (
 from ..domain.errors import EvaluationConflictError
 from ..domain.models import Evaluation, EvaluationScenarioResult, EvaluationStatus
 from ..domain.outcomes import (
+    CropLimitationEvidence,
     CropOutcome,
     CropOutcomeStatus,
+    LimitationEvidenceAvailability,
+    LimitingFactorEvidence,
     ScientificArtifact,
     ScientificArtifactGrid,
     ScientificArtifactRole,
@@ -38,6 +41,8 @@ from ..domain.outcomes import (
 from ..domain.snapshot import ParcelSnapshot, SnapshotGeometry
 from ..domain.water_regime import WaterRegime
 from .orm import (
+    CropLimitationEvidenceRecord,
+    CropLimitingFactorRecord,
     CropOutcomeRecord,
     EvaluationCommonSupportRecord,
     EvaluationComparableCropRecord,
@@ -188,6 +193,22 @@ class PostgreSQLEvaluationRepository:
                         artifact,
                     )
                     for artifact in outcome.artifacts
+                )
+                session.add(
+                    _limitation_evidence_record(
+                        evaluation_id,
+                        outcome,
+                    )
+                )
+                session.flush()
+                session.add_all(
+                    _limiting_factor_record(
+                        evaluation_id,
+                        outcome.crop_id,
+                        outcome.water_regime,
+                        factor,
+                    )
+                    for factor in outcome.limitation_evidence.factors
                 )
         except IntegrityError as error:
             raise EvaluationConflictError(
@@ -700,11 +721,32 @@ def _load_outcomes(
         )
     )
 
+    limitation_evidence_records = session.scalars(
+        select(CropLimitationEvidenceRecord).where(
+            CropLimitationEvidenceRecord.evaluation_id == evaluation_id
+        )
+    )
+    limiting_factor_records = session.scalars(
+        select(CropLimitingFactorRecord)
+        .where(CropLimitingFactorRecord.evaluation_id == evaluation_id)
+        .order_by(
+            CropLimitingFactorRecord.crop_id,
+            CropLimitingFactorRecord.water_regime,
+            CropLimitingFactorRecord.raw_code,
+        )
+    )
+
     artifacts_by_execution: dict[
         tuple[str, WaterRegime], list[ScientificArtifact]
     ] = {}
     source_fingerprints_by_execution: dict[
         tuple[str, WaterRegime], list[ScientificSourceFingerprint]
+    ] = {}
+    limitation_evidence_by_execution: dict[
+        tuple[str, WaterRegime], CropLimitationEvidenceRecord
+    ] = {}
+    limiting_factors_by_execution: dict[
+        tuple[str, WaterRegime], list[CropLimitingFactorRecord]
     ] = {}
 
     for record in artifact_records:
@@ -722,6 +764,14 @@ def _load_outcomes(
             )
         )
 
+    for record in limitation_evidence_records:
+        key = (record.crop_id, WaterRegime(record.water_regime))
+        limitation_evidence_by_execution[key] = record
+
+    for record in limiting_factor_records:
+        key = (record.crop_id, WaterRegime(record.water_regime))
+        limiting_factors_by_execution.setdefault(key, []).append(record)
+
     return tuple(
         _outcome_from_record(
             record,
@@ -736,6 +786,17 @@ def _load_outcomes(
                     (record.crop_id, WaterRegime(record.water_regime)),
                     (),
                 )
+            ),
+            _limitation_evidence_from_records(
+                limitation_evidence_by_execution.get(
+                    (record.crop_id, WaterRegime(record.water_regime))
+                ),
+                tuple(
+                    limiting_factors_by_execution.get(
+                        (record.crop_id, WaterRegime(record.water_regime)),
+                        (),
+                    )
+                ),
             ),
         )
         for record in outcome_records
@@ -795,6 +856,43 @@ def _artifact_record(
     )
 
 
+def _limitation_evidence_record(
+    evaluation_id: UUID,
+    outcome: CropOutcome,
+) -> CropLimitationEvidenceRecord:
+    evidence = outcome.limitation_evidence
+    return CropLimitationEvidenceRecord(
+        evaluation_id=evaluation_id,
+        crop_id=outcome.crop_id,
+        water_regime=outcome.water_regime.value,
+        availability=evidence.availability.value,
+        reason=evidence.reason,
+        warnings=list(evidence.warnings),
+    )
+
+
+def _limiting_factor_record(
+    evaluation_id: UUID,
+    crop_id: str,
+    water_regime: WaterRegime,
+    factor: LimitingFactorEvidence,
+) -> CropLimitingFactorRecord:
+    return CropLimitingFactorRecord(
+        evaluation_id=evaluation_id,
+        crop_id=crop_id,
+        water_regime=water_regime.value,
+        raw_code=factor.raw_code,
+        factor_code=factor.factor_code,
+        label=factor.label,
+        affected_cells=factor.affected_cells,
+        affected_area_m2=factor.affected_area_m2,
+        affected_fraction=factor.affected_fraction,
+        dominant=factor.dominant,
+        source_storage_reference=factor.source_storage_reference,
+        source_sha256=factor.source_sha256,
+    )
+
+
 def _source_fingerprint_record(
     evaluation_id: UUID,
     crop_id: str,
@@ -844,6 +942,7 @@ def _outcome_from_record(
     record: CropOutcomeRecord,
     artifacts: tuple[ScientificArtifact, ...],
     source_fingerprints: tuple[ScientificSourceFingerprint, ...],
+    limitation_evidence: CropLimitationEvidence,
 ) -> CropOutcome:
     status = CropOutcomeStatus(record.status)
     summary = (
@@ -879,6 +978,37 @@ def _outcome_from_record(
             source_fingerprints=source_fingerprints,
         ),
         artifacts=artifacts,
+        limitation_evidence=limitation_evidence,
+    )
+
+
+def _limitation_evidence_from_records(
+    record: CropLimitationEvidenceRecord | None,
+    factor_records: tuple[CropLimitingFactorRecord, ...],
+) -> CropLimitationEvidence:
+    if record is None:
+        return CropLimitationEvidence(
+            availability=LimitationEvidenceAvailability.UNAVAILABLE,
+            reason="limitation_evidence_not_persisted",
+        )
+    return CropLimitationEvidence(
+        availability=LimitationEvidenceAvailability(record.availability),
+        reason=record.reason,
+        warnings=tuple(cast(list[str], record.warnings)),
+        factors=tuple(
+            LimitingFactorEvidence(
+                factor_code=factor.factor_code,
+                label=factor.label,
+                raw_code=factor.raw_code,
+                affected_cells=factor.affected_cells,
+                affected_area_m2=factor.affected_area_m2,
+                affected_fraction=factor.affected_fraction,
+                dominant=factor.dominant,
+                source_storage_reference=factor.source_storage_reference,
+                source_sha256=factor.source_sha256,
+            )
+            for factor in factor_records
+        ),
     )
 
 

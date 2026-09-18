@@ -21,8 +21,11 @@ from ..domain.environmental_inputs import EnvironmentalInputManifest, Environmen
 from ..domain.errors import EvaluationConflictError
 from ..domain.models import Evaluation, EvaluationStatus
 from ..domain.outcomes import (
+    CropLimitationEvidence,
     CropOutcome,
     CropOutcomeStatus,
+    LimitationEvidenceAvailability,
+    LimitingFactorEvidence,
     ScientificArtifact,
     ScientificArtifactGrid,
     ScientificArtifactRole,
@@ -326,6 +329,27 @@ def _to_outcome(
                 ),
             )
             for artifact in result.artifacts
+        ),
+        limitation_evidence=CropLimitationEvidence(
+            availability=LimitationEvidenceAvailability(
+                result.limitation_evidence.availability.value
+            ),
+            reason=result.limitation_evidence.reason,
+            warnings=result.limitation_evidence.warnings,
+            factors=tuple(
+                LimitingFactorEvidence(
+                    factor_code=factor.factor_code,
+                    label=factor.label,
+                    raw_code=factor.raw_code,
+                    affected_cells=factor.affected_cells,
+                    affected_area_m2=factor.affected_area_m2,
+                    affected_fraction=factor.affected_fraction,
+                    dominant=factor.dominant,
+                    source_storage_reference=factor.source_storage_reference,
+                    source_sha256=factor.source_sha256,
+                )
+                for factor in result.limitation_evidence.factors
+            ),
         ),
     )
 

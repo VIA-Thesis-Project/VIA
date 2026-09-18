@@ -11,6 +11,7 @@ from via_backend.contexts.agroclimatic_evaluation.application import (
     FinalizedEvaluationResultReader,
     GetEvaluation,
     GetEvaluationEvidence,
+    GetEvaluationLimitations,
     GetEvaluationResult,
     GetFinalizedEvaluationResult,
     ResourceConflictError,
@@ -159,8 +160,11 @@ def test_query_messages_return_read_only_views_without_mutation() -> None:
     status_view = service.get_evaluation(GetEvaluation(evaluation.id))
     result_view = service.get_evaluation_result(GetEvaluationResult(evaluation.id))
     evidence_view = service.get_evaluation_evidence(GetEvaluationEvidence(evaluation.id))
+    limitations_view = service.get_evaluation_limitations(
+        GetEvaluationLimitations(evaluation.id)
+    )
 
-    assert repository.get_calls == 3
+    assert repository.get_calls == 4
     assert repository.stored == evaluation
     assert status_view.requested_crops == ("maize", "potato", "rice")
     assert status_view.requested_crop_count == 3
@@ -170,6 +174,11 @@ def test_query_messages_return_read_only_views_without_mutation() -> None:
     assert [outcome.crop_id for outcome in result_view.outcomes] == ["maize"]
     assert [item.crop_id for item in evidence_view.evidence] == ["maize"]
     assert evidence_view.evidence[0].trace.source_sha256 == ("a" * 64, "b" * 64)
+    assert [item.crop_id for item in limitations_view.limitations] == ["maize"]
+    assert limitations_view.limitations[0].limitation_evidence.availability.value == (
+        "unavailable"
+    )
+    assert not hasattr(limitations_view.limitations[0], "execution_reference")
 
 
 def test_finalized_public_contract_preserves_order_and_outcome_semantics() -> None:

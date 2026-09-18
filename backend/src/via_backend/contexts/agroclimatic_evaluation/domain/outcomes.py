@@ -27,6 +27,124 @@ class ScientificArtifactRole(StrEnum):
     """Scientific artifact role persisted by Agroclimatic Evaluation."""
 
     CROP_SUITABILITY = "crop_suitability"
+    CROP_LIMITING_FACTOR = "crop_limiting_factor"
+
+
+class LimitationEvidenceAvailability(StrEnum):
+    """Availability of deterministic limiting-factor evidence."""
+
+    AVAILABLE = "available"
+    PARTIAL = "partial"
+    UNAVAILABLE = "unavailable"
+
+
+@dataclass(frozen=True, slots=True)
+class LimitingFactorEvidence:
+    """Aggregated SAME-RUN evidence for one raw limiting-factor code."""
+
+    factor_code: str
+    label: str
+    raw_code: int
+    affected_cells: int
+    affected_area_m2: float
+    affected_fraction: float
+    dominant: bool
+    source_storage_reference: str | None
+    source_sha256: str
+
+    def __post_init__(self) -> None:
+        if not self.factor_code or self.factor_code != self.factor_code.strip():
+            raise DomainValidationError("Limiting factor code must be non-empty and trimmed.")
+        if not self.label or self.label != self.label.strip():
+            raise DomainValidationError("Limiting factor label must be non-empty and trimmed.")
+        if isinstance(self.raw_code, bool) or not isinstance(self.raw_code, int):
+            raise DomainValidationError("Limiting factor raw code must be an integer.")
+        if (
+            isinstance(self.affected_cells, bool)
+            or not isinstance(self.affected_cells, int)
+            or self.affected_cells < 0
+        ):
+            raise DomainValidationError(
+                "Affected cell count must be a non-negative integer."
+            )
+        if not math.isfinite(self.affected_area_m2) or self.affected_area_m2 < 0:
+            raise DomainValidationError("Affected area must be finite and non-negative.")
+        if (
+            not math.isfinite(self.affected_fraction)
+            or self.affected_fraction < 0
+            or self.affected_fraction > 1
+        ):
+            raise DomainValidationError("Affected fraction must be finite and within [0, 1].")
+        if self.source_storage_reference is not None and (
+            not self.source_storage_reference
+            or self.source_storage_reference != self.source_storage_reference.strip()
+        ):
+            raise DomainValidationError(
+                "Limiting-factor storage reference must be trimmed when supplied."
+            )
+        if _SHA256_PATTERN.fullmatch(self.source_sha256) is None:
+            raise DomainValidationError(
+                "Limiting-factor source SHA-256 must be 64 lowercase hex characters."
+            )
+
+
+@dataclass(frozen=True, slots=True)
+class CropLimitationEvidence:
+    """Deterministic explanatory evidence associated with one crop execution."""
+
+    availability: LimitationEvidenceAvailability
+    reason: str | None
+    warnings: tuple[str, ...] = ()
+    factors: tuple[LimitingFactorEvidence, ...] = ()
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "warnings", tuple(self.warnings))
+        object.__setattr__(self, "factors", tuple(self.factors))
+        if self.reason is not None and (
+            not self.reason or self.reason != self.reason.strip()
+        ):
+            raise DomainValidationError(
+                "Limitation evidence reason must be trimmed when supplied."
+            )
+        if any(not warning or warning != warning.strip() for warning in self.warnings):
+            raise DomainValidationError(
+                "Limitation evidence warnings must be non-empty and trimmed."
+            )
+        if (
+            self.availability is LimitationEvidenceAvailability.AVAILABLE
+            and self.reason is not None
+        ):
+            raise DomainValidationError(
+                "Available limitation evidence cannot have a failure reason."
+            )
+        if (
+            self.availability is LimitationEvidenceAvailability.AVAILABLE
+            and not self.factors
+        ):
+            raise DomainValidationError(
+                "Available limitation evidence must contain at least one factor."
+            )
+        if (
+            self.availability is not LimitationEvidenceAvailability.AVAILABLE
+            and self.reason is None
+        ):
+            raise DomainValidationError(
+                "Partial or unavailable limitation evidence requires a deterministic reason."
+            )
+        if self.availability is LimitationEvidenceAvailability.UNAVAILABLE and self.factors:
+            raise DomainValidationError("Unavailable limitation evidence cannot contain factors.")
+        raw_codes = [factor.raw_code for factor in self.factors]
+        factor_codes = [factor.factor_code for factor in self.factors]
+        if len(raw_codes) != len(set(raw_codes)) or len(factor_codes) != len(set(factor_codes)):
+            raise DomainValidationError(
+                "Limitation evidence cannot contain duplicate factor identities."
+            )
+
+
+DEFAULT_UNAVAILABLE_LIMITATION_EVIDENCE = CropLimitationEvidence(
+    availability=LimitationEvidenceAvailability.UNAVAILABLE,
+    reason="limitation_evidence_not_persisted",
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -158,6 +276,7 @@ class CropOutcome:
     trace: ScientificTrace
     water_regime: WaterRegime = WaterRegime.RAINFED
     artifacts: tuple[ScientificArtifact, ...] = ()
+    limitation_evidence: CropLimitationEvidence = DEFAULT_UNAVAILABLE_LIMITATION_EVIDENCE
 
     def __post_init__(self) -> None:
         try:
@@ -186,4 +305,8 @@ class CropOutcome:
         if self.status is CropOutcomeStatus.FAILED and self.artifacts:
             raise DomainValidationError(
                 "A failed crop outcome cannot contain scientific result artifacts."
+            )
+        if self.status is CropOutcomeStatus.FAILED and self.limitation_evidence.factors:
+            raise DomainValidationError(
+                "A failed crop outcome cannot contain limiting-factor evidence."
             )

@@ -67,6 +67,46 @@ class ScientificArtifactRole(StrEnum):
     """Scientific artifact roles understood by VIA."""
 
     CROP_SUITABILITY = "crop_suitability"
+    CROP_LIMITING_FACTOR = "crop_limiting_factor"
+
+
+class LimitationEvidenceAvailability(StrEnum):
+    """Availability of deterministic SAME-RUN limiting-factor evidence."""
+
+    AVAILABLE = "available"
+    PARTIAL = "partial"
+    UNAVAILABLE = "unavailable"
+
+
+@dataclass(frozen=True, slots=True)
+class LimitingFactorEvidence:
+    """Transport-neutral aggregate for one limiting-factor code."""
+
+    factor_code: str
+    label: str
+    raw_code: int
+    affected_cells: int
+    affected_area_m2: float
+    affected_fraction: float
+    dominant: bool
+    source_storage_reference: str | None
+    source_sha256: str
+
+
+@dataclass(frozen=True, slots=True)
+class CropLimitationEvidence:
+    """Deterministic explanatory evidence returned by the scientific adapter."""
+
+    availability: LimitationEvidenceAvailability
+    reason: str | None
+    warnings: tuple[str, ...] = ()
+    factors: tuple[LimitingFactorEvidence, ...] = ()
+
+
+DEFAULT_UNAVAILABLE_LIMITATION_EVIDENCE = CropLimitationEvidence(
+    availability=LimitationEvidenceAvailability.UNAVAILABLE,
+    reason="limitation_evidence_unavailable",
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -115,6 +155,7 @@ class CropSuitabilityResult:
     trace: ScientificExecutionTrace
     artifacts: tuple[ScientificArtifactDescriptor, ...] = ()
     water_regime: WaterRegime = WaterRegime.RAINFED
+    limitation_evidence: CropLimitationEvidence = DEFAULT_UNAVAILABLE_LIMITATION_EVIDENCE
 
 class CommonSupportStatus(StrEnum):
     """Scientific common-support outcome across evaluated crops."""

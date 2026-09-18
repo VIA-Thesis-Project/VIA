@@ -26,6 +26,7 @@ from via_backend.contexts.agroclimatic_evaluation.domain import (
     CommonSupport,
     CommonSupportStatus,
     ComparableCrop,
+    CropLimitationEvidence,
     CropOutcome,
     CropOutcomeStatus,
     EnvironmentalInputManifest,
@@ -34,6 +35,8 @@ from via_backend.contexts.agroclimatic_evaluation.domain import (
     Evaluation,
     EvaluationConflictError,
     EvaluationStatus,
+    LimitationEvidenceAvailability,
+    LimitingFactorEvidence,
     ParcelSnapshot,
     ScientificArtifact,
     ScientificArtifactGrid,
@@ -48,6 +51,8 @@ from via_backend.contexts.agroclimatic_evaluation.infrastructure import (
     postgresql_repositories as repositories_module,
 )
 from via_backend.contexts.agroclimatic_evaluation.infrastructure.orm import (
+    CropLimitationEvidenceRecord,
+    CropLimitingFactorRecord,
     CropOutcomeRecord,
     EvaluationCommonSupportRecord,
     EvaluationComparableCropRecord,
@@ -401,6 +406,48 @@ def test_evaluation_schema_has_no_cross_context_foreign_keys(
     assert referenced_schemas <= {"agroclimatic_evaluation"}
 
 
+def test_limiting_factor_migration_upgrades_from_0013(
+    database: tuple[Engine, SessionFactory],
+) -> None:
+    engine, _ = database
+    config = Config(str(BACKEND_ROOT / "alembic.ini"))
+    previous = os.environ.get("VIA_DATABASE_URL")
+    os.environ["VIA_DATABASE_URL"] = _database_url()
+    try:
+        command.downgrade(config, "20260917_0013")
+        with engine.connect() as connection:
+            assert connection.scalar(
+                text(
+                    "SELECT to_regclass("
+                    "'agroclimatic_evaluation.crop_limitation_evidence')"
+                )
+            ) is None
+
+        command.upgrade(config, "20260918_0014")
+        with engine.connect() as connection:
+            assert connection.scalar(
+                text(
+                    "SELECT to_regclass("
+                    "'agroclimatic_evaluation.crop_limitation_evidence')"
+                )
+            ) == "agroclimatic_evaluation.crop_limitation_evidence"
+            assert connection.scalar(
+                text(
+                    "SELECT to_regclass("
+                    "'agroclimatic_evaluation.crop_limiting_factors')"
+                )
+            ) == "agroclimatic_evaluation.crop_limiting_factors"
+            assert connection.scalar(text("SELECT version_num FROM alembic_version")) == (
+                "20260918_0014"
+            )
+    finally:
+        command.upgrade(config, "head")
+        if previous is None:
+            os.environ.pop("VIA_DATABASE_URL", None)
+        else:
+            os.environ["VIA_DATABASE_URL"] = previous
+
+
 def _succeeded_outcome(
     crop_id: str = "rice",
     *,
@@ -505,6 +552,179 @@ def test_crop_outcome_and_trace_fields_round_trip(
         (0, "/science/z-source.tif", "a" * 64),
         (1, "/science/a-source.tif", "a" * 64),
     ]
+
+
+def test_limiting_factor_evidence_round_trips_with_traceable_source(
+    database: tuple[Engine, SessionFactory],
+) -> None:
+    _, sessions = database
+    evaluation = _evaluation()
+    repository = PostgreSQLEvaluationRepository(sessions)
+    repository.add(evaluation)
+    preparing = evaluation.prepare()
+    repository.save(preparing, expected_status=EvaluationStatus.QUEUED)
+    _start_running(repository, preparing)
+
+    limitation_artifact = _limitation_artifact()
+    evidence = _limitation_evidence()
+    outcome = replace(
+        _succeeded_outcome(),
+        artifacts=(_scientific_artifact(), limitation_artifact),
+        limitation_evidence=evidence,
+    )
+    repository.add_outcome(evaluation.id, outcome)
+
+    restored = repository.get(evaluation.id)
+    assert restored is not None
+    restored_evidence = restored.outcomes[0].limitation_evidence
+    assert restored_evidence.availability is LimitationEvidenceAvailability.AVAILABLE
+    assert restored_evidence.reason is None
+    assert len(restored_evidence.factors) == 1
+    factor = restored_evidence.factors[0]
+    assert factor.factor_code == "precipitation"
+    assert factor.raw_code == 1
+    assert factor.affected_cells == 2
+    assert factor.affected_area_m2 == pytest.approx(50.0000000003)
+    assert factor.affected_fraction == pytest.approx(2 / 3)
+    assert factor.dominant is True
+    assert factor.source_storage_reference == limitation_artifact.storage_reference
+    assert factor.source_sha256 == limitation_artifact.sha256
+
+    with sessions() as session:
+        evidence_rows = session.scalar(
+            select(func.count()).select_from(CropLimitationEvidenceRecord)
+        )
+        factor_rows = session.scalar(
+            select(func.count()).select_from(CropLimitingFactorRecord)
+        )
+    assert evidence_rows == 1
+    assert factor_rows == 1
+
+
+def test_limiting_factor_evidence_is_independent_per_water_regime(
+    database: tuple[Engine, SessionFactory],
+) -> None:
+    _, sessions = database
+    evaluation = _evaluation(
+        water_regimes=(WaterRegime.RAINFED, WaterRegime.IRRIGATED),
+    )
+    repository = PostgreSQLEvaluationRepository(sessions)
+    repository.add(evaluation)
+    preparing = evaluation.prepare()
+    repository.save(preparing, expected_status=EvaluationStatus.QUEUED)
+    _start_running(repository, preparing)
+
+    rainfed = replace(
+        _succeeded_outcome("rice", water_regime=WaterRegime.RAINFED),
+        artifacts=(
+            _scientific_artifact(water_regime=WaterRegime.RAINFED),
+            _limitation_artifact(water_regime=WaterRegime.RAINFED),
+        ),
+        limitation_evidence=_limitation_evidence(
+            water_regime=WaterRegime.RAINFED,
+        ),
+    )
+    irrigated = replace(
+        _succeeded_outcome("rice", water_regime=WaterRegime.IRRIGATED),
+        artifacts=(
+            _scientific_artifact(water_regime=WaterRegime.IRRIGATED),
+            _limitation_artifact(water_regime=WaterRegime.IRRIGATED),
+        ),
+        limitation_evidence=_limitation_evidence(
+            raw_code=0,
+            factor_code="temperature",
+            label="temperature",
+            affected_cells=3,
+            affected_area_m2=75.0,
+            affected_fraction=1.0,
+            water_regime=WaterRegime.IRRIGATED,
+        ),
+    )
+
+    repository.add_outcome(evaluation.id, rainfed)
+    repository.add_outcome(evaluation.id, irrigated)
+    restored = repository.get(evaluation.id)
+
+    assert restored is not None
+    factors_by_regime = {
+        outcome.water_regime: outcome.limitation_evidence.factors[0]
+        for outcome in restored.outcomes
+    }
+    assert factors_by_regime[WaterRegime.RAINFED].factor_code == "precipitation"
+    assert factors_by_regime[WaterRegime.IRRIGATED].factor_code == "temperature"
+
+    with sessions() as session:
+        evidence_rows = session.scalar(
+            select(func.count()).select_from(CropLimitationEvidenceRecord)
+        )
+        factor_rows = session.scalar(
+            select(func.count()).select_from(CropLimitingFactorRecord)
+        )
+    assert evidence_rows == 2
+    assert factor_rows == 2
+
+
+def test_historical_outcome_without_limitation_row_hydrates_unavailable(
+    database: tuple[Engine, SessionFactory],
+) -> None:
+    _, sessions = database
+    evaluation = _evaluation()
+    repository = PostgreSQLEvaluationRepository(sessions)
+    repository.add(evaluation)
+    preparing = evaluation.prepare()
+    repository.save(preparing, expected_status=EvaluationStatus.QUEUED)
+    _start_running(repository, preparing)
+    outcome = _succeeded_outcome()
+    repository.add_outcome(evaluation.id, outcome)
+
+    with sessions.begin() as session:
+        session.execute(
+            delete(CropLimitationEvidenceRecord).where(
+                CropLimitationEvidenceRecord.evaluation_id == evaluation.id,
+                CropLimitationEvidenceRecord.crop_id == outcome.crop_id,
+                CropLimitationEvidenceRecord.water_regime == outcome.water_regime.value,
+            )
+        )
+
+    restored = repository.get(evaluation.id)
+    assert restored is not None
+    evidence = restored.outcomes[0].limitation_evidence
+    assert evidence.availability is LimitationEvidenceAvailability.UNAVAILABLE
+    assert evidence.reason == "limitation_evidence_not_persisted"
+    assert evidence.factors == ()
+
+
+def test_limiting_factor_database_rejects_invalid_fraction(
+    database: tuple[Engine, SessionFactory],
+) -> None:
+    _, sessions = database
+    evaluation = _evaluation()
+    repository = PostgreSQLEvaluationRepository(sessions)
+    repository.add(evaluation)
+    preparing = evaluation.prepare()
+    repository.save(preparing, expected_status=EvaluationStatus.QUEUED)
+    _start_running(repository, preparing)
+    outcome = _succeeded_outcome()
+    repository.add_outcome(evaluation.id, outcome)
+
+    with pytest.raises(IntegrityError):
+        with sessions.begin() as session:
+            session.add(
+                CropLimitingFactorRecord(
+                    evaluation_id=evaluation.id,
+                    crop_id=outcome.crop_id,
+                    water_regime=outcome.water_regime.value,
+                    raw_code=1,
+                    factor_code="precipitation",
+                    label="precipitation",
+                    affected_cells=1,
+                    affected_area_m2=25.0,
+                    affected_fraction=1.01,
+                    dominant=True,
+                    source_storage_reference="evaluations/test/crop_limiting_factor.tif",
+                    source_sha256="b" * 64,
+                )
+            )
 
 
 def test_source_fingerprints_remain_owned_and_ordered_per_crop(
@@ -697,6 +917,69 @@ def test_crop_outcome_identity_includes_water_regime(
 
     with pytest.raises(EvaluationConflictError):
         repository.add_outcome(evaluation.id, irrigated)
+
+
+def _limitation_artifact(
+    *,
+    crop_id: str = "rice",
+    water_regime: WaterRegime = WaterRegime.RAINFED,
+) -> ScientificArtifact:
+    return ScientificArtifact(
+        role=ScientificArtifactRole.CROP_LIMITING_FACTOR,
+        storage_reference=(
+            "evaluations/00000000-0000-0000-0000-000000000001/"
+            f"scenarios/{water_regime.value}/crops/{crop_id}/crop_limiting_factor.tif"
+        ),
+        sha256="b" * 64,
+        media_type="image/tiff",
+        size_bytes=321,
+        grid=ScientificArtifactGrid(
+            crs="EPSG:4326",
+            width=12,
+            height=8,
+            transform=(
+                0.0041666667,
+                0.0,
+                -77.5,
+                0.0,
+                -0.0041666667,
+                -11.0,
+            ),
+            nodata=-1.0,
+        ),
+    )
+
+
+def _limitation_evidence(
+    *,
+    raw_code: int = 1,
+    factor_code: str = "precipitation",
+    label: str = "precipitation",
+    affected_cells: int = 2,
+    affected_area_m2: float = 50.0000000003,
+    affected_fraction: float = 2 / 3,
+    dominant: bool = True,
+    crop_id: str = "rice",
+    water_regime: WaterRegime = WaterRegime.RAINFED,
+) -> CropLimitationEvidence:
+    artifact = _limitation_artifact(crop_id=crop_id, water_regime=water_regime)
+    return CropLimitationEvidence(
+        availability=LimitationEvidenceAvailability.AVAILABLE,
+        reason=None,
+        factors=(
+            LimitingFactorEvidence(
+                factor_code=factor_code,
+                label=label,
+                raw_code=raw_code,
+                affected_cells=affected_cells,
+                affected_area_m2=affected_area_m2,
+                affected_fraction=affected_fraction,
+                dominant=dominant,
+                source_storage_reference=artifact.storage_reference,
+                source_sha256=artifact.sha256,
+            ),
+        ),
+    )
 
 
 def test_queued_discovery_filters_orders_and_limits(

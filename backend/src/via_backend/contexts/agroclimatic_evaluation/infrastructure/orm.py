@@ -645,7 +645,7 @@ class ScientificArtifactRecord(Base):
     __tablename__ = "scientific_artifacts"
     __table_args__ = (
         CheckConstraint(
-            "role IN ('crop_suitability')",
+            "role IN ('crop_suitability', 'crop_limiting_factor')",
             name="scientific_artifact_role_supported",
         ),
         CheckConstraint(
@@ -727,3 +727,117 @@ class ScientificArtifactRecord(Base):
     height: Mapped[int] = mapped_column(Integer, nullable=False)
     transform: Mapped[list[float]] = mapped_column(JSONB, nullable=False)
     nodata: Mapped[float | None] = mapped_column(Float, nullable=True)
+
+
+class CropLimitationEvidenceRecord(Base):
+    __tablename__ = "crop_limitation_evidence"
+    __table_args__ = (
+        CheckConstraint(
+            "availability IN ('available', 'partial', 'unavailable')",
+            name="crop_limitation_evidence_availability_supported",
+        ),
+        CheckConstraint(
+            "(availability = 'available' AND reason IS NULL) OR "
+            "(availability IN ('partial', 'unavailable') AND reason IS NOT NULL)",
+            name="crop_limitation_evidence_reason_matches_availability",
+        ),
+        CheckConstraint(
+            "jsonb_typeof(warnings) = 'array'",
+            name="crop_limitation_evidence_warnings_array",
+        ),
+        CheckConstraint(
+            "water_regime IN ('rainfed', 'irrigated')",
+            name="crop_limitation_evidence_water_regime_supported",
+        ),
+        ForeignKeyConstraint(
+            ["evaluation_id", "crop_id", "water_regime"],
+            [
+                f"{AGROCLIMATIC_EVALUATION_SCHEMA}.crop_outcomes.evaluation_id",
+                f"{AGROCLIMATIC_EVALUATION_SCHEMA}.crop_outcomes.crop_id",
+                f"{AGROCLIMATIC_EVALUATION_SCHEMA}.crop_outcomes.water_regime",
+            ],
+            name="fk_crop_limitation_evidence_crop_outcome",
+            ondelete="CASCADE",
+        ),
+    )
+
+    evaluation_id: Mapped[UUID] = mapped_column(
+        PostgreSQLUUID(as_uuid=True), primary_key=True, nullable=False
+    )
+    crop_id: Mapped[str] = mapped_column(String(120), primary_key=True, nullable=False)
+    water_regime: Mapped[str] = mapped_column(String(16), primary_key=True, nullable=False)
+    availability: Mapped[str] = mapped_column(String(16), nullable=False)
+    reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    warnings: Mapped[list[str]] = mapped_column(JSONB, nullable=False)
+
+
+class CropLimitingFactorRecord(Base):
+    __tablename__ = "crop_limiting_factors"
+    __table_args__ = (
+        CheckConstraint(
+            "factor_code <> '' AND factor_code = btrim(factor_code)",
+            name="crop_limiting_factor_code_nonempty_trimmed",
+        ),
+        CheckConstraint(
+            "label <> '' AND label = btrim(label)",
+            name="crop_limiting_factor_label_nonempty_trimmed",
+        ),
+        CheckConstraint(
+            "affected_cells >= 0",
+            name="crop_limiting_factor_cells_nonnegative",
+        ),
+        CheckConstraint(
+            "affected_area_m2 >= 0",
+            name="crop_limiting_factor_area_nonnegative",
+        ),
+        CheckConstraint(
+            "affected_fraction >= 0 AND affected_fraction <= 1",
+            name="crop_limiting_factor_fraction_valid",
+        ),
+        CheckConstraint(
+            "source_storage_reference IS NULL OR "
+            "(source_storage_reference <> '' "
+            "AND source_storage_reference = btrim(source_storage_reference))",
+            name="crop_limiting_factor_storage_reference_valid",
+        ),
+        CheckConstraint(
+            "source_sha256 ~ '^[0-9a-f]{64}$'",
+            name="crop_limiting_factor_sha256_valid",
+        ),
+        CheckConstraint(
+            "water_regime IN ('rainfed', 'irrigated')",
+            name="crop_limiting_factor_water_regime_supported",
+        ),
+        ForeignKeyConstraint(
+            ["evaluation_id", "crop_id", "water_regime"],
+            [
+                f"{AGROCLIMATIC_EVALUATION_SCHEMA}.crop_limitation_evidence.evaluation_id",
+                f"{AGROCLIMATIC_EVALUATION_SCHEMA}.crop_limitation_evidence.crop_id",
+                f"{AGROCLIMATIC_EVALUATION_SCHEMA}.crop_limitation_evidence.water_regime",
+            ],
+            name="fk_crop_limiting_factors_limitation_evidence",
+            ondelete="CASCADE",
+        ),
+        UniqueConstraint(
+            "evaluation_id",
+            "crop_id",
+            "water_regime",
+            "factor_code",
+            name="uq_crop_limiting_factor_code",
+        ),
+    )
+
+    evaluation_id: Mapped[UUID] = mapped_column(
+        PostgreSQLUUID(as_uuid=True), primary_key=True, nullable=False
+    )
+    crop_id: Mapped[str] = mapped_column(String(120), primary_key=True, nullable=False)
+    water_regime: Mapped[str] = mapped_column(String(16), primary_key=True, nullable=False)
+    raw_code: Mapped[int] = mapped_column(Integer, primary_key=True, nullable=False)
+    factor_code: Mapped[str] = mapped_column(String(160), nullable=False)
+    label: Mapped[str] = mapped_column(Text, nullable=False)
+    affected_cells: Mapped[int] = mapped_column(Integer, nullable=False)
+    affected_area_m2: Mapped[float] = mapped_column(Float, nullable=False)
+    affected_fraction: Mapped[float] = mapped_column(Float, nullable=False)
+    dominant: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    source_storage_reference: Mapped[str | None] = mapped_column(Text, nullable=True)
+    source_sha256: Mapped[str] = mapped_column(String(64), nullable=False)

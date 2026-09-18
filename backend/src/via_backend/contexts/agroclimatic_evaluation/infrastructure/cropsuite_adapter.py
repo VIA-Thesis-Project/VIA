@@ -15,11 +15,14 @@ from typing import Any, cast
 
 from ..application.ports import (
     CropExecutionStatus,
+    CropLimitationEvidence,
     CropSuitabilityExecutionError,
     CropSuitabilityRequest,
     CropSuitabilityResult,
     IEnvironmentalInputIntegrityVerifier,
     InvalidEngineOutputError,
+    LimitationEvidenceAvailability,
+    LimitingFactorEvidence,
     ScientificArtifactDescriptor,
     ScientificArtifactGrid,
     ScientificArtifactRole,
@@ -45,6 +48,7 @@ from __future__ import annotations
 import hashlib
 import json
 import math
+import re
 import sys
 from pathlib import Path
 
@@ -68,7 +72,9 @@ for key in ("parcel_path", "output_root", "source_config", "catalog"):
 report = run_evaluation(**payload)
 
 if collect_artifact_metadata:
+    import numpy as np
     import rasterio
+    from src.multicrop import cell_areas, load_geometry
 
     def sha256(path):
         digest = hashlib.sha256()
@@ -76,6 +82,222 @@ if collect_artifact_metadata:
             for chunk in iter(lambda: artifact.read(1024 * 1024), b""):
                 digest.update(chunk)
         return digest.hexdigest()
+
+    def parse_limiting_factor_info(path):
+        parsed = {}
+        warnings = []
+        try:
+            lines = path.read_text(encoding="utf-8").splitlines()
+        except UnicodeDecodeError:
+            lines = path.read_text(encoding="latin-1").splitlines()
+        for line_number, line in enumerate(lines, start=1):
+            stripped = line.strip()
+            if not stripped:
+                continue
+            parts = stripped.split(" - ", 1)
+            if len(parts) != 2:
+                warnings.append(
+                    f"limiting_factor_inf_unparseable_line:{line_number}"
+                )
+                continue
+            raw_code_text, label = parts
+            try:
+                raw_code = int(raw_code_text.strip())
+            except ValueError:
+                warnings.append(
+                    f"limiting_factor_inf_invalid_code:{line_number}"
+                )
+                continue
+            label = label.strip()
+            if not label:
+                warnings.append(
+                    f"limiting_factor_inf_empty_label:{line_number}"
+                )
+                continue
+            if raw_code in parsed:
+                warnings.append(
+                    f"limiting_factor_inf_duplicate_code:{raw_code}"
+                )
+                continue
+            parsed[raw_code] = label
+        return parsed, warnings
+
+    def stable_factor_code(raw_code, label):
+        fixed = {
+            0: "temperature",
+            1: "precipitation",
+            2: "crop_failure_frequency",
+            3: "photoperiod",
+        }
+        if raw_code in fixed:
+            return fixed[raw_code]
+        normalized = re.sub(r"[^a-z0-9]+", "_", label.lower()).strip("_")
+        if normalized:
+            return f"parameter_{normalized}"
+        return f"parameter_raw_{raw_code}"
+
+    def collect_limitation_metadata(crop, parcel_path):
+        result_directory = Path(crop["result_directory"]).resolve()
+        raster_path = result_directory / "crop_limiting_factor.tif"
+        info_path = result_directory / "limiting_factor.inf"
+        if not raster_path.is_file():
+            return {
+                "availability": "unavailable",
+                "reason": "crop_limiting_factor_artifact_missing",
+                "warnings": [],
+                "factors": [],
+            }, None
+        if not info_path.is_file():
+            return {
+                "availability": "unavailable",
+                "reason": "limiting_factor_mapping_missing",
+                "warnings": [],
+                "factors": [],
+            }, None
+
+        mapping, warnings = parse_limiting_factor_info(info_path)
+        raster_sha256 = sha256(raster_path)
+        with rasterio.open(raster_path) as dataset:
+            if dataset.crs is None:
+                return {
+                    "availability": "unavailable",
+                    "reason": "crop_limiting_factor_crs_missing",
+                    "warnings": warnings,
+                    "factors": [],
+                }, None
+            nodata = dataset.nodata
+            if nodata is not None:
+                nodata = float(nodata)
+                if not math.isfinite(nodata):
+                    return {
+                        "availability": "unavailable",
+                        "reason": "crop_limiting_factor_nodata_invalid",
+                        "warnings": warnings,
+                        "factors": [],
+                    }, None
+            values = dataset.read(1).astype("float64", copy=False)
+            parcel_geometry = load_geometry(parcel_path)
+            areas, _parcel_area = cell_areas(
+                parcel_geometry,
+                dataset.shape,
+                dataset.transform,
+                dataset.crs,
+            )
+            areas = np.asarray(areas, dtype="float64")
+            valid = np.isfinite(values) & np.isfinite(areas) & (areas > 0)
+            if nodata is not None:
+                valid &= values != nodata
+            if not np.any(valid):
+                transform = dataset.transform
+                return {
+                    "availability": "unavailable",
+                    "reason": "no_valid_explanatory_area",
+                    "warnings": warnings,
+                    "factors": [],
+                }, {
+                    "sha256": raster_sha256,
+                    "grid": {
+                        "crs": dataset.crs.to_string(),
+                        "width": dataset.width,
+                        "height": dataset.height,
+                        "transform": [
+                            transform.a,
+                            transform.b,
+                            transform.c,
+                            transform.d,
+                            transform.e,
+                            transform.f,
+                        ],
+                        "nodata": nodata,
+                    },
+                }
+
+            total_valid_area = float(np.sum(areas[valid]))
+            aggregates = {}
+            for raw_value, area in zip(values[valid], areas[valid], strict=True):
+                rounded = int(round(float(raw_value)))
+                if not math.isclose(float(raw_value), rounded, abs_tol=1e-9):
+                    warnings.append(
+                        f"crop_limiting_factor_noninteger_value:{raw_value}"
+                    )
+                    continue
+                entry = aggregates.setdefault(
+                    rounded,
+                    {"affected_cells": 0, "affected_area_m2": 0.0},
+                )
+                entry["affected_cells"] += 1
+                entry["affected_area_m2"] += float(area)
+
+            factors = []
+            for raw_code in sorted(aggregates):
+                aggregate = aggregates[raw_code]
+                label = mapping.get(raw_code)
+                if label is None:
+                    label = f"unsupported_raw_code_{raw_code}"
+                    factor_code = f"unknown_raw_{raw_code}"
+                    warnings.append(
+                        f"unsupported_limiting_factor_raw_code:{raw_code}"
+                    )
+                else:
+                    factor_code = stable_factor_code(raw_code, label)
+                affected_area = float(aggregate["affected_area_m2"])
+                factors.append(
+                    {
+                        "factor_code": factor_code,
+                        "label": label,
+                        "raw_code": raw_code,
+                        "affected_cells": int(aggregate["affected_cells"]),
+                        "affected_area_m2": affected_area,
+                        "affected_fraction": (
+                            affected_area / total_valid_area
+                            if total_valid_area > 0
+                            else 0.0
+                        ),
+                        "dominant": False,
+                        "source_sha256": raster_sha256,
+                    }
+                )
+
+            if not factors:
+                availability = "unavailable"
+                reason = "no_supported_explanatory_cells"
+            else:
+                max_area = max(factor["affected_area_m2"] for factor in factors)
+                tolerance = max(1e-9, abs(max_area) * 1e-12)
+                for factor in factors:
+                    factor["dominant"] = math.isclose(
+                        factor["affected_area_m2"],
+                        max_area,
+                        rel_tol=1e-12,
+                        abs_tol=tolerance,
+                    )
+                availability = "partial" if warnings else "available"
+                reason = "limiting_factor_evidence_warnings" if warnings else None
+
+            transform = dataset.transform
+            artifact_metadata = {
+                "sha256": raster_sha256,
+                "grid": {
+                    "crs": dataset.crs.to_string(),
+                    "width": dataset.width,
+                    "height": dataset.height,
+                    "transform": [
+                        transform.a,
+                        transform.b,
+                        transform.c,
+                        transform.d,
+                        transform.e,
+                        transform.f,
+                    ],
+                    "nodata": nodata,
+                },
+            }
+            return {
+                "availability": availability,
+                "reason": reason,
+                "warnings": sorted(set(warnings)),
+                "factors": factors,
+            }, artifact_metadata
 
     for crop in report.get("crops", []):
         if crop.get("status") not in {"succeeded", "no_coverage"}:
@@ -122,6 +344,25 @@ if collect_artifact_metadata:
                     "nodata": nodata,
                 },
             }
+
+        try:
+            limitation_evidence, limitation_artifact = collect_limitation_metadata(
+                crop,
+                payload["parcel_path"],
+            )
+        except Exception as error:
+            limitation_evidence = {
+                "availability": "unavailable",
+                "reason": "limiting_factor_extraction_failed",
+                "warnings": [
+                    f"limiting_factor_extraction_failed:{type(error).__name__}"
+                ],
+                "factors": [],
+            }
+            limitation_artifact = None
+        crop["via_limitation_evidence"] = limitation_evidence
+        if limitation_artifact is not None:
+            crop["via_limitation_artifact"] = limitation_artifact
 
 result_path.write_text(
     json.dumps(report, ensure_ascii=False, allow_nan=False),
@@ -281,14 +522,43 @@ class CropSuiteAdapter:
                 f"Scientific artifact publication failed: {error}"
             ) from error
 
+        limitation_artifact: ScientificArtifactDescriptor | None = None
+        limitation_evidence = result.limitation_evidence
+        try:
+            limitation_artifact = _publish_crop_limiting_factor_artifact(
+                report=report,
+                crop_id=request.crop_id,
+                evaluation_id=str(request.evaluation_id),
+                water_regime=request.water_regime,
+                request_workspace=request_workspace,
+                artifact_store=self._artifact_store,
+            )
+        except Exception as error:
+            limitation_evidence = _degrade_limitation_publication(
+                limitation_evidence,
+                error,
+            )
+        else:
+            if limitation_artifact is not None:
+                limitation_evidence = _with_published_limitation_source(
+                    limitation_evidence,
+                    limitation_artifact,
+                )
+
+        artifacts = (
+            (artifact, limitation_artifact)
+            if limitation_artifact is not None
+            else (artifact,)
+        )
         return CropSuitabilityResult(
             crop_id=result.crop_id,
             status=result.status,
             suitability=result.suitability,
             failure=result.failure,
             trace=result.trace,
-            artifacts=(artifact,),
+            artifacts=artifacts,
             water_regime=result.water_regime,
+            limitation_evidence=limitation_evidence,
         )
 
     def _run_scientific_process(
@@ -464,6 +734,14 @@ def _map_report(
         source_files_unchanged=source_files_unchanged,
         source_fingerprints=source_fingerprints,
     )
+    limitation_evidence = (
+        _map_limitation_evidence(crop)
+        if status is not CropExecutionStatus.FAILED
+        else CropLimitationEvidence(
+            availability=LimitationEvidenceAvailability.UNAVAILABLE,
+            reason="crop_execution_failed",
+        )
+    )
     return CropSuitabilityResult(
         crop_id=crop_id,
         status=status,
@@ -471,6 +749,167 @@ def _map_report(
         failure=failure,
         trace=trace,
         water_regime=water_regime,
+        limitation_evidence=limitation_evidence,
+    )
+
+
+def _map_limitation_evidence(
+    crop: Mapping[str, Any],
+) -> CropLimitationEvidence:
+    raw = crop.get("via_limitation_evidence")
+    if raw is None:
+        return CropLimitationEvidence(
+            availability=LimitationEvidenceAvailability.UNAVAILABLE,
+            reason="limitation_evidence_unavailable",
+        )
+    if not isinstance(raw, Mapping):
+        return CropLimitationEvidence(
+            availability=LimitationEvidenceAvailability.UNAVAILABLE,
+            reason="invalid_limitation_evidence_metadata",
+            warnings=("invalid_limitation_evidence_metadata:not_object",),
+        )
+
+    try:
+        availability = LimitationEvidenceAvailability(raw.get("availability"))
+        reason = raw.get("reason")
+        if reason is not None and (not isinstance(reason, str) or not reason.strip()):
+            raise ValueError("reason")
+        raw_warnings = raw.get("warnings", [])
+        raw_factors = raw.get("factors", [])
+        if not isinstance(raw_warnings, list) or not all(
+            isinstance(item, str) and item.strip() for item in raw_warnings
+        ):
+            raise ValueError("warnings")
+        if not isinstance(raw_factors, list):
+            raise ValueError("factors")
+
+        factors: list[LimitingFactorEvidence] = []
+        for item in raw_factors:
+            if not isinstance(item, Mapping):
+                raise ValueError("factor")
+            raw_code = item.get("raw_code")
+            affected_cells = item.get("affected_cells")
+            affected_area_m2 = item.get("affected_area_m2")
+            affected_fraction = item.get("affected_fraction")
+            dominant = item.get("dominant")
+            source_sha256 = item.get("source_sha256")
+            factor_code = item.get("factor_code")
+            label = item.get("label")
+            if isinstance(raw_code, bool) or not isinstance(raw_code, int):
+                raise ValueError("raw_code")
+            if (
+                isinstance(affected_cells, bool)
+                or not isinstance(affected_cells, int)
+                or affected_cells < 0
+            ):
+                raise ValueError("affected_cells")
+            if (
+                isinstance(affected_area_m2, bool)
+                or not isinstance(affected_area_m2, (int, float))
+                or affected_area_m2 < 0
+            ):
+                raise ValueError("affected_area_m2")
+            if (
+                isinstance(affected_fraction, bool)
+                or not isinstance(affected_fraction, (int, float))
+                or affected_fraction < 0
+                or affected_fraction > 1
+            ):
+                raise ValueError("affected_fraction")
+            if not isinstance(dominant, bool):
+                raise ValueError("dominant")
+            if (
+                not isinstance(factor_code, str)
+                or not factor_code.strip()
+                or not isinstance(label, str)
+                or not label.strip()
+            ):
+                raise ValueError("factor_identity")
+            if (
+                not isinstance(source_sha256, str)
+                or _SHA256.fullmatch(source_sha256) is None
+            ):
+                raise ValueError("source_sha256")
+            factors.append(
+                LimitingFactorEvidence(
+                    factor_code=factor_code,
+                    label=label,
+                    raw_code=raw_code,
+                    affected_cells=affected_cells,
+                    affected_area_m2=float(affected_area_m2),
+                    affected_fraction=float(affected_fraction),
+                    dominant=dominant,
+                    source_storage_reference=None,
+                    source_sha256=source_sha256,
+                )
+            )
+    except (TypeError, ValueError):
+        return CropLimitationEvidence(
+            availability=LimitationEvidenceAvailability.UNAVAILABLE,
+            reason="invalid_limitation_evidence_metadata",
+            warnings=("invalid_limitation_evidence_metadata:contract",),
+        )
+
+    if availability is LimitationEvidenceAvailability.AVAILABLE and not factors:
+        return CropLimitationEvidence(
+            availability=LimitationEvidenceAvailability.UNAVAILABLE,
+            reason="invalid_limitation_evidence_metadata",
+            warnings=("invalid_limitation_evidence_metadata:available_without_factors",),
+        )
+    if availability is LimitationEvidenceAvailability.UNAVAILABLE:
+        factors = []
+    return CropLimitationEvidence(
+        availability=availability,
+        reason=cast(str | None, reason),
+        warnings=tuple(sorted(set(cast(list[str], raw_warnings)))),
+        factors=tuple(factors),
+    )
+
+
+def _with_published_limitation_source(
+    evidence: CropLimitationEvidence,
+    artifact: ScientificArtifactDescriptor,
+) -> CropLimitationEvidence:
+    if not evidence.factors:
+        return evidence
+    return CropLimitationEvidence(
+        availability=evidence.availability,
+        reason=evidence.reason,
+        warnings=evidence.warnings,
+        factors=tuple(
+            LimitingFactorEvidence(
+                factor_code=factor.factor_code,
+                label=factor.label,
+                raw_code=factor.raw_code,
+                affected_cells=factor.affected_cells,
+                affected_area_m2=factor.affected_area_m2,
+                affected_fraction=factor.affected_fraction,
+                dominant=factor.dominant,
+                source_storage_reference=artifact.storage_reference,
+                source_sha256=artifact.sha256,
+            )
+            for factor in evidence.factors
+        ),
+    )
+
+
+def _degrade_limitation_publication(
+    evidence: CropLimitationEvidence,
+    error: Exception,
+) -> CropLimitationEvidence:
+    warning = f"crop_limiting_factor_publication_failed:{type(error).__name__}"
+    if not evidence.factors:
+        return CropLimitationEvidence(
+            availability=evidence.availability,
+            reason=evidence.reason,
+            warnings=tuple(sorted(set((*evidence.warnings, warning)))),
+            factors=(),
+        )
+    return CropLimitationEvidence(
+        availability=LimitationEvidenceAvailability.PARTIAL,
+        reason="crop_limiting_factor_artifact_publication_failed",
+        warnings=tuple(sorted(set((*evidence.warnings, warning)))),
+        factors=evidence.factors,
     )
 
 def _publish_crop_suitability_artifact(
@@ -557,6 +996,93 @@ def _publish_crop_suitability_artifact(
 
     return ScientificArtifactDescriptor(
         role=ScientificArtifactRole.CROP_SUITABILITY,
+        storage_reference=published.storage_reference,
+        sha256=published.sha256,
+        media_type="image/tiff",
+        size_bytes=published.size_bytes,
+        grid=grid,
+    )
+
+
+def _publish_crop_limiting_factor_artifact(
+    *,
+    report: Mapping[str, Any],
+    crop_id: str,
+    evaluation_id: str,
+    water_regime: WaterRegime,
+    request_workspace: Path,
+    artifact_store: ScientificArtifactStore,
+) -> ScientificArtifactDescriptor | None:
+    crops = _sequence(report, "crops")
+    if len(crops) != 1 or not isinstance(crops[0], Mapping):
+        raise InvalidEngineOutputError(
+            "Engine report must contain exactly one per-crop outcome."
+        )
+    crop = cast(Mapping[str, Any], crops[0])
+    if crop.get("id") != crop_id:
+        raise InvalidEngineOutputError(
+            "Engine limiting-factor artifact did not preserve the requested crop identity."
+        )
+    raw_metadata = crop.get("via_limitation_artifact")
+    if raw_metadata is None:
+        return None
+    if not isinstance(raw_metadata, Mapping):
+        raise InvalidEngineOutputError(
+            "Scientific limiting-factor artifact metadata must be an object."
+        )
+
+    result_directory = Path(_string(crop, "result_directory")).resolve()
+    workspace = request_workspace.resolve()
+    if not _is_within(result_directory, workspace):
+        raise InvalidEngineOutputError(
+            "Scientific limiting-factor result directory escapes the request workspace."
+        )
+    source = (result_directory / "crop_limiting_factor.tif").resolve()
+    if not _is_within(source, workspace):
+        raise InvalidEngineOutputError(
+            "Scientific limiting-factor artifact path escapes the request workspace."
+        )
+    if not source.is_file():
+        raise InvalidEngineOutputError(
+            "Scientific crop limiting-factor artifact does not exist."
+        )
+
+    expected_sha256 = _string(raw_metadata, "sha256")
+    if _SHA256.fullmatch(expected_sha256) is None:
+        raise InvalidEngineOutputError(
+            "Scientific limiting-factor artifact SHA-256 must be lowercase hexadecimal."
+        )
+    raw_grid = _mapping(raw_metadata, "grid")
+    raw_transform = _sequence(raw_grid, "transform")
+    if len(raw_transform) != 6:
+        raise InvalidEngineOutputError(
+            "Scientific limiting-factor artifact grid transform must contain six coefficients."
+        )
+    transform = tuple(
+        _number(value, f"transform[{index}]")
+        for index, value in enumerate(raw_transform)
+    )
+    grid = ScientificArtifactGrid(
+        crs=_string(raw_grid, "crs"),
+        width=_positive_integer(raw_grid, "width"),
+        height=_positive_integer(raw_grid, "height"),
+        transform=cast(
+            tuple[float, float, float, float, float, float],
+            transform,
+        ),
+        nodata=_optional_number(raw_grid, "nodata"),
+    )
+    storage_reference = (
+        f"evaluations/{evaluation_id}/scenarios/{water_regime.value}/"
+        f"crops/{crop_id}/crop_limiting_factor.tif"
+    )
+    published = artifact_store.publish(
+        source,
+        storage_reference,
+        expected_sha256=expected_sha256,
+    )
+    return ScientificArtifactDescriptor(
+        role=ScientificArtifactRole.CROP_LIMITING_FACTOR,
         storage_reference=published.storage_reference,
         sha256=published.sha256,
         media_type="image/tiff",

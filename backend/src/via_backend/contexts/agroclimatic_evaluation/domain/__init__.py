@@ -17,8 +17,11 @@ from .errors import (
 )
 from .models import Evaluation, EvaluationStatus
 from .outcomes import (
+    CropLimitationEvidence,
     CropOutcome,
     CropOutcomeStatus,
+    LimitationEvidenceAvailability,
+    LimitingFactorEvidence,
     ScientificArtifact,
     ScientificArtifactGrid,
     ScientificArtifactRole,
@@ -31,6 +34,7 @@ from .snapshot import ParcelSnapshot, SnapshotGeometry
 from .water_regime import WaterRegime
 
 __all__ = [
+    "CropLimitationEvidence",
     "CropOutcome",
     "CropOutcomeStatus",
     "DomainValidationError",
@@ -42,6 +46,8 @@ __all__ = [
     "EvaluationRepository",
     "EvaluationStatus",
     "InvalidEvaluationTransitionError",
+    "LimitationEvidenceAvailability",
+    "LimitingFactorEvidence",
     "ParcelSnapshot",
     "ScientificTrace",
     "ScientificArtifact",

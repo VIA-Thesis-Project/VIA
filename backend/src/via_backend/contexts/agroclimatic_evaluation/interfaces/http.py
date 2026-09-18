@@ -17,6 +17,7 @@ from ..application.commands import (
 from ..application.queries import (
     GetEvaluation,
     GetEvaluationEvidence,
+    GetEvaluationLimitations,
     GetEvaluationResult,
     ListEvaluations,
 )
@@ -29,7 +30,10 @@ from ..application.service import (
 )
 from ..domain.comparison import CommonSupportStatus
 from ..domain.models import EvaluationStatus
-from ..domain.outcomes import CropOutcomeStatus
+from ..domain.outcomes import (
+    CropOutcomeStatus,
+    LimitationEvidenceAvailability,
+)
 from ..domain.water_regime import WaterRegime
 
 
@@ -213,6 +217,48 @@ class EvaluationEvidenceResponse(BaseModel):
     evidence: list[CropEvidenceResponse]
 
 
+class LimitingFactorResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    factor_code: str
+    label: str
+    raw_code: int
+    affected_cells: int
+    affected_area_m2: float
+    affected_fraction: float
+    dominant: bool
+    source_storage_reference: str | None
+    source_sha256: str
+
+
+class LimitationEvidenceResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    availability: LimitationEvidenceAvailability
+    reason: str | None
+    warnings: list[str]
+    factors: list[LimitingFactorResponse]
+
+
+class CropLimitationResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    crop_id: str
+    water_regime: WaterRegime
+    status: CropOutcomeStatus
+    suitability: SuitabilitySummaryResponse | None
+    limitation_evidence: LimitationEvidenceResponse
+
+
+class EvaluationLimitationsResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    evaluation_id: UUID
+    evaluation_status: EvaluationStatus
+    availability: EvaluationResultAvailability
+    limitations: list[CropLimitationResponse]
+
+
 def create_router(service: AgroclimaticEvaluationService) -> APIRouter:
     """Create a router bound to the supplied evaluation application service."""
     router = APIRouter(prefix="/evaluations", tags=["agroclimatic-evaluation"])
@@ -274,6 +320,19 @@ def create_router(service: AgroclimaticEvaluationService) -> APIRouter:
             GetEvaluationEvidence(evaluation_id),
         )
         return EvaluationEvidenceResponse.model_validate(result)
+
+    @router.get(
+        "/{evaluation_id}/limitations",
+        response_model=EvaluationLimitationsResponse,
+    )
+    def get_evaluation_limitations(
+        evaluation_id: UUID,
+    ) -> EvaluationLimitationsResponse:
+        result = _execute(
+            service.get_evaluation_limitations,
+            GetEvaluationLimitations(evaluation_id),
+        )
+        return EvaluationLimitationsResponse.model_validate(result)
 
     @router.get("/{evaluation_id}", response_model=EvaluationStatusResponse)
     def get_evaluation(evaluation_id: UUID) -> EvaluationStatusResponse:

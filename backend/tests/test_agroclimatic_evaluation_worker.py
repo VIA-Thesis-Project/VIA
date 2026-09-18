@@ -42,6 +42,7 @@ from via_backend.contexts.agroclimatic_evaluation.domain import (
     CommonSupportStatus as DomainCommonSupportStatus,
 )
 from via_backend.contexts.agroclimatic_evaluation.domain import (
+    CropLimitationEvidence,
     CropOutcome,
     CropOutcomeStatus,
     EnvironmentalInputManifest,
@@ -49,6 +50,8 @@ from via_backend.contexts.agroclimatic_evaluation.domain import (
     EnvironmentalInputSnapshot,
     Evaluation,
     EvaluationStatus,
+    LimitationEvidenceAvailability,
+    LimitingFactorEvidence,
     ParcelSnapshot,
     ScientificTrace,
     SnapshotGeometry,
@@ -667,6 +670,26 @@ def _outcome(
     *,
     water_regime: WaterRegime = WaterRegime.RAINFED,
 ) -> CropOutcome:
+    limitation_evidence = CropLimitationEvidence(
+        availability=LimitationEvidenceAvailability.AVAILABLE,
+        reason=None,
+        factors=(
+            LimitingFactorEvidence(
+                factor_code="precipitation",
+                label="precipitation",
+                raw_code=1,
+                affected_cells=1,
+                affected_area_m2=25.0,
+                affected_fraction=1.0,
+                dominant=True,
+                source_storage_reference=(
+                    "evaluations/test/scenarios/"
+                    f"{water_regime.value}/crops/maize/crop_limiting_factor.tif"
+                ),
+                source_sha256="b" * 64,
+            ),
+        ),
+    )
     return CropOutcome(
         crop_id="maize",
         status=CropOutcomeStatus.SUCCEEDED,
@@ -693,6 +716,7 @@ def _outcome(
             True,
         ),
         water_regime=water_regime,
+        limitation_evidence=limitation_evidence,
     )
 
 
@@ -870,6 +894,12 @@ def test_recovery_preserves_partial_two_regime_execution_without_duplication() -
     assert [(outcome.crop_id, outcome.water_regime) for outcome in restored.outcomes] == [
         ("maize", WaterRegime.RAINFED),
     ]
+    assert len(restored.outcomes) == 1
+    preserved_evidence = restored.outcomes[0].limitation_evidence
+    assert preserved_evidence.availability is LimitationEvidenceAvailability.AVAILABLE
+    assert len(preserved_evidence.factors) == 1
+    assert preserved_evidence.factors[0].factor_code == "precipitation"
+    assert preserved_evidence.factors[0].source_sha256 == "b" * 64
 
 
 @pytest.mark.parametrize(

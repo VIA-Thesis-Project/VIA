@@ -22,6 +22,12 @@ class FinalizedCropOutcomeStatus(StrEnum):
     FAILED = "failed"
 
 
+class FinalizedLimitationEvidenceAvailability(StrEnum):
+    AVAILABLE = "available"
+    PARTIAL = "partial"
+    UNAVAILABLE = "unavailable"
+
+
 @dataclass(frozen=True, slots=True)
 class GetFinalizedEvaluationResult:
     evaluation_id: UUID
@@ -53,12 +59,42 @@ class FinalizedScientificTrace:
 
 
 @dataclass(frozen=True, slots=True)
+class FinalizedLimitingFactorEvidence:
+    factor_code: str
+    label: str
+    raw_code: int
+    affected_cells: int
+    affected_area_m2: float
+    affected_fraction: float
+    dominant: bool
+    source_storage_reference: str | None
+    source_sha256: str
+
+
+@dataclass(frozen=True, slots=True)
+class FinalizedCropLimitationEvidence:
+    availability: FinalizedLimitationEvidenceAvailability
+    reason: str | None
+    warnings: tuple[str, ...] = ()
+    factors: tuple[FinalizedLimitingFactorEvidence, ...] = ()
+
+
+DEFAULT_FINALIZED_UNAVAILABLE_LIMITATION_EVIDENCE = FinalizedCropLimitationEvidence(
+    availability=FinalizedLimitationEvidenceAvailability.UNAVAILABLE,
+    reason="limitation_evidence_not_persisted",
+)
+
+
+@dataclass(frozen=True, slots=True)
 class FinalizedCropOutcome:
     crop_id: str
     status: FinalizedCropOutcomeStatus
     suitability: FinalizedSuitabilitySummary | None
     trace: FinalizedScientificTrace
     water_regime: WaterRegime = WaterRegime.RAINFED
+    limitation_evidence: FinalizedCropLimitationEvidence = (
+        DEFAULT_FINALIZED_UNAVAILABLE_LIMITATION_EVIDENCE
+    )
 
 
 @dataclass(frozen=True, slots=True)

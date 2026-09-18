@@ -9,7 +9,10 @@ from uuid import UUID
 
 from ..domain.comparison import CommonSupportStatus
 from ..domain.models import Evaluation, EvaluationStatus
-from ..domain.outcomes import CropOutcomeStatus
+from ..domain.outcomes import (
+    CropOutcomeStatus,
+    LimitationEvidenceAvailability,
+)
 from ..domain.water_regime import WaterRegime
 
 
@@ -297,6 +300,96 @@ class EvaluationEvidenceResult:
                         source_sha256=tuple(
                             fingerprint.sha256
                             for fingerprint in outcome.trace.source_fingerprints
+                        ),
+                    ),
+                )
+                for outcome in evaluation.outcomes
+            ),
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class LimitingFactorResult:
+    factor_code: str
+    label: str
+    raw_code: int
+    affected_cells: int
+    affected_area_m2: float
+    affected_fraction: float
+    dominant: bool
+    source_storage_reference: str | None
+    source_sha256: str
+
+
+@dataclass(frozen=True, slots=True)
+class LimitationEvidenceResult:
+    availability: LimitationEvidenceAvailability
+    reason: str | None
+    warnings: tuple[str, ...]
+    factors: tuple[LimitingFactorResult, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class CropLimitationResult:
+    crop_id: str
+    water_regime: WaterRegime
+    status: CropOutcomeStatus
+    suitability: SuitabilitySummaryResult | None
+    limitation_evidence: LimitationEvidenceResult
+
+
+@dataclass(frozen=True, slots=True)
+class EvaluationLimitationsResult:
+    evaluation_id: UUID
+    evaluation_status: EvaluationStatus
+    availability: EvaluationResultAvailability
+    limitations: tuple[CropLimitationResult, ...]
+
+    @classmethod
+    def from_domain(cls, evaluation: Evaluation) -> EvaluationLimitationsResult:
+        return cls(
+            evaluation_id=evaluation.id,
+            evaluation_status=evaluation.status,
+            availability=_availability(evaluation),
+            limitations=tuple(
+                CropLimitationResult(
+                    crop_id=outcome.crop_id,
+                    water_regime=outcome.water_regime,
+                    status=outcome.status,
+                    suitability=(
+                        SuitabilitySummaryResult(
+                            mean=outcome.suitability.mean,
+                            minimum=outcome.suitability.minimum,
+                            maximum=outcome.suitability.maximum,
+                            valid_cells=outcome.suitability.valid_cells,
+                            valid_area_m2=outcome.suitability.valid_area_m2,
+                            coverage_fraction=outcome.suitability.coverage_fraction,
+                            zero_suitability_area_m2=(
+                                outcome.suitability.zero_suitability_area_m2
+                            ),
+                        )
+                        if outcome.suitability is not None
+                        else None
+                    ),
+                    limitation_evidence=LimitationEvidenceResult(
+                        availability=outcome.limitation_evidence.availability,
+                        reason=outcome.limitation_evidence.reason,
+                        warnings=outcome.limitation_evidence.warnings,
+                        factors=tuple(
+                            LimitingFactorResult(
+                                factor_code=factor.factor_code,
+                                label=factor.label,
+                                raw_code=factor.raw_code,
+                                affected_cells=factor.affected_cells,
+                                affected_area_m2=factor.affected_area_m2,
+                                affected_fraction=factor.affected_fraction,
+                                dominant=factor.dominant,
+                                source_storage_reference=(
+                                    factor.source_storage_reference
+                                ),
+                                source_sha256=factor.source_sha256,
+                            )
+                            for factor in outcome.limitation_evidence.factors
                         ),
                     ),
                 )

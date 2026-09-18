@@ -19,10 +19,13 @@ from via_backend.contexts.agroclimatic_evaluation.domain import (
     CommonSupport,
     CommonSupportStatus,
     ComparableCrop,
+    CropLimitationEvidence,
     CropOutcome,
     CropOutcomeStatus,
     Evaluation,
     EvaluationStatus,
+    LimitationEvidenceAvailability,
+    LimitingFactorEvidence,
     ParcelSnapshot,
     ScientificSourceFingerprint,
     ScientificTrace,
@@ -597,3 +600,66 @@ def test_evidence_serializes_historical_empty_source_hashes() -> None:
 
     assert response.status_code == 200
     assert response.json()["evidence"][0]["trace"]["source_sha256"] == []
+
+
+def test_limitations_endpoint_exposes_traceable_evidence_without_host_paths() -> None:
+    factor = LimitingFactorEvidence(
+        factor_code="precipitation",
+        label="precipitation",
+        raw_code=1,
+        affected_cells=2,
+        affected_area_m2=25.0,
+        affected_fraction=1.0,
+        dominant=True,
+        source_storage_reference="evaluations/e/scenarios/rainfed/crops/maize/crop_limiting_factor.tif",
+        source_sha256="c" * 64,
+    )
+    maize = replace(
+        _outcome("maize", CropOutcomeStatus.SUCCEEDED),
+        limitation_evidence=CropLimitationEvidence(
+            availability=LimitationEvidenceAvailability.AVAILABLE,
+            reason=None,
+            factors=(factor,),
+        ),
+    )
+    evaluation = _evaluation(
+        status=EvaluationStatus.SUCCEEDED,
+        outcomes=(
+            maize,
+            _outcome("potato", CropOutcomeStatus.SUCCEEDED),
+            _outcome("rice", CropOutcomeStatus.SUCCEEDED),
+        ),
+    )
+
+    response = asyncio.run(
+        _request(
+            _app_with(evaluation),
+            "GET",
+            f"/api/v1/evaluations/{evaluation.id}/limitations",
+        )
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["evaluation_id"] == str(evaluation.id)
+    assert body["limitations"][0]["crop_id"] == "maize"
+    assert body["limitations"][0]["water_regime"] == "rainfed"
+    evidence = body["limitations"][0]["limitation_evidence"]
+    assert evidence["availability"] == "available"
+    assert evidence["factors"][0] == {
+        "factor_code": "precipitation",
+        "label": "precipitation",
+        "raw_code": 1,
+        "affected_cells": 2,
+        "affected_area_m2": 25.0,
+        "affected_fraction": 1.0,
+        "dominant": True,
+        "source_storage_reference": (
+            "evaluations/e/scenarios/rainfed/crops/maize/crop_limiting_factor.tif"
+        ),
+        "source_sha256": "c" * 64,
+    }
+    serialized = json.dumps(body).casefold()
+    assert "execution_reference" not in serialized
+    assert "c:\\private" not in serialized
+    assert "/tmp/" not in serialized
