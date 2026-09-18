@@ -1,0 +1,70 @@
+taxonomy_version: "2026-09-18"
+factors:
+  precipitation:
+    - precipitation
+    - rainfall
+    - water deficit
+    - water availability
+    - precipitación
+    - lluvia
+    - déficit hídrico
+    - necesidad hídrica
+    - riego
+  parameter_soildepth:
+    - soil depth
+    - effective soil depth
+    - rooting depth
+    - shallow soil
+    - profundidad del suelo
+    - profundidad efectiva
+    - profundidad radicular
+  temperature:
+    - temperature
+    - minimum temperature
+    - heat
+    - cold
+    - temperatura
+    - temperatura mínima
+    - calor
+    - frío
+  climate_variability:
+    - climate variability
+    - climate risk
+    - seasonal variability
+    - variabilidad climática
+    - riesgo climático
+    - variabilidad estacional
+  photoperiod:
+    - photoperiod
+    - day length
+    - photoperiodism
+    - fotoperiodo
+    - duración del día
+
+crops:
+  maize:
+    - maize
+    - corn
+    - yellow maize
+    - hard yellow maize
+    - maíz
+    - maíz amarillo
+    - maíz amarillo duro
+  avocado:
+    - avocado
+    - avocado tree
+    - palto
+    - palta
+
+water_regimes:
+  rainfed:
+    - rainfed
+    - rain-fed
+    - secano
+    - dependiente de lluvia
+  irrigated:
+    - irrigated
+    - irrigation
+    - bajo riego
+    - irrigado
+    - riego

@@ -17,6 +17,23 @@ from via_backend.contexts.agroclimatic_evaluation.infrastructure import (
 from via_backend.contexts.agroclimatic_evaluation.interfaces import (
     create_router as create_agroclimatic_evaluation_router,
 )
+from via_backend.contexts.decision_support.application.knowledge_services import (
+    HybridKnowledgeRetriever,
+    RecommendationApplicationService,
+    RecommendationContextBuilder,
+    configured_embedding_index,
+)
+from via_backend.contexts.decision_support.infrastructure import (
+    OpenAIEmbeddingProvider,
+    OpenAIRecommendationGenerator,
+    PostgreSQLKnowledgeCorpusRepository,
+    PostgreSQLRecommendationRepository,
+    YamlFilesystemKnowledgeSourceCatalog,
+    load_taxonomy,
+)
+from via_backend.contexts.decision_support.interfaces import (
+    create_router as create_decision_support_router,
+)
 from via_backend.contexts.environmental_information.application import (
     EnvironmentalInformationService,
 )
@@ -118,6 +135,48 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         create_agroclimatic_evaluation_router(agroclimatic_evaluation),
         prefix="/api/v1",
     )
+    if sessions is not None:
+        source_dir = settings.knowledge_source_dir or settings.knowledge_manifest.parent
+        knowledge_catalog = YamlFilesystemKnowledgeSourceCatalog(
+            settings.knowledge_manifest,
+            source_dir,
+        )
+        corpus_manifest = knowledge_catalog.load_manifest()
+        taxonomy = load_taxonomy(settings.knowledge_taxonomy)
+        embedding_provider = OpenAIEmbeddingProvider(
+            api_key=settings.openai_api_key,
+            model=settings.openai_embedding_model,
+            dimensions=settings.openai_embedding_dimensions,
+        )
+        knowledge_repository = PostgreSQLKnowledgeCorpusRepository(sessions)
+        retriever = HybridKnowledgeRetriever(
+            repository=knowledge_repository,
+            embeddings=embedding_provider,
+            taxonomy=taxonomy,
+            embedding_index=configured_embedding_index(
+                embedding_provider,
+                settings.rag_embedding_index_version,
+            ),
+            corpus_version=corpus_manifest.corpus_version,
+            vector_top_k=settings.rag_vector_top_k,
+            lexical_top_k=settings.rag_lexical_top_k,
+            final_top_k=settings.rag_final_top_k,
+        )
+        recommendation_service = RecommendationApplicationService(
+            retriever=retriever,
+            generator=OpenAIRecommendationGenerator(
+                api_key=settings.openai_api_key,
+                model=settings.openai_recommendation_model,
+            ),
+            repository=PostgreSQLRecommendationRepository(sessions),
+        )
+        application.include_router(
+            create_decision_support_router(
+                RecommendationContextBuilder(agroclimatic_evaluation),
+                recommendation_service,
+            ),
+            prefix="/api/v1",
+        )
     return application
 
 

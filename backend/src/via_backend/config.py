@@ -10,6 +10,10 @@ from typing import Literal, cast
 
 RepositoryBackend = Literal["memory", "postgresql"]
 
+_REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
+_DEFAULT_KNOWLEDGE_MANIFEST = _REPOSITORY_ROOT / "knowledge" / "corpus.yaml"
+_DEFAULT_KNOWLEDGE_TAXONOMY = _REPOSITORY_ROOT / "knowledge" / "taxonomy.yaml"
+
 
 @dataclass(frozen=True, slots=True)
 class Settings:
@@ -19,6 +23,17 @@ class Settings:
     environmental_information_repository: RepositoryBackend = "memory"
     agroclimatic_evaluation_repository: RepositoryBackend = "memory"
     database_url: str | None = None
+    knowledge_source_dir: Path | None = None
+    knowledge_manifest: Path = _DEFAULT_KNOWLEDGE_MANIFEST
+    knowledge_taxonomy: Path = _DEFAULT_KNOWLEDGE_TAXONOMY
+    openai_api_key: str | None = None
+    openai_embedding_model: str = "text-embedding-3-small"
+    openai_embedding_dimensions: int = 1536
+    openai_recommendation_model: str = "gpt-5.6-luna"
+    rag_embedding_index_version: str = "openai-embedding-v1"
+    rag_vector_top_k: int = 10
+    rag_lexical_top_k: int = 10
+    rag_final_top_k: int = 5
 
     def __post_init__(self) -> None:
         selections = {
@@ -33,6 +48,23 @@ class Settings:
             raise ValueError(
                 "VIA_DATABASE_URL is required when PostgreSQL persistence is selected."
             )
+        positive_integers = {
+            "VIA_OPENAI_EMBEDDING_DIMENSIONS": self.openai_embedding_dimensions,
+            "VIA_RAG_VECTOR_TOP_K": self.rag_vector_top_k,
+            "VIA_RAG_LEXICAL_TOP_K": self.rag_lexical_top_k,
+            "VIA_RAG_FINAL_TOP_K": self.rag_final_top_k,
+        }
+        for setting_name, value in positive_integers.items():
+            if isinstance(value, bool) or not isinstance(value, int) or value < 1:
+                raise ValueError(f"{setting_name} must be a positive integer.")
+        required_strings = {
+            "VIA_OPENAI_EMBEDDING_MODEL": self.openai_embedding_model,
+            "VIA_OPENAI_RECOMMENDATION_MODEL": self.openai_recommendation_model,
+            "VIA_RAG_EMBEDDING_INDEX_VERSION": self.rag_embedding_index_version,
+        }
+        for setting_name, value in required_strings.items():
+            if not value.strip():
+                raise ValueError(f"{setting_name} must be non-empty.")
 
     def require_production(self) -> Settings:
         """Require the durable persistence contract used by the production API."""
@@ -78,6 +110,29 @@ class Settings:
                 RepositoryBackend, evaluation_backend.casefold()
             ),
             database_url=database_url,
+            knowledge_source_dir=_optional_path("VIA_KNOWLEDGE_SOURCE_DIR"),
+            knowledge_manifest=Path(
+                os.getenv("VIA_KNOWLEDGE_MANIFEST", str(_DEFAULT_KNOWLEDGE_MANIFEST))
+            ),
+            knowledge_taxonomy=Path(
+                os.getenv("VIA_KNOWLEDGE_TAXONOMY", str(_DEFAULT_KNOWLEDGE_TAXONOMY))
+            ),
+            openai_api_key=os.getenv("VIA_OPENAI_API_KEY") or None,
+            openai_embedding_model=os.getenv(
+                "VIA_OPENAI_EMBEDDING_MODEL", "text-embedding-3-small"
+            ),
+            openai_embedding_dimensions=_environment_integer(
+                "VIA_OPENAI_EMBEDDING_DIMENSIONS", 1536
+            ),
+            openai_recommendation_model=os.getenv(
+                "VIA_OPENAI_RECOMMENDATION_MODEL", "gpt-5.6-luna"
+            ),
+            rag_embedding_index_version=os.getenv(
+                "VIA_RAG_EMBEDDING_INDEX_VERSION", "openai-embedding-v1"
+            ),
+            rag_vector_top_k=_environment_integer("VIA_RAG_VECTOR_TOP_K", 10),
+            rag_lexical_top_k=_environment_integer("VIA_RAG_LEXICAL_TOP_K", 10),
+            rag_final_top_k=_environment_integer("VIA_RAG_FINAL_TOP_K", 5),
         )
 
 

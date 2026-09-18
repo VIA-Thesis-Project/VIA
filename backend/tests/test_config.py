@@ -7,6 +7,7 @@ import pytest
 
 import via_backend.app as app_module
 from via_backend.config import Settings, WorkerSettings
+from via_backend.contexts.decision_support.infrastructure import openai_knowledge
 
 
 def test_database_url_selects_postgresql_by_default(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -110,6 +111,40 @@ def test_create_production_app_validates_before_composition(
         app_module.create_production_app()
 
     assert validation_calls == [settings]
+
+
+def test_postgresql_app_composition_does_not_initialize_openai_client(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class _Engine:
+        def dispose(self) -> None:
+            pass
+
+    class _Sessions:
+        pass
+
+    def fail_if_openai_client_is_created(*args: object, **kwargs: object) -> None:
+        del args, kwargs
+        raise AssertionError("OpenAI client must stay lazy during application composition")
+
+    monkeypatch.setattr(
+        app_module,
+        "create_database",
+        lambda _: (_Engine(), _Sessions()),
+    )
+    monkeypatch.setattr(openai_knowledge, "OpenAI", fail_if_openai_client_is_created)
+
+    application = app_module.create_app(
+        Settings(
+            agroclimatic_evaluation_repository="postgresql",
+            database_url="postgresql+psycopg://example.invalid/via",
+            openai_api_key=None,
+        )
+    )
+
+    paths = {getattr(route, "path", None) for route in application.routes}
+    assert "/api/v1/decision-support/evaluations/{evaluation_id}/knowledge" in paths
+    assert "/api/v1/decision-support/evaluations/{evaluation_id}/recommendations" in paths
 
 
 def test_postgresql_selection_requires_database_url() -> None:

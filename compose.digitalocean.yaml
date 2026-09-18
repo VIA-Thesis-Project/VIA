@@ -36,6 +36,10 @@ services:
       VIA_FARM_MANAGEMENT_REPOSITORY: postgresql
       VIA_ENVIRONMENTAL_INFORMATION_REPOSITORY: postgresql
       VIA_AGROCLIMATIC_EVALUATION_REPOSITORY: postgresql
+      VIA_KNOWLEDGE_SOURCE_DIR: /var/lib/via/knowledge/sources
+      VIA_OPENAI_API_KEY: ${VIA_OPENAI_API_KEY:-}
+    volumes:
+      - /srv/via/knowledge/sources:/var/lib/via/knowledge/sources:ro
     ports:
       - "127.0.0.1:${VIA_API_HOST_PORT:-8000}:8000"
     healthcheck:

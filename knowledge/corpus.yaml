@@ -1,0 +1,71 @@
+corpus_version: "2026-09-18"
+sources:
+  - source_id: fao_crop_water_requirements
+    organization: FAO
+    title: Guidelines for Predicting Crop Water Requirements, Irrigation and Drainage
+    source_type: pdf
+    source_roles:
+      - methodology
+      - water_management
+    language: en
+    relative_path: "fao/FAO-Guidelines for Predicting Crop Water Requirements, Irrigation and Drainage.pdf"
+    crops: []
+    factors:
+      - precipitation
+
+  - source_id: fao_gaez_v4_model_documentation
+    organization: FAO
+    title: GAEZ v4 Model Documentation
+    source_type: pdf
+    source_roles:
+      - methodology
+      - crop_requirements
+    language: en
+    relative_path: "fao/GAEZ v4 Model Documentation.pdf"
+    crops: []
+    factors: []
+
+  - source_id: inia_cultivo_palto_2012
+    organization: INIA
+    title: Cultivo del palto
+    source_type: pdf
+    source_roles:
+      - crop_requirements
+      - management_guidance
+    language: es
+    country: Peru
+    relative_path: "inia/Cultivo del palto-INIA 2012.pdf"
+    crops:
+      - avocado
+    factors: []
+
+  - source_id: inia_maiz_amarillo_duro
+    organization: INIA
+    title: Manual Técnico del Cultivo de Maíz Amarillo Duro
+    source_type: pdf
+    source_roles:
+      - crop_requirements
+      - management_guidance
+    language: es
+    country: Peru
+    relative_path: "inia/Manual Técnico del Cultivo de Maíz Amarillo Duro.pdf"
+    crops:
+      - maize
+    factors: []
+
+  - source_id: inia_suelos_agricolas_agua_riego_2024
+    organization: INIA
+    title: Suelos agrícolas y agua para riego
+    source_type: pdf
+    source_roles:
+      - soil_management
+      - water_management
+      - management_guidance
+    language: es
+    country: Peru
+    relative_path: "inia/Suelos agrícolas y agua para riego-INIA 2024.pdf"
+    crops: []
+    factors:
+      - precipitation
+      - parameter_soildepth
+

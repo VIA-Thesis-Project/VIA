@@ -31,6 +31,7 @@ RUN grep -v -E '^[[:space:]]*tk[[:space:]]*$' \
     && rm /tmp/cropsuite-requirements.txt /tmp/cropsuite-container-requirements.txt
 
 COPY backend /opt/via/backend
+COPY knowledge /opt/via/knowledge
 RUN python -m pip install --no-cache-dir /opt/via/backend \
     && python -m pip check
 
@@ -39,9 +40,9 @@ COPY data/huaura/boundary/huaura_province.geojson /opt/via/data/huaura/boundary/
 
 RUN groupadd --system via \
     && useradd --system --gid via --home-dir /nonexistent --shell /usr/sbin/nologin via \
-    && mkdir -p /etc/via /mnt/via/sources /var/lib/via/workspace /var/lib/via/artifacts \
+    && mkdir -p /etc/via /mnt/via/sources /var/lib/via/workspace /var/lib/via/artifacts /var/lib/via/knowledge/sources \
     && chown -R via:via /var/lib/via/workspace /var/lib/via/artifacts \
-    && chmod -R a+rX,a-w /opt/via/backend /opt/via/CropSuiteLite /opt/via/data /etc/via /mnt/via/sources
+    && chmod -R a+rX,a-w /opt/via/backend /opt/via/knowledge /opt/via/CropSuiteLite /opt/via/data /etc/via /mnt/via/sources /var/lib/via/knowledge/sources
 
 USER via
 WORKDIR /opt/via/backend
