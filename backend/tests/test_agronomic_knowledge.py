@@ -166,19 +166,27 @@ def _context() -> RecommendationContext:
     )
 
 
-def _stored_chunk(chunk_id: str, *, content: str) -> StoredChunk:
+def _stored_chunk(
+    chunk_id: str,
+    *,
+    content: str,
+    title: str = "Guidance",
+    page_start: int = 3,
+    page_end: int = 4,
+    section: str | None = "Water",
+) -> StoredChunk:
     return StoredChunk(
         chunk_id=chunk_id,
         document_id=uuid4(),
         organization="FAO",
-        title="Guidance",
+        title=title,
         source_roles=("methodology",),
         relative_path="fao/guidance.pdf",
         source_reference=None,
         corpus_version="test-v1",
-        page_start=3,
-        page_end=4,
-        section="Water",
+        page_start=page_start,
+        page_end=page_end,
+        section=section,
         content=content,
         content_sha256="a" * 64,
         crops=(),
@@ -774,6 +782,246 @@ def test_hybrid_retrieval_uses_crop_factor_filters_and_deterministic_rrf() -> No
     assert repository.last_filters == ("maize", ("precipitation",), "test-v1")
     assert repository.persisted == [result]
     assert all(not Path(item.source_reference).is_absolute() for item in result.evidence)
+
+
+def test_hybrid_retrieval_v2_uses_semantic_query_and_filters_low_value_chunks() -> None:
+    context = _context()
+    repository = _KnowledgeRepository()
+
+    references = _stored_chunk(
+        "chunk-references",
+        content="Maize rainfall water deficit bibliography references.",
+        title="Maize Manual",
+        page_start=134,
+        page_end=146,
+        section="14. Referencias",
+    )
+    front_matter = _stored_chunk(
+        "chunk-front-matter",
+        content=(
+            "ISBN 123 Authors Example Editor Example Published 2020 "
+            "1. Introduction 9 2. Water 54 3. Irrigation 68 "
+            "4. References 132"
+        ),
+        title="Maize Manual",
+        page_start=4,
+        page_end=7,
+        section="Maize Manual",
+    )
+    irrigation = _stored_chunk(
+        "chunk-irrigation",
+        content=(
+            "Water availability is critical for maize. Rainfall deficits "
+            "during sensitive stages can reduce yield."
+        ),
+        title="Maize Manual",
+        page_start=70,
+        page_end=71,
+        section="8. Riegos",
+    )
+    gaez = _stored_chunk(
+        "chunk-gaez",
+        content=(
+            "Rain-fed and irrigated land evaluation considers water supply "
+            "and soil limitations."
+        ),
+        title="GAEZ v4 Model Documentation",
+        page_start=132,
+        page_end=134,
+        section="SOIL AND TERRAIN EVALUATION",
+    )
+
+    repository.lexical = (
+        LexicalSearchHit(chunk=references, rank=1, score=1.0),
+        LexicalSearchHit(chunk=front_matter, rank=2, score=0.9),
+        LexicalSearchHit(chunk=irrigation, rank=3, score=0.8),
+        LexicalSearchHit(chunk=gaez, rank=4, score=0.7),
+    )
+    repository.vectors = (
+        VectorSearchCandidate(
+            chunk=references,
+            vector=(1.0, 0.0, 0.0),
+        ),
+        VectorSearchCandidate(
+            chunk=front_matter,
+            vector=(0.99, 0.01, 0.0),
+        ),
+        VectorSearchCandidate(
+            chunk=irrigation,
+            vector=(0.95, 0.05, 0.0),
+        ),
+        VectorSearchCandidate(
+            chunk=gaez,
+            vector=(0.90, 0.10, 0.0),
+        ),
+    )
+
+    embeddings = _FakeEmbeddings()
+
+    retriever = HybridKnowledgeRetriever(
+        repository=repository,
+        embeddings=embeddings,
+        taxonomy=Taxonomy(
+            version="test",
+            factors={
+                "precipitation": (
+                    "rainfall",
+                    "water deficit",
+                    "water availability",
+                )
+            },
+            crops={
+                "maize": (
+                    "corn",
+                    "yellow maize",
+                )
+            },
+            water_regimes={
+                "rainfed": (
+                    "rain-fed",
+                    "secano",
+                )
+            },
+        ),
+        embedding_index=configured_embedding_index(
+            embeddings,
+            "test-v1",
+        ),
+        corpus_version="test-v1",
+        vector_top_k=2,
+        lexical_top_k=2,
+        final_top_k=2,
+    )
+
+    first = retriever.retrieve(context)
+    second = retriever.retrieve(context)
+
+    assert first.retrieval_status is RetrievalStatus.AVAILABLE
+    assert first.retrieval_version == "hybrid-rrf-v2"
+
+    assert [
+        item.chunk_id
+        for item in first.evidence
+    ] == [
+        "chunk-irrigation",
+        "chunk-gaez",
+    ]
+
+    assert [
+        item.chunk_id
+        for item in second.evidence
+    ] == [
+        item.chunk_id
+        for item in first.evidence
+    ]
+
+    assert [
+        item.section
+        for item in first.evidence
+    ] == [
+        "8. Riegos",
+        "SOIL AND TERRAIN EVALUATION",
+    ]
+
+    assert "chunk-references" not in {
+        item.chunk_id
+        for item in first.evidence
+    }
+    assert "chunk-front-matter" not in {
+        item.chunk_id
+        for item in first.evidence
+    }
+
+    assert len(embeddings.calls) == 2
+
+    semantic_query = embeddings.calls[0][0]
+
+    assert "Agronomic evidence for maize" in semantic_query
+    assert "rainfall" in semantic_query
+    assert "water deficit" in semantic_query
+    assert "rainfed" in semantic_query
+    assert " OR " not in semantic_query
+    assert '"' not in semantic_query
+
+    lexical_line, semantic_line = first.query.splitlines()
+
+    assert lexical_line.startswith("lexical: ")
+    assert semantic_line.startswith("semantic: ")
+
+    assert '"maize"' in lexical_line
+    assert '"precipitation"' in lexical_line
+    assert '"rainfall"' in lexical_line
+    assert '"water deficit"' in lexical_line
+    assert '"rainfed"' in lexical_line
+
+    assert '"corn"' not in lexical_line
+    assert '"yellow maize"' not in lexical_line
+
+    assert semantic_line.removeprefix("semantic: ") == semantic_query
+
+
+def test_hybrid_retrieval_v2_preserves_useful_introduction_sections() -> None:
+    context = _context()
+    repository = _KnowledgeRepository()
+
+    introduction = _stored_chunk(
+        "chunk-introduction",
+        content=(
+            "Maize adapts to a range of agroclimatic conditions and "
+            "water availability affects crop development."
+        ),
+        title="Maize Manual",
+        page_start=11,
+        page_end=14,
+        section="1. Introduction",
+    )
+
+    repository.lexical = (
+        LexicalSearchHit(
+            chunk=introduction,
+            rank=1,
+            score=1.0,
+        ),
+    )
+    repository.vectors = (
+        VectorSearchCandidate(
+            chunk=introduction,
+            vector=(1.0, 0.0, 0.0),
+        ),
+    )
+
+    embeddings = _FakeEmbeddings()
+
+    retriever = HybridKnowledgeRetriever(
+        repository=repository,
+        embeddings=embeddings,
+        taxonomy=Taxonomy(
+            version="test",
+            factors={
+                "precipitation": (
+                    "rainfall",
+                    "water deficit",
+                )
+            },
+            crops={"maize": ("corn",)},
+            water_regimes={"rainfed": ("rain-fed",)},
+        ),
+        embedding_index=configured_embedding_index(
+            embeddings,
+            "test-v1",
+        ),
+        corpus_version="test-v1",
+        vector_top_k=1,
+        lexical_top_k=1,
+        final_top_k=1,
+    )
+
+    result = retriever.retrieve(context)
+
+    assert result.retrieval_status is RetrievalStatus.AVAILABLE
+    assert len(result.evidence) == 1
+    assert result.evidence[0].chunk_id == "chunk-introduction"
+    assert result.evidence[0].section == "1. Introduction"
 
 
 def test_recommendation_validates_citations_and_reuses_cache() -> None:

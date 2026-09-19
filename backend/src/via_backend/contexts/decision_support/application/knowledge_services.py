@@ -48,9 +48,35 @@ from .knowledge_ports import (
     IRecommendationRepository,
 )
 
-DEFAULT_RETRIEVAL_VERSION = "hybrid-rrf-v1"
+DEFAULT_RETRIEVAL_VERSION = "hybrid-rrf-v2"
 DEFAULT_PROMPT_VERSION = "agronomic-recommendation-v1"
 _RRF_K = 60
+
+_LOW_VALUE_SECTION_TITLES = frozenset(
+    {
+        "references",
+        "referencias",
+        "bibliography",
+        "bibliografia",
+        "contents",
+        "table of contents",
+        "index",
+        "indice",
+        "glossary",
+        "glosario",
+    }
+)
+
+_LOW_VALUE_SECTION_PREFIX = re.compile(
+    r"^\s*\d{1,2}(?:\.\d{1,2}){0,3}[.)]?\s+"
+)
+
+_FRONT_MATTER_TOC_ENTRY = re.compile(
+    r"\b\d{1,2}(?:\.\d{1,2}){0,3}\.?"
+    r"\s+[^\d]{2,80}\s+\d{1,3}\b"
+)
+
+
 _GENERIC_SINGLE_WORD_HEADINGS = frozenset(
     {
         "BIBLIOGRAPHY",
@@ -650,14 +676,27 @@ class HybridKnowledgeRetriever(IKnowledgeRetriever):
             for item in context.factors
         )
 
-        query = build_retrieval_query(
+        lexical_query = build_lexical_retrieval_query(
+            context,
+            self._taxonomy,
+        )
+        semantic_query = build_semantic_retrieval_query(
             context,
             self._taxonomy,
         )
 
+        trace_query = (
+            f"lexical: {lexical_query}\n"
+            f"semantic: {semantic_query}"
+        )
+
         run_id = uuid4()
 
-        if not factor_codes or not query:
+        if (
+            not factor_codes
+            or not lexical_query
+            or not semantic_query
+        ):
             result = RetrievedKnowledge(
                 retrieval_run_id=run_id,
                 evaluation_id=context.evaluation_id,
@@ -667,7 +706,7 @@ class HybridKnowledgeRetriever(IKnowledgeRetriever):
                 retrieval_status=(
                     RetrievalStatus.INSUFFICIENT_EVIDENCE
                 ),
-                query=query,
+                query=trace_query,
                 corpus_version=self._corpus_version,
                 retrieval_version=self._retrieval_version,
                 embedding_index=self._index,
@@ -677,16 +716,24 @@ class HybridKnowledgeRetriever(IKnowledgeRetriever):
             self._repository.persist_retrieval(result)
             return result
 
-        lexical = self._repository.lexical_search(
-            query,
+        raw_lexical = self._repository.lexical_search(
+            lexical_query,
             context.crop_id,
             factor_codes,
             self._corpus_version,
+            max(
+                self._lexical_top_k,
+                self._lexical_top_k * 3,
+            ),
+        )
+
+        lexical = _filter_low_value_lexical_hits(
+            raw_lexical,
             self._lexical_top_k,
         )
 
         embedded_query = self._embeddings.embed(
-            (query,)
+            (semantic_query,)
         )
 
         if len(embedded_query.vectors) != 1:
@@ -696,11 +743,17 @@ class HybridKnowledgeRetriever(IKnowledgeRetriever):
 
         query_vector = embedded_query.vectors[0].values
 
-        candidates = self._repository.vector_candidates(
+        raw_candidates = self._repository.vector_candidates(
             context.crop_id,
             factor_codes,
             self._corpus_version,
             self._index.index_id,
+        )
+
+        candidates = tuple(
+            candidate
+            for candidate in raw_candidates
+            if not _is_low_value_chunk(candidate.chunk)
         )
 
         vector = _rank_vectors(
@@ -726,7 +779,7 @@ class HybridKnowledgeRetriever(IKnowledgeRetriever):
                 if evidence
                 else RetrievalStatus.INSUFFICIENT_EVIDENCE
             ),
-            query=query,
+            query=trace_query,
             corpus_version=self._corpus_version,
             retrieval_version=self._retrieval_version,
             embedding_index=self._index,
@@ -891,15 +944,13 @@ class RecommendationApplicationService:
         )
 
 
-def build_retrieval_query(
+def build_lexical_retrieval_query(
     context: RecommendationContext,
     taxonomy: Taxonomy,
 ) -> str:
-    terms: list[str] = []
-
-    terms.extend(
-        taxonomy.expand_crop(context.crop_id)
-    )
+    terms: list[str] = [
+        context.crop_id.replace("_", " "),
+    ]
 
     for factor in context.factors:
         terms.extend(
@@ -921,6 +972,58 @@ def build_retrieval_query(
     ]
 
     return " OR ".join(escaped)
+
+
+def build_semantic_retrieval_query(
+    context: RecommendationContext,
+    taxonomy: Taxonomy,
+) -> str:
+    factor_terms: list[str] = []
+
+    for factor in context.factors:
+        factor_terms.extend(
+            taxonomy.expand_factor(
+                factor.factor_code
+            )
+        )
+
+    if not factor_terms:
+        return ""
+
+    focus_terms = _unique_terms(
+        (
+            *factor_terms,
+            *taxonomy.expand_water_regime(
+                context.water_regime
+            ),
+        )
+    )
+
+    crop = context.crop_id.replace("_", " ").strip()
+    water_regime = (
+        context.water_regime
+        .replace("_", " ")
+        .strip()
+    )
+
+    focus = ", ".join(focus_terms)
+
+    return (
+        f"Agronomic evidence for {crop} "
+        f"under {water_regime} conditions "
+        f"about {focus}."
+    )
+
+
+def build_retrieval_query(
+    context: RecommendationContext,
+    taxonomy: Taxonomy,
+) -> str:
+    """Backward-compatible lexical query builder."""
+    return build_lexical_retrieval_query(
+        context,
+        taxonomy,
+    )
 
 
 def validate_recommendation(
@@ -1444,6 +1547,130 @@ def _choose_boundary(
         )
 
     return preferred
+
+
+def _fold_retrieval_text(
+    value: str,
+) -> str:
+    decomposed = unicodedata.normalize(
+        "NFKD",
+        value,
+    )
+
+    without_accents = "".join(
+        character
+        for character in decomposed
+        if not unicodedata.combining(character)
+    )
+
+    return " ".join(
+        without_accents.casefold().split()
+    )
+
+
+def _normalized_section_name(
+    value: str,
+) -> str:
+    without_number = _LOW_VALUE_SECTION_PREFIX.sub(
+        "",
+        value.strip(),
+    )
+
+    return _fold_retrieval_text(
+        without_number
+    )
+
+
+def _is_probable_front_matter(
+    chunk: StoredChunk,
+) -> bool:
+    if (
+        not chunk.section
+        or chunk.page_start > 10
+    ):
+        return False
+
+    section_name = _fold_retrieval_text(
+        chunk.section
+    )
+    title_name = _fold_retrieval_text(
+        chunk.title
+    )
+
+    if section_name != title_name:
+        return False
+
+    content = _fold_retrieval_text(
+        chunk.content
+    )
+
+    markers = (
+        "isbn",
+        "autores",
+        "authors",
+        "editor",
+        "publicado",
+        "published",
+        "primera edicion",
+        "first edition",
+        "copyright",
+    )
+
+    marker_count = sum(
+        marker in content
+        for marker in markers
+    )
+
+    toc_entries = len(
+        _FRONT_MATTER_TOC_ENTRY.findall(
+            chunk.content
+        )
+    )
+
+    return (
+        marker_count >= 2
+        or toc_entries >= 4
+    )
+
+
+def _is_low_value_chunk(
+    chunk: StoredChunk,
+) -> bool:
+    if chunk.section:
+        section_name = _normalized_section_name(
+            chunk.section
+        )
+
+        if section_name in _LOW_VALUE_SECTION_TITLES:
+            return True
+
+    return _is_probable_front_matter(chunk)
+
+
+def _filter_low_value_lexical_hits(
+    hits: tuple[object, ...],
+    limit: int,
+) -> tuple[object, ...]:
+    from .knowledge_models import LexicalSearchHit
+
+    accepted = [
+        hit
+        for hit in hits
+        if isinstance(hit, LexicalSearchHit)
+        and not _is_low_value_chunk(hit.chunk)
+    ]
+
+    return tuple(
+        LexicalSearchHit(
+            chunk=hit.chunk,
+            rank=rank,
+            score=hit.score,
+        )
+        for rank, hit in enumerate(
+            accepted[:limit],
+            start=1,
+        )
+    )
 
 
 def _rank_vectors(
