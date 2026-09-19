@@ -48,7 +48,7 @@ from .knowledge_ports import (
     IRecommendationRepository,
 )
 
-DEFAULT_RETRIEVAL_VERSION = "hybrid-rrf-v3"
+DEFAULT_RETRIEVAL_VERSION = "hybrid-rrf-v4"
 DEFAULT_PROMPT_VERSION = "agronomic-recommendation-v1"
 _RRF_K = 60
 
@@ -948,22 +948,21 @@ def build_lexical_retrieval_query(
     context: RecommendationContext,
     taxonomy: Taxonomy,
 ) -> str:
-    terms: list[str] = [
-        context.crop_id.replace("_", " "),
-    ]
+    terms: list[str] = []
 
     for factor in context.factors:
-        terms.extend(
-            taxonomy.expand_factor(
-                factor.factor_code
-            )
+        expanded = taxonomy.expand_factor(
+            factor.factor_code
         )
 
-    terms.extend(
-        taxonomy.expand_water_regime(
-            context.water_regime
-        )
-    )
+        for term in expanded:
+            if (
+                factor.factor_code.startswith("parameter_")
+                and term == factor.factor_code
+            ):
+                continue
+
+            terms.append(term)
 
     escaped = [
         f'"{term.replace(chr(34), "")}"'

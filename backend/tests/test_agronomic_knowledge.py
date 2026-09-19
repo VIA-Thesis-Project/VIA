@@ -784,7 +784,7 @@ def test_hybrid_retrieval_uses_crop_factor_filters_and_deterministic_rrf() -> No
     assert all(not Path(item.source_reference).is_absolute() for item in result.evidence)
 
 
-def test_hybrid_retrieval_v3_filters_noise_with_factor_focused_query() -> None:
+def test_hybrid_retrieval_v4_filters_noise_with_factor_focused_queries() -> None:
     context = _context()
     repository = _KnowledgeRepository()
 
@@ -897,7 +897,7 @@ def test_hybrid_retrieval_v3_filters_noise_with_factor_focused_query() -> None:
     second = retriever.retrieve(context)
 
     assert first.retrieval_status is RetrievalStatus.AVAILABLE
-    assert first.retrieval_version == "hybrid-rrf-v3"
+    assert first.retrieval_version == "hybrid-rrf-v4"
 
     assert [
         item.chunk_id
@@ -952,11 +952,11 @@ def test_hybrid_retrieval_v3_filters_noise_with_factor_focused_query() -> None:
     assert lexical_line.startswith("lexical: ")
     assert semantic_line.startswith("semantic: ")
 
-    assert '"maize"' in lexical_line
+    assert '"maize"' not in lexical_line
     assert '"precipitation"' in lexical_line
     assert '"rainfall"' in lexical_line
     assert '"water deficit"' in lexical_line
-    assert '"rainfed"' in lexical_line
+    assert '"rainfed"' not in lexical_line
 
     assert '"corn"' not in lexical_line
     assert '"yellow maize"' not in lexical_line
@@ -964,7 +964,7 @@ def test_hybrid_retrieval_v3_filters_noise_with_factor_focused_query() -> None:
     assert semantic_line.removeprefix("semantic: ") == semantic_query
 
 
-def test_hybrid_retrieval_v3_keeps_water_regime_secondary_to_soil_factor() -> None:
+def test_hybrid_retrieval_v4_keeps_context_out_of_lexical_factor_query() -> None:
     context = RecommendationContext(
         evaluation_id=uuid4(),
         crop_id="maize",
@@ -1050,7 +1050,7 @@ def test_hybrid_retrieval_v3_keeps_water_regime_secondary_to_soil_factor() -> No
     semantic_query = embeddings.calls[0][0]
     lexical_line, semantic_line = result.query.splitlines()
 
-    assert result.retrieval_version == "hybrid-rrf-v3"
+    assert result.retrieval_version == "hybrid-rrf-v4"
 
     assert "soil depth" in semantic_query
     assert "effective soil depth" in semantic_query
@@ -1066,14 +1066,21 @@ def test_hybrid_retrieval_v3_keeps_water_regime_secondary_to_soil_factor() -> No
     assert "irrigado" not in semantic_query
     assert "riego" not in semantic_query
 
-    assert '"irrigated"' in lexical_line
-    assert '"irrigation"' in lexical_line
-    assert '"riego"' in lexical_line
+    assert '"soil depth"' in lexical_line
+    assert '"effective soil depth"' in lexical_line
+    assert '"rooting depth"' in lexical_line
+    assert '"shallow soil"' in lexical_line
+
+    assert "parameter_soildepth" not in lexical_line
+    assert '"maize"' not in lexical_line
+    assert '"irrigated"' not in lexical_line
+    assert '"irrigation"' not in lexical_line
+    assert '"riego"' not in lexical_line
 
     assert semantic_line.removeprefix("semantic: ") == semantic_query
 
 
-def test_hybrid_retrieval_v3_preserves_useful_introduction_sections() -> None:
+def test_hybrid_retrieval_v4_preserves_useful_introduction_sections() -> None:
     context = _context()
     repository = _KnowledgeRepository()
 
