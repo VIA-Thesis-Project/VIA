@@ -2879,7 +2879,7 @@
       "file_type": "code",
       "norm_label": "_token",
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1122"
+      "source_location": "L1121"
     },
     {
       "id": "backend_src_via_backend_contexts_decision_support_application_knowledge_models_ingestionreport",
@@ -12173,7 +12173,7 @@
       "file_type": "code",
       "norm_label": "configured_embedding_index()",
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1102"
+      "source_location": "L1101"
     },
     {
       "id": "backend_src_via_backend_contexts_decision_support_application_knowledge_services_hybridknowledgeretriever_init",
@@ -12320,40 +12320,40 @@
       "source_location": "L749"
     },
     {
-      "id": "backend_tests_test_agronomic_knowledge_test_hybrid_retrieval_v3_filters_noise_with_factor_focused_query",
-      "label": "test_hybrid_retrieval_v3_filters_noise_with_factor_focused_query()",
+      "id": "backend_tests_test_agronomic_knowledge_test_hybrid_retrieval_v4_filters_noise_with_factor_focused_queries",
+      "label": "test_hybrid_retrieval_v4_filters_noise_with_factor_focused_queries()",
       "_callable": true,
       "_origin": "ast",
       "community": 176,
       "community_name": "EmbeddingIndex",
       "file_type": "code",
-      "norm_label": "test_hybrid_retrieval_v3_filters_noise_with_factor_focused_query()",
+      "norm_label": "test_hybrid_retrieval_v4_filters_noise_with_factor_focused_queries()",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
       "source_location": "L787"
     },
     {
-      "id": "backend_tests_test_agronomic_knowledge_test_hybrid_retrieval_v3_keeps_water_regime_secondary_to_soil_factor",
-      "label": "test_hybrid_retrieval_v3_keeps_water_regime_secondary_to_soil_factor()",
+      "id": "backend_tests_test_agronomic_knowledge_test_hybrid_retrieval_v4_keeps_context_out_of_lexical_factor_query",
+      "label": "test_hybrid_retrieval_v4_keeps_context_out_of_lexical_factor_query()",
       "_callable": true,
       "_origin": "ast",
       "community": 176,
       "community_name": "EmbeddingIndex",
       "file_type": "code",
-      "norm_label": "test_hybrid_retrieval_v3_keeps_water_regime_secondary_to_soil_factor()",
+      "norm_label": "test_hybrid_retrieval_v4_keeps_context_out_of_lexical_factor_query()",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
       "source_location": "L967"
     },
     {
-      "id": "backend_tests_test_agronomic_knowledge_test_hybrid_retrieval_v3_preserves_useful_introduction_sections",
-      "label": "test_hybrid_retrieval_v3_preserves_useful_introduction_sections()",
+      "id": "backend_tests_test_agronomic_knowledge_test_hybrid_retrieval_v4_preserves_useful_introduction_sections",
+      "label": "test_hybrid_retrieval_v4_preserves_useful_introduction_sections()",
       "_callable": true,
       "_origin": "ast",
       "community": 176,
       "community_name": "EmbeddingIndex",
       "file_type": "code",
-      "norm_label": "test_hybrid_retrieval_v3_preserves_useful_introduction_sections()",
+      "norm_label": "test_hybrid_retrieval_v4_preserves_useful_introduction_sections()",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1076"
+      "source_location": "L1083"
     },
     {
       "id": "backend_src_via_backend_contexts_decision_support_application_policy_lifecycle_viabilitypolicylifecycleservice_init",
@@ -15161,7 +15161,7 @@
       "file_type": "code",
       "norm_label": "test_openai_responses_adapter_uses_strict_schema_and_no_tools()",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1197"
+      "source_location": "L1204"
     },
     {
       "id": "backend_tests_test_agronomic_knowledge_test_openai_responses_adapter_uses_strict_schema_and_no_tools_create",
@@ -15173,7 +15173,7 @@
       "file_type": "code",
       "norm_label": "create()",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1224"
+      "source_location": "L1231"
     },
     {
       "id": "backend_tests_test_agronomic_knowledge_test_openai_responses_adapter_uses_strict_schema_and_no_tools_init",
@@ -15185,7 +15185,7 @@
       "file_type": "code",
       "norm_label": "__init__()",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1229"
+      "source_location": "L1236"
     },
     {
       "id": "backend_tests_test_agronomic_knowledge_test_recommendation_validates_citations_and_reuses_cache",
@@ -15197,7 +15197,7 @@
       "file_type": "code",
       "norm_label": "test_recommendation_validates_citations_and_reuses_cache()",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1140"
+      "source_location": "L1147"
     },
     {
       "id": "backend_tests_test_agronomic_knowledge_test_recommendation_without_item_citation_is_rejected",
@@ -15209,7 +15209,7 @@
       "file_type": "code",
       "norm_label": "test_recommendation_without_item_citation_is_rejected()",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1171"
+      "source_location": "L1178"
     },
     {
       "id": "backend_tests_test_container_image_contract_test_api_and_worker_hosts_do_not_import_migration_execution",
@@ -17261,7 +17261,7 @@
       "file_type": "code",
       "norm_label": "build_retrieval_query()",
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1024"
+      "source_location": "L1023"
     },
     {
       "id": "backend_src_via_backend_contexts_decision_support_application_knowledge_services_build_semantic_retrieval_query",
@@ -17273,7 +17273,7 @@
       "file_type": "code",
       "norm_label": "build_semantic_retrieval_query()",
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L977"
+      "source_location": "L976"
     },
     {
       "id": "backend_src_via_backend_contexts_decision_support_application_knowledge_services_choose_boundary",
@@ -17285,7 +17285,7 @@
       "file_type": "code",
       "norm_label": "_choose_boundary()",
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1508"
+      "source_location": "L1507"
     },
     {
       "id": "backend_src_via_backend_contexts_decision_support_application_knowledge_services_contiguous_section_spans",
@@ -17297,7 +17297,7 @@
       "file_type": "code",
       "norm_label": "_contiguous_section_spans()",
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1294"
+      "source_location": "L1293"
     },
     {
       "id": "backend_src_via_backend_contexts_decision_support_application_knowledge_services_cosine_similarity",
@@ -17309,7 +17309,7 @@
       "file_type": "code",
       "norm_label": "_cosine_similarity()",
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1731"
+      "source_location": "L1730"
     },
     {
       "id": "backend_src_via_backend_contexts_decision_support_application_knowledge_services_deterministicknowledgechunker_chunk",
@@ -17333,7 +17333,7 @@
       "file_type": "code",
       "norm_label": "_document_id()",
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1920"
+      "source_location": "L1919"
     },
     {
       "id": "backend_src_via_backend_contexts_decision_support_application_knowledge_services_embedding_index_id",
@@ -17345,7 +17345,7 @@
       "file_type": "code",
       "norm_label": "_embedding_index_id()",
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1936"
+      "source_location": "L1935"
     },
     {
       "id": "backend_src_via_backend_contexts_decision_support_application_knowledge_services_filter_low_value_lexical_hits",
@@ -17357,7 +17357,7 @@
       "file_type": "code",
       "norm_label": "_filter_low_value_lexical_hits()",
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1656"
+      "source_location": "L1655"
     },
     {
       "id": "backend_src_via_backend_contexts_decision_support_application_knowledge_services_fold_retrieval_text",
@@ -17369,7 +17369,7 @@
       "file_type": "code",
       "norm_label": "_fold_retrieval_text()",
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1558"
+      "source_location": "L1557"
     },
     {
       "id": "backend_src_via_backend_contexts_decision_support_application_knowledge_services_fuse_hits",
@@ -17381,7 +17381,7 @@
       "file_type": "code",
       "norm_label": "_fuse_hits()",
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1775"
+      "source_location": "L1774"
     },
     {
       "id": "backend_src_via_backend_contexts_decision_support_application_knowledge_services_has_formula_or_url",
@@ -17393,7 +17393,7 @@
       "file_type": "code",
       "norm_label": "_has_formula_or_url()",
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1472"
+      "source_location": "L1471"
     },
     {
       "id": "backend_src_via_backend_contexts_decision_support_application_knowledge_services_has_mixed_alphanumeric_token",
@@ -17405,7 +17405,7 @@
       "file_type": "code",
       "norm_label": "_has_mixed_alphanumeric_token()",
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1491"
+      "source_location": "L1490"
     },
     {
       "id": "backend_src_via_backend_contexts_decision_support_application_knowledge_services_has_table_spacing",
@@ -17417,7 +17417,7 @@
       "file_type": "code",
       "norm_label": "_has_table_spacing()",
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1468"
+      "source_location": "L1467"
     },
     {
       "id": "backend_src_via_backend_contexts_decision_support_application_knowledge_services_has_unbalanced_delimiters",
@@ -17429,7 +17429,7 @@
       "file_type": "code",
       "norm_label": "_has_unbalanced_delimiters()",
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1487"
+      "source_location": "L1486"
     },
     {
       "id": "backend_src_via_backend_contexts_decision_support_application_knowledge_services_heading_key",
@@ -17441,7 +17441,7 @@
       "file_type": "code",
       "norm_label": "_heading_key()",
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1499"
+      "source_location": "L1498"
     },
     {
       "id": "backend_src_via_backend_contexts_decision_support_application_knowledge_services_hybridknowledgeretriever_retrieve",
@@ -17465,7 +17465,7 @@
       "file_type": "code",
       "norm_label": "_is_low_value_chunk()",
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1642"
+      "source_location": "L1641"
     },
     {
       "id": "backend_src_via_backend_contexts_decision_support_application_knowledge_services_is_probable_front_matter",
@@ -17477,7 +17477,7 @@
       "file_type": "code",
       "norm_label": "_is_probable_front_matter()",
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1590"
+      "source_location": "L1589"
     },
     {
       "id": "backend_src_via_backend_contexts_decision_support_application_knowledge_services_looks_like_heading",
@@ -17489,7 +17489,7 @@
       "file_type": "code",
       "norm_label": "_looks_like_heading()",
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1331"
+      "source_location": "L1330"
     },
     {
       "id": "backend_src_via_backend_contexts_decision_support_application_knowledge_services_looks_like_numbered_heading",
@@ -17501,7 +17501,7 @@
       "file_type": "code",
       "norm_label": "_looks_like_numbered_heading()",
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1414"
+      "source_location": "L1413"
     },
     {
       "id": "backend_src_via_backend_contexts_decision_support_application_knowledge_services_normalized_section_name",
@@ -17513,7 +17513,7 @@
       "file_type": "code",
       "norm_label": "_normalized_section_name()",
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1577"
+      "source_location": "L1576"
     },
     {
       "id": "backend_src_via_backend_contexts_decision_support_application_knowledge_services_rank_vectors",
@@ -17525,7 +17525,7 @@
       "file_type": "code",
       "norm_label": "_rank_vectors()",
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1682"
+      "source_location": "L1681"
     },
     {
       "id": "backend_src_via_backend_contexts_decision_support_application_knowledge_services_recommendationapplicationservice_list_for_evaluation",
@@ -17549,7 +17549,7 @@
       "file_type": "code",
       "norm_label": "_remove_repeated_page_edges()",
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1166"
+      "source_location": "L1165"
     },
     {
       "id": "backend_src_via_backend_contexts_decision_support_application_knowledge_services_structured_tokens",
@@ -17561,7 +17561,7 @@
       "file_type": "code",
       "norm_label": "_structured_tokens()",
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1261"
+      "source_location": "L1260"
     },
     {
       "id": "backend_src_via_backend_contexts_decision_support_application_knowledge_services_taxonomy_expand_crop",
@@ -17609,7 +17609,7 @@
       "file_type": "code",
       "norm_label": "_unique_terms()",
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1128"
+      "source_location": "L1127"
     },
     {
       "id": "backend_src_via_backend_contexts_decision_support_application_knowledge_services_validate_recommendation",
@@ -17621,7 +17621,7 @@
       "file_type": "code",
       "norm_label": "validate_recommendation()",
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1035"
+      "source_location": "L1034"
     },
     {
       "id": "backend_tests_test_agronomic_knowledge_test_numbered_heading_detection_preserves_structural_headings",
@@ -17777,7 +17777,7 @@
       "file_type": "code",
       "norm_label": "_embedding_text()",
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1146"
+      "source_location": "L1145"
     },
     {
       "id": "backend_src_via_backend_contexts_decision_support_application_knowledge_services_knowledgeingestionservice_embed_chunks",
@@ -19181,7 +19181,7 @@
       "file_type": "code",
       "norm_label": "test_openai_embedding_key_is_lazy()",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1190"
+      "source_location": "L1197"
     },
     {
       "id": "backend_tests_test_agronomic_knowledge_test_packaged_manifest_loads_without_external_source_directory",
@@ -19217,7 +19217,7 @@
       "file_type": "code",
       "norm_label": "test_real_openai_embedding_only_with_explicit_opt_in()",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1254"
+      "source_location": "L1261"
     },
     {
       "id": "backend_tests_test_agronomic_knowledge_test_repo_taxonomy_covers_known_and_future_factors",
@@ -22097,7 +22097,7 @@
       "file_type": "code",
       "norm_label": "recommendation_cache_key()",
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1074"
+      "source_location": "L1073"
     },
     {
       "id": "backend_src_via_backend_contexts_decision_support_application_knowledge_services_recommendationapplicationservice_generate",
@@ -33023,7 +33023,7 @@
       "source_location": "L1"
     },
     {
-      "id": "backend_src_via_backend_contexts_decision_support_application_knowledge_services_rationale_1028",
+      "id": "backend_src_via_backend_contexts_decision_support_application_knowledge_services_rationale_1027",
       "label": "Backward-compatible lexical query builder.",
       "_origin": "ast",
       "community": 23,
@@ -33031,7 +33031,7 @@
       "file_type": "rationale",
       "norm_label": "backward-compatible lexical query builder.",
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1028"
+      "source_location": "L1027"
     },
     {
       "id": "backend_src_via_backend_contexts_decision_support_application_knowledge_services_rationale_137",
@@ -47172,7 +47172,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L970",
+      "source_location": "L969",
       "weight": 1.0
     },
     {
@@ -47184,7 +47184,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1029",
+      "source_location": "L1028",
       "weight": 1.0
     },
     {
@@ -47196,7 +47196,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L998",
+      "source_location": "L997",
       "weight": 1.0
     },
     {
@@ -47208,7 +47208,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1106",
+      "source_location": "L1105",
       "weight": 1.0
     },
     {
@@ -47220,7 +47220,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1107",
+      "source_location": "L1106",
       "weight": 1.0
     },
     {
@@ -47304,7 +47304,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1666",
+      "source_location": "L1665",
       "weight": 1.0
     },
     {
@@ -47316,7 +47316,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1670",
+      "source_location": "L1669",
       "weight": 1.0
     },
     {
@@ -47328,7 +47328,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1885",
+      "source_location": "L1884",
       "weight": 1.0
     },
     {
@@ -47436,7 +47436,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1646",
+      "source_location": "L1645",
       "weight": 1.0
     },
     {
@@ -47448,7 +47448,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1653",
+      "source_location": "L1652",
       "weight": 1.0
     },
     {
@@ -47460,7 +47460,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1599",
+      "source_location": "L1598",
       "weight": 1.0
     },
     {
@@ -47592,12 +47592,24 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1351",
+      "source_location": "L1350",
       "weight": 1.0
     },
     {
       "source": "backend_src_via_backend_contexts_decision_support_application_knowledge_services_looks_like_heading",
       "target": "backend_src_via_backend_contexts_decision_support_application_knowledge_services_has_table_spacing",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
+      "source_location": "L1359",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_src_via_backend_contexts_decision_support_application_knowledge_services_looks_like_heading",
+      "target": "backend_src_via_backend_contexts_decision_support_application_knowledge_services_has_formula_or_url",
       "relation": "calls",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -47609,7 +47621,7 @@
     },
     {
       "source": "backend_src_via_backend_contexts_decision_support_application_knowledge_services_looks_like_heading",
-      "target": "backend_src_via_backend_contexts_decision_support_application_knowledge_services_has_formula_or_url",
+      "target": "backend_src_via_backend_contexts_decision_support_application_knowledge_services_has_unbalanced_delimiters",
       "relation": "calls",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -47621,18 +47633,6 @@
     },
     {
       "source": "backend_src_via_backend_contexts_decision_support_application_knowledge_services_looks_like_heading",
-      "target": "backend_src_via_backend_contexts_decision_support_application_knowledge_services_has_unbalanced_delimiters",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1362",
-      "weight": 1.0
-    },
-    {
-      "source": "backend_src_via_backend_contexts_decision_support_application_knowledge_services_looks_like_heading",
       "target": "backend_src_via_backend_contexts_decision_support_application_knowledge_services_heading_key",
       "relation": "calls",
       "_origin": "ast",
@@ -47640,7 +47640,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1396",
+      "source_location": "L1395",
       "weight": 1.0
     },
     {
@@ -47652,7 +47652,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1425",
+      "source_location": "L1424",
       "weight": 1.0
     },
     {
@@ -47664,7 +47664,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1426",
+      "source_location": "L1425",
       "weight": 1.0
     },
     {
@@ -47676,7 +47676,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1431",
+      "source_location": "L1430",
       "weight": 1.0
     },
     {
@@ -47688,7 +47688,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1432",
+      "source_location": "L1431",
       "weight": 1.0
     },
     {
@@ -47700,7 +47700,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1442",
+      "source_location": "L1441",
       "weight": 1.0
     },
     {
@@ -47712,7 +47712,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1585",
+      "source_location": "L1584",
       "weight": 1.0
     },
     {
@@ -47724,7 +47724,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1700",
+      "source_location": "L1699",
       "weight": 1.0
     },
     {
@@ -47820,7 +47820,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1276",
+      "source_location": "L1275",
       "weight": 1.0
     },
     {
@@ -47832,7 +47832,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1283",
+      "source_location": "L1282",
       "weight": 1.0
     },
     {
@@ -47880,7 +47880,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1048",
+      "source_location": "L1047",
       "weight": 1.0
     },
     {
@@ -58336,7 +58336,7 @@
       "weight": 1.0
     },
     {
-      "source": "backend_tests_test_agronomic_knowledge_test_hybrid_retrieval_v3_filters_noise_with_factor_focused_query",
+      "source": "backend_tests_test_agronomic_knowledge_test_hybrid_retrieval_v4_filters_noise_with_factor_focused_queries",
       "target": "backend_tests_test_agronomic_knowledge_context",
       "relation": "calls",
       "_origin": "ast",
@@ -58348,7 +58348,7 @@
       "weight": 1.0
     },
     {
-      "source": "backend_tests_test_agronomic_knowledge_test_hybrid_retrieval_v3_filters_noise_with_factor_focused_query",
+      "source": "backend_tests_test_agronomic_knowledge_test_hybrid_retrieval_v4_filters_noise_with_factor_focused_queries",
       "target": "backend_tests_test_agronomic_knowledge_knowledgerepository",
       "relation": "calls",
       "_origin": "ast",
@@ -58360,7 +58360,7 @@
       "weight": 1.0
     },
     {
-      "source": "backend_tests_test_agronomic_knowledge_test_hybrid_retrieval_v3_filters_noise_with_factor_focused_query",
+      "source": "backend_tests_test_agronomic_knowledge_test_hybrid_retrieval_v4_filters_noise_with_factor_focused_queries",
       "target": "backend_tests_test_agronomic_knowledge_stored_chunk",
       "relation": "calls",
       "_origin": "ast",
@@ -58372,7 +58372,7 @@
       "weight": 1.0
     },
     {
-      "source": "backend_tests_test_agronomic_knowledge_test_hybrid_retrieval_v3_filters_noise_with_factor_focused_query",
+      "source": "backend_tests_test_agronomic_knowledge_test_hybrid_retrieval_v4_filters_noise_with_factor_focused_queries",
       "target": "backend_src_via_backend_contexts_decision_support_application_knowledge_models_lexicalsearchhit",
       "relation": "calls",
       "_origin": "ast",
@@ -58384,7 +58384,7 @@
       "weight": 1.0
     },
     {
-      "source": "backend_tests_test_agronomic_knowledge_test_hybrid_retrieval_v3_filters_noise_with_factor_focused_query",
+      "source": "backend_tests_test_agronomic_knowledge_test_hybrid_retrieval_v4_filters_noise_with_factor_focused_queries",
       "target": "backend_src_via_backend_contexts_decision_support_application_knowledge_models_vectorsearchcandidate",
       "relation": "calls",
       "_origin": "ast",
@@ -58396,7 +58396,7 @@
       "weight": 1.0
     },
     {
-      "source": "backend_tests_test_agronomic_knowledge_test_hybrid_retrieval_v3_filters_noise_with_factor_focused_query",
+      "source": "backend_tests_test_agronomic_knowledge_test_hybrid_retrieval_v4_filters_noise_with_factor_focused_queries",
       "target": "backend_tests_test_agronomic_knowledge_fakeembeddings",
       "relation": "calls",
       "_origin": "ast",
@@ -58408,7 +58408,7 @@
       "weight": 1.0
     },
     {
-      "source": "backend_tests_test_agronomic_knowledge_test_hybrid_retrieval_v3_filters_noise_with_factor_focused_query",
+      "source": "backend_tests_test_agronomic_knowledge_test_hybrid_retrieval_v4_filters_noise_with_factor_focused_queries",
       "target": "backend_src_via_backend_contexts_decision_support_application_knowledge_services_configured_embedding_index",
       "relation": "calls",
       "_origin": "ast",
@@ -58420,7 +58420,7 @@
       "weight": 1.0
     },
     {
-      "source": "backend_tests_test_agronomic_knowledge_test_hybrid_retrieval_v3_keeps_water_regime_secondary_to_soil_factor",
+      "source": "backend_tests_test_agronomic_knowledge_test_hybrid_retrieval_v4_keeps_context_out_of_lexical_factor_query",
       "target": "backend_src_via_backend_contexts_decision_support_application_knowledge_models_vectorsearchcandidate",
       "relation": "calls",
       "_origin": "ast",
@@ -58432,7 +58432,7 @@
       "weight": 1.0
     },
     {
-      "source": "backend_tests_test_agronomic_knowledge_test_hybrid_retrieval_v3_keeps_water_regime_secondary_to_soil_factor",
+      "source": "backend_tests_test_agronomic_knowledge_test_hybrid_retrieval_v4_keeps_context_out_of_lexical_factor_query",
       "target": "backend_tests_test_agronomic_knowledge_fakeembeddings",
       "relation": "calls",
       "_origin": "ast",
@@ -58444,7 +58444,7 @@
       "weight": 1.0
     },
     {
-      "source": "backend_tests_test_agronomic_knowledge_test_hybrid_retrieval_v3_keeps_water_regime_secondary_to_soil_factor",
+      "source": "backend_tests_test_agronomic_knowledge_test_hybrid_retrieval_v4_keeps_context_out_of_lexical_factor_query",
       "target": "backend_src_via_backend_contexts_decision_support_application_knowledge_services_configured_embedding_index",
       "relation": "calls",
       "_origin": "ast",
@@ -58456,7 +58456,7 @@
       "weight": 1.0
     },
     {
-      "source": "backend_tests_test_agronomic_knowledge_test_hybrid_retrieval_v3_keeps_water_regime_secondary_to_soil_factor",
+      "source": "backend_tests_test_agronomic_knowledge_test_hybrid_retrieval_v4_keeps_context_out_of_lexical_factor_query",
       "target": "backend_src_via_backend_contexts_decision_support_application_knowledge_models_recommendationcontext",
       "relation": "calls",
       "_origin": "ast",
@@ -58468,7 +58468,7 @@
       "weight": 1.0
     },
     {
-      "source": "backend_tests_test_agronomic_knowledge_test_hybrid_retrieval_v3_keeps_water_regime_secondary_to_soil_factor",
+      "source": "backend_tests_test_agronomic_knowledge_test_hybrid_retrieval_v4_keeps_context_out_of_lexical_factor_query",
       "target": "backend_tests_test_agronomic_knowledge_knowledgerepository",
       "relation": "calls",
       "_origin": "ast",
@@ -58480,7 +58480,7 @@
       "weight": 1.0
     },
     {
-      "source": "backend_tests_test_agronomic_knowledge_test_hybrid_retrieval_v3_keeps_water_regime_secondary_to_soil_factor",
+      "source": "backend_tests_test_agronomic_knowledge_test_hybrid_retrieval_v4_keeps_context_out_of_lexical_factor_query",
       "target": "backend_tests_test_agronomic_knowledge_stored_chunk",
       "relation": "calls",
       "_origin": "ast",
@@ -58492,7 +58492,7 @@
       "weight": 1.0
     },
     {
-      "source": "backend_tests_test_agronomic_knowledge_test_hybrid_retrieval_v3_keeps_water_regime_secondary_to_soil_factor",
+      "source": "backend_tests_test_agronomic_knowledge_test_hybrid_retrieval_v4_keeps_context_out_of_lexical_factor_query",
       "target": "backend_src_via_backend_contexts_decision_support_application_knowledge_models_lexicalsearchhit",
       "relation": "calls",
       "_origin": "ast",
@@ -58504,7 +58504,7 @@
       "weight": 1.0
     },
     {
-      "source": "backend_tests_test_agronomic_knowledge_test_hybrid_retrieval_v3_preserves_useful_introduction_sections",
+      "source": "backend_tests_test_agronomic_knowledge_test_hybrid_retrieval_v4_preserves_useful_introduction_sections",
       "target": "backend_tests_test_agronomic_knowledge_context",
       "relation": "calls",
       "_origin": "ast",
@@ -58512,11 +58512,11 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1077",
+      "source_location": "L1084",
       "weight": 1.0
     },
     {
-      "source": "backend_tests_test_agronomic_knowledge_test_hybrid_retrieval_v3_preserves_useful_introduction_sections",
+      "source": "backend_tests_test_agronomic_knowledge_test_hybrid_retrieval_v4_preserves_useful_introduction_sections",
       "target": "backend_tests_test_agronomic_knowledge_knowledgerepository",
       "relation": "calls",
       "_origin": "ast",
@@ -58524,11 +58524,11 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1078",
+      "source_location": "L1085",
       "weight": 1.0
     },
     {
-      "source": "backend_tests_test_agronomic_knowledge_test_hybrid_retrieval_v3_preserves_useful_introduction_sections",
+      "source": "backend_tests_test_agronomic_knowledge_test_hybrid_retrieval_v4_preserves_useful_introduction_sections",
       "target": "backend_tests_test_agronomic_knowledge_stored_chunk",
       "relation": "calls",
       "_origin": "ast",
@@ -58536,24 +58536,12 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1080",
+      "source_location": "L1087",
       "weight": 1.0
     },
     {
-      "source": "backend_tests_test_agronomic_knowledge_test_hybrid_retrieval_v3_preserves_useful_introduction_sections",
+      "source": "backend_tests_test_agronomic_knowledge_test_hybrid_retrieval_v4_preserves_useful_introduction_sections",
       "target": "backend_src_via_backend_contexts_decision_support_application_knowledge_models_lexicalsearchhit",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1093",
-      "weight": 1.0
-    },
-    {
-      "source": "backend_tests_test_agronomic_knowledge_test_hybrid_retrieval_v3_preserves_useful_introduction_sections",
-      "target": "backend_src_via_backend_contexts_decision_support_application_knowledge_models_vectorsearchcandidate",
       "relation": "calls",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -58564,7 +58552,19 @@
       "weight": 1.0
     },
     {
-      "source": "backend_tests_test_agronomic_knowledge_test_hybrid_retrieval_v3_preserves_useful_introduction_sections",
+      "source": "backend_tests_test_agronomic_knowledge_test_hybrid_retrieval_v4_preserves_useful_introduction_sections",
+      "target": "backend_src_via_backend_contexts_decision_support_application_knowledge_models_vectorsearchcandidate",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "backend/tests/test_agronomic_knowledge.py",
+      "source_location": "L1107",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_tests_test_agronomic_knowledge_test_hybrid_retrieval_v4_preserves_useful_introduction_sections",
       "target": "backend_tests_test_agronomic_knowledge_fakeembeddings",
       "relation": "calls",
       "_origin": "ast",
@@ -58572,11 +58572,11 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1106",
+      "source_location": "L1113",
       "weight": 1.0
     },
     {
-      "source": "backend_tests_test_agronomic_knowledge_test_hybrid_retrieval_v3_preserves_useful_introduction_sections",
+      "source": "backend_tests_test_agronomic_knowledge_test_hybrid_retrieval_v4_preserves_useful_introduction_sections",
       "target": "backend_src_via_backend_contexts_decision_support_application_knowledge_services_configured_embedding_index",
       "relation": "calls",
       "_origin": "ast",
@@ -58584,7 +58584,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1122",
+      "source_location": "L1129",
       "weight": 1.0
     },
     {
@@ -58716,7 +58716,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1234",
+      "source_location": "L1241",
       "weight": 1.0
     },
     {
@@ -58728,7 +58728,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1237",
+      "source_location": "L1244",
       "weight": 1.0
     },
     {
@@ -58740,7 +58740,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1141",
+      "source_location": "L1148",
       "weight": 1.0
     },
     {
@@ -58752,7 +58752,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1142",
+      "source_location": "L1149",
       "weight": 1.0
     },
     {
@@ -58764,7 +58764,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1143",
+      "source_location": "L1150",
       "weight": 1.0
     },
     {
@@ -58776,7 +58776,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1144",
+      "source_location": "L1151",
       "weight": 1.0
     },
     {
@@ -58788,7 +58788,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1144",
+      "source_location": "L1151",
       "weight": 1.0
     },
     {
@@ -58800,7 +58800,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1145",
+      "source_location": "L1152",
       "weight": 1.0
     },
     {
@@ -58812,7 +58812,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1172",
+      "source_location": "L1179",
       "weight": 1.0
     },
     {
@@ -58824,7 +58824,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1173",
+      "source_location": "L1180",
       "weight": 1.0
     },
     {
@@ -58836,7 +58836,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1174",
+      "source_location": "L1181",
       "weight": 1.0
     },
     {
@@ -58848,7 +58848,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1183",
+      "source_location": "L1190",
       "weight": 1.0
     },
     {
@@ -58860,7 +58860,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1184",
+      "source_location": "L1191",
       "weight": 1.0
     },
     {
@@ -58872,7 +58872,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1185",
+      "source_location": "L1192",
       "weight": 1.0
     },
     {
@@ -69552,7 +69552,7 @@
       "confidence_score": 1.0,
       "context": "decorator",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1253",
+      "source_location": "L1260",
       "weight": 1.0
     },
     {
@@ -71736,7 +71736,7 @@
       "confidence_score": 1.0,
       "context": "generic_arg",
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1508",
+      "source_location": "L1507",
       "weight": 1.0
     },
     {
@@ -71748,7 +71748,7 @@
       "confidence_score": 1.0,
       "context": "generic_arg",
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1294",
+      "source_location": "L1293",
       "weight": 1.0
     },
     {
@@ -79212,7 +79212,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1169",
+      "source_location": "L1168",
       "weight": 1.0
     },
     {
@@ -79284,7 +79284,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1660",
+      "source_location": "L1659",
       "weight": 1.0
     },
     {
@@ -91764,7 +91764,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1024",
+      "source_location": "L1023",
       "weight": 1.0
     },
     {
@@ -91776,7 +91776,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L977",
+      "source_location": "L976",
       "weight": 1.0
     },
     {
@@ -94596,7 +94596,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1197",
+      "source_location": "L1204",
       "weight": 1.0
     },
     {
@@ -96708,7 +96708,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1920",
+      "source_location": "L1919",
       "weight": 1.0
     },
     {
@@ -96720,7 +96720,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1936",
+      "source_location": "L1935",
       "weight": 1.0
     },
     {
@@ -101660,7 +101660,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1024",
+      "source_location": "L1023",
       "weight": 1.0
     },
     {
@@ -101671,7 +101671,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1035",
+      "source_location": "L1034",
       "weight": 1.0
     },
     {
@@ -101682,7 +101682,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1074",
+      "source_location": "L1073",
       "weight": 1.0
     },
     {
@@ -101693,7 +101693,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1102",
+      "source_location": "L1101",
       "weight": 1.0
     },
     {
@@ -101704,7 +101704,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1122",
+      "source_location": "L1121",
       "weight": 1.0
     },
     {
@@ -101715,7 +101715,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1128",
+      "source_location": "L1127",
       "weight": 1.0
     },
     {
@@ -101726,7 +101726,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1146",
+      "source_location": "L1145",
       "weight": 1.0
     },
     {
@@ -101737,7 +101737,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1166",
+      "source_location": "L1165",
       "weight": 1.0
     },
     {
@@ -101748,7 +101748,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1261",
+      "source_location": "L1260",
       "weight": 1.0
     },
     {
@@ -101770,7 +101770,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1294",
+      "source_location": "L1293",
       "weight": 1.0
     },
     {
@@ -101792,7 +101792,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1331",
+      "source_location": "L1330",
       "weight": 1.0
     },
     {
@@ -101825,7 +101825,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1414",
+      "source_location": "L1413",
       "weight": 1.0
     },
     {
@@ -101836,7 +101836,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1468",
+      "source_location": "L1467",
       "weight": 1.0
     },
     {
@@ -101847,7 +101847,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1472",
+      "source_location": "L1471",
       "weight": 1.0
     },
     {
@@ -101858,7 +101858,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1487",
+      "source_location": "L1486",
       "weight": 1.0
     },
     {
@@ -101869,7 +101869,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1491",
+      "source_location": "L1490",
       "weight": 1.0
     },
     {
@@ -101880,7 +101880,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1499",
+      "source_location": "L1498",
       "weight": 1.0
     },
     {
@@ -101891,7 +101891,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1508",
+      "source_location": "L1507",
       "weight": 1.0
     },
     {
@@ -101902,7 +101902,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1558",
+      "source_location": "L1557",
       "weight": 1.0
     },
     {
@@ -101913,7 +101913,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1577",
+      "source_location": "L1576",
       "weight": 1.0
     },
     {
@@ -101924,7 +101924,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1590",
+      "source_location": "L1589",
       "weight": 1.0
     },
     {
@@ -101935,7 +101935,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1642",
+      "source_location": "L1641",
       "weight": 1.0
     },
     {
@@ -101946,7 +101946,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1656",
+      "source_location": "L1655",
       "weight": 1.0
     },
     {
@@ -101957,7 +101957,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1682",
+      "source_location": "L1681",
       "weight": 1.0
     },
     {
@@ -101979,7 +101979,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1731",
+      "source_location": "L1730",
       "weight": 1.0
     },
     {
@@ -101990,7 +101990,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1775",
+      "source_location": "L1774",
       "weight": 1.0
     },
     {
@@ -102001,7 +102001,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1920",
+      "source_location": "L1919",
       "weight": 1.0
     },
     {
@@ -102012,7 +102012,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1936",
+      "source_location": "L1935",
       "weight": 1.0
     },
     {
@@ -102078,7 +102078,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L977",
+      "source_location": "L976",
       "weight": 1.0
     },
     {
@@ -106912,13 +106912,13 @@
     },
     {
       "source": "backend_tests_test_agronomic_knowledge",
-      "target": "backend_tests_test_agronomic_knowledge_test_hybrid_retrieval_v3_preserves_useful_introduction_sections",
+      "target": "backend_tests_test_agronomic_knowledge_test_hybrid_retrieval_v4_preserves_useful_introduction_sections",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1076",
+      "source_location": "L1083",
       "weight": 1.0
     },
     {
@@ -106929,7 +106929,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1140",
+      "source_location": "L1147",
       "weight": 1.0
     },
     {
@@ -106940,7 +106940,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1171",
+      "source_location": "L1178",
       "weight": 1.0
     },
     {
@@ -106951,7 +106951,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1190",
+      "source_location": "L1197",
       "weight": 1.0
     },
     {
@@ -106962,7 +106962,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1197",
+      "source_location": "L1204",
       "weight": 1.0
     },
     {
@@ -106973,7 +106973,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1254",
+      "source_location": "L1261",
       "weight": 1.0
     },
     {
@@ -107297,7 +107297,7 @@
     },
     {
       "source": "backend_tests_test_agronomic_knowledge",
-      "target": "backend_tests_test_agronomic_knowledge_test_hybrid_retrieval_v3_filters_noise_with_factor_focused_query",
+      "target": "backend_tests_test_agronomic_knowledge_test_hybrid_retrieval_v4_filters_noise_with_factor_focused_queries",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -107319,7 +107319,7 @@
     },
     {
       "source": "backend_tests_test_agronomic_knowledge",
-      "target": "backend_tests_test_agronomic_knowledge_test_hybrid_retrieval_v3_keeps_water_regime_secondary_to_soil_factor",
+      "target": "backend_tests_test_agronomic_knowledge_test_hybrid_retrieval_v4_keeps_context_out_of_lexical_factor_query",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -107512,7 +107512,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1224",
+      "source_location": "L1231",
       "weight": 1.0
     },
     {
@@ -107523,7 +107523,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1229",
+      "source_location": "L1236",
       "weight": 1.0
     },
     {
@@ -124434,14 +124434,14 @@
       "weight": 1.0
     },
     {
-      "source": "backend_src_via_backend_contexts_decision_support_application_knowledge_services_rationale_1028",
+      "source": "backend_src_via_backend_contexts_decision_support_application_knowledge_services_rationale_1027",
       "target": "backend_src_via_backend_contexts_decision_support_application_knowledge_services_build_retrieval_query",
       "relation": "rationale_for",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1028",
+      "source_location": "L1027",
       "weight": 1.0
     },
     {
@@ -132171,7 +132171,7 @@
       "confidence_score": 0.95,
       "context": "generic_arg",
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1779",
+      "source_location": "L1778",
       "weight": 0.8
     },
     {
@@ -132183,7 +132183,7 @@
       "confidence_score": 0.95,
       "context": "generic_arg",
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1685",
+      "source_location": "L1684",
       "weight": 0.8
     },
     {
@@ -132195,7 +132195,7 @@
       "confidence_score": 0.95,
       "context": "generic_arg",
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1691",
+      "source_location": "L1690",
       "weight": 0.8
     },
     {
@@ -132747,7 +132747,7 @@
       "confidence_score": 0.95,
       "context": "parameter_type",
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1025",
+      "source_location": "L1024",
       "weight": 0.8
     },
     {
@@ -132759,7 +132759,7 @@
       "confidence_score": 0.95,
       "context": "parameter_type",
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L978",
+      "source_location": "L977",
       "weight": 0.8
     },
     {
@@ -132771,7 +132771,7 @@
       "confidence_score": 0.95,
       "context": "parameter_type",
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1103",
+      "source_location": "L1102",
       "weight": 0.8
     },
     {
@@ -132783,7 +132783,7 @@
       "confidence_score": 0.95,
       "context": "parameter_type",
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1147",
+      "source_location": "L1146",
       "weight": 0.8
     },
     {
@@ -132795,7 +132795,7 @@
       "confidence_score": 0.95,
       "context": "parameter_type",
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1148",
+      "source_location": "L1147",
       "weight": 0.8
     },
     {
@@ -132807,7 +132807,7 @@
       "confidence_score": 0.95,
       "context": "parameter_type",
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1643",
+      "source_location": "L1642",
       "weight": 0.8
     },
     {
@@ -132819,7 +132819,7 @@
       "confidence_score": 0.95,
       "context": "parameter_type",
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1591",
+      "source_location": "L1590",
       "weight": 0.8
     },
     {
@@ -132831,7 +132831,7 @@
       "confidence_score": 0.95,
       "context": "parameter_type",
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1075",
+      "source_location": "L1074",
       "weight": 0.8
     },
     {
@@ -132843,7 +132843,7 @@
       "confidence_score": 0.95,
       "context": "parameter_type",
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1076",
+      "source_location": "L1075",
       "weight": 0.8
     },
     {
@@ -132855,7 +132855,7 @@
       "confidence_score": 0.95,
       "context": "parameter_type",
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1036",
+      "source_location": "L1035",
       "weight": 0.8
     },
     {
@@ -132867,7 +132867,7 @@
       "confidence_score": 0.95,
       "context": "parameter_type",
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1037",
+      "source_location": "L1036",
       "weight": 0.8
     },
     {
@@ -136026,7 +136026,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.95,
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1812",
+      "source_location": "L1811",
       "weight": 0.8
     },
     {
@@ -136400,7 +136400,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.95,
       "source_file": "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py",
-      "source_location": "L1174",
+      "source_location": "L1173",
       "weight": 0.8
     },
     {
@@ -139462,7 +139462,7 @@
       "weight": 0.8
     },
     {
-      "source": "backend_tests_test_agronomic_knowledge_test_hybrid_retrieval_v3_filters_noise_with_factor_focused_query",
+      "source": "backend_tests_test_agronomic_knowledge_test_hybrid_retrieval_v4_filters_noise_with_factor_focused_queries",
       "target": "backend_src_via_backend_contexts_decision_support_application_knowledge_services_hybridknowledgeretriever",
       "relation": "uses",
       "_origin": "ast",
@@ -139473,7 +139473,7 @@
       "weight": 0.8
     },
     {
-      "source": "backend_tests_test_agronomic_knowledge_test_hybrid_retrieval_v3_filters_noise_with_factor_focused_query",
+      "source": "backend_tests_test_agronomic_knowledge_test_hybrid_retrieval_v4_filters_noise_with_factor_focused_queries",
       "target": "backend_src_via_backend_contexts_decision_support_application_knowledge_services_taxonomy",
       "relation": "uses",
       "_origin": "ast",
@@ -139484,7 +139484,7 @@
       "weight": 0.8
     },
     {
-      "source": "backend_tests_test_agronomic_knowledge_test_hybrid_retrieval_v3_filters_noise_with_factor_focused_query",
+      "source": "backend_tests_test_agronomic_knowledge_test_hybrid_retrieval_v4_filters_noise_with_factor_focused_queries",
       "target": "backend_src_via_backend_contexts_decision_support_application_knowledge_models_retrievalstatus",
       "relation": "uses",
       "_origin": "ast",
@@ -139495,7 +139495,7 @@
       "weight": 0.8
     },
     {
-      "source": "backend_tests_test_agronomic_knowledge_test_hybrid_retrieval_v3_keeps_water_regime_secondary_to_soil_factor",
+      "source": "backend_tests_test_agronomic_knowledge_test_hybrid_retrieval_v4_keeps_context_out_of_lexical_factor_query",
       "target": "backend_src_via_backend_contexts_decision_support_application_knowledge_services_hybridknowledgeretriever",
       "relation": "uses",
       "_origin": "ast",
@@ -139506,7 +139506,7 @@
       "weight": 0.8
     },
     {
-      "source": "backend_tests_test_agronomic_knowledge_test_hybrid_retrieval_v3_keeps_water_regime_secondary_to_soil_factor",
+      "source": "backend_tests_test_agronomic_knowledge_test_hybrid_retrieval_v4_keeps_context_out_of_lexical_factor_query",
       "target": "backend_src_via_backend_contexts_decision_support_application_knowledge_services_taxonomy",
       "relation": "uses",
       "_origin": "ast",
@@ -139517,7 +139517,7 @@
       "weight": 0.8
     },
     {
-      "source": "backend_tests_test_agronomic_knowledge_test_hybrid_retrieval_v3_keeps_water_regime_secondary_to_soil_factor",
+      "source": "backend_tests_test_agronomic_knowledge_test_hybrid_retrieval_v4_keeps_context_out_of_lexical_factor_query",
       "target": "backend_src_via_backend_contexts_decision_support_application_knowledge_models_recommendationfactor",
       "relation": "uses",
       "_origin": "ast",
@@ -139528,36 +139528,36 @@
       "weight": 0.8
     },
     {
-      "source": "backend_tests_test_agronomic_knowledge_test_hybrid_retrieval_v3_preserves_useful_introduction_sections",
+      "source": "backend_tests_test_agronomic_knowledge_test_hybrid_retrieval_v4_preserves_useful_introduction_sections",
       "target": "backend_src_via_backend_contexts_decision_support_application_knowledge_services_hybridknowledgeretriever",
       "relation": "uses",
       "_origin": "ast",
       "confidence": "INFERRED",
       "confidence_score": 0.95,
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1108",
+      "source_location": "L1115",
       "weight": 0.8
     },
     {
-      "source": "backend_tests_test_agronomic_knowledge_test_hybrid_retrieval_v3_preserves_useful_introduction_sections",
+      "source": "backend_tests_test_agronomic_knowledge_test_hybrid_retrieval_v4_preserves_useful_introduction_sections",
       "target": "backend_src_via_backend_contexts_decision_support_application_knowledge_services_taxonomy",
       "relation": "uses",
       "_origin": "ast",
       "confidence": "INFERRED",
       "confidence_score": 0.95,
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1111",
+      "source_location": "L1118",
       "weight": 0.8
     },
     {
-      "source": "backend_tests_test_agronomic_knowledge_test_hybrid_retrieval_v3_preserves_useful_introduction_sections",
+      "source": "backend_tests_test_agronomic_knowledge_test_hybrid_retrieval_v4_preserves_useful_introduction_sections",
       "target": "backend_src_via_backend_contexts_decision_support_application_knowledge_models_retrievalstatus",
       "relation": "uses",
       "_origin": "ast",
       "confidence": "INFERRED",
       "confidence_score": 0.95,
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1134",
+      "source_location": "L1141",
       "weight": 0.8
     },
     {
@@ -139645,7 +139645,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.95,
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1191",
+      "source_location": "L1198",
       "weight": 0.8
     },
     {
@@ -139656,7 +139656,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.95,
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1193",
+      "source_location": "L1200",
       "weight": 0.8
     },
     {
@@ -139667,7 +139667,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.95,
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1235",
+      "source_location": "L1242",
       "weight": 0.8
     },
     {
@@ -139689,7 +139689,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.95,
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1260",
+      "source_location": "L1267",
       "weight": 0.8
     },
     {
@@ -139700,7 +139700,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.95,
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1146",
+      "source_location": "L1153",
       "weight": 0.8
     },
     {
@@ -139711,7 +139711,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.95,
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1154",
+      "source_location": "L1161",
       "weight": 0.8
     },
     {
@@ -139722,7 +139722,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.95,
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1178",
+      "source_location": "L1185",
       "weight": 0.8
     },
     {
@@ -139733,7 +139733,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.95,
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1182",
+      "source_location": "L1189",
       "weight": 0.8
     },
     {
@@ -139744,7 +139744,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.95,
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1187",
+      "source_location": "L1194",
       "weight": 0.8
     },
     {
@@ -144178,5 +144178,5 @@
       "source_file": "docs/architecture/cropsuite-integration.md"
     }
   ],
-  "built_at_commit": "e87a61d005efb632f308e3a7b5e3c38c291cdc14"
+  "built_at_commit": "cd1903a87d12997b076570cf998d6f5840a3e318"
 }
