@@ -41,6 +41,7 @@ class IKnowledgeChunker(Protocol):
         self,
         source: CorpusSource,
         source_sha256: str,
+        corpus_version: str,
         extracted: ExtractedDocument,
     ) -> tuple[KnowledgeChunk, ...]: ...
 
@@ -72,7 +73,7 @@ class IKnowledgeCorpusRepository(Protocol):
 
     def reusable_embeddings(
         self,
-        content_hashes: tuple[str, ...],
+        chunk_ids: tuple[str, ...],
         embedding_index_id: UUID,
     ) -> dict[str, tuple[float, ...]]: ...
 
@@ -91,6 +92,7 @@ class IKnowledgeCorpusRepository(Protocol):
         query: str,
         crop_id: str,
         factor_codes: tuple[str, ...],
+        corpus_version: str,
         limit: int,
     ) -> tuple[LexicalSearchHit, ...]: ...
 
@@ -98,6 +100,7 @@ class IKnowledgeCorpusRepository(Protocol):
         self,
         crop_id: str,
         factor_codes: tuple[str, ...],
+        corpus_version: str,
         embedding_index_id: UUID,
     ) -> tuple[VectorSearchCandidate, ...]: ...
 

@@ -227,11 +227,17 @@ def test_document_persistence_is_idempotent_and_filtering_isolated(
         "rainfall deficit",
         "maize",
         ("precipitation",),
+        "test-corpus-v1",
         10,
     )
     assert {hit.chunk.chunk_id for hit in lexical} == {"maize-precip", "generic"}
 
-    vectors = repository.vector_candidates("maize", ("precipitation",), index.index_id)
+    vectors = repository.vector_candidates(
+        "maize",
+        ("precipitation",),
+        "test-corpus-v1",
+        index.index_id,
+    )
     assert {candidate.chunk.chunk_id for candidate in vectors} == {
         "maize-precip",
         "generic",

@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import math
 import re
+import unicodedata
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from uuid import NAMESPACE_URL, UUID, uuid4, uuid5
@@ -50,6 +51,52 @@ from .knowledge_ports import (
 DEFAULT_RETRIEVAL_VERSION = "hybrid-rrf-v1"
 DEFAULT_PROMPT_VERSION = "agronomic-recommendation-v1"
 _RRF_K = 60
+_GENERIC_SINGLE_WORD_HEADINGS = frozenset(
+    {
+        "BIBLIOGRAPHY",
+        "BIBLIOGRAFIA",
+        "CONCLUSIONS",
+        "CONCLUSIONES",
+        "GLOSSARY",
+        "GLOSARIO",
+        "INTRODUCTION",
+        "INTRODUCCION",
+        "REFERENCES",
+        "REFERENCIAS",
+    }
+)
+_NUMBERED_HEADING = re.compile(
+    r"^(?P<number>\d{1,2}(?:\.\d{1,2}){0,3})(?P<terminator>[.)]?)\s+"
+    r"(?P<title>\S(?:.*\S)?)$"
+)
+_DATA_PREFIXES = frozenset(
+    {
+        "cm",
+        "g",
+        "ha",
+        "kg",
+        "l",
+        "m",
+        "meq",
+        "mg",
+        "mm",
+        "ppm",
+        "t",
+        "x",
+    }
+)
+_TRAILING_CONNECTORS = frozenset(
+    {
+        "and",
+        "de",
+        "del",
+        "o",
+        "of",
+        "or",
+        "the",
+        "y",
+    }
+)
 
 
 class KnowledgeContextUnavailableError(LookupError):
@@ -74,11 +121,14 @@ class Taxonomy:
     def expand_factor(self, factor_code: str) -> tuple[str, ...]:
         normalized = factor_code.strip().casefold()
         configured = self.factors.get(normalized)
+
         if configured is not None:
             return _unique_terms((normalized, *configured))
+
         if normalized.startswith("parameter_"):
             readable = normalized.removeprefix("parameter_").replace("_", " ")
             return _unique_terms((normalized, readable))
+
         return (normalized,) if normalized else ()
 
     def expand_crop(self, crop_id: str) -> tuple[str, ...]:
@@ -102,7 +152,10 @@ class DeterministicKnowledgeChunker:
         overlap_tokens: int = 80,
     ) -> None:
         if not 0 <= overlap_tokens < min_tokens <= target_tokens <= max_tokens:
-            raise ValueError("Chunk token thresholds must be ordered and overlap must be smaller.")
+            raise ValueError(
+                "Chunk token thresholds must be ordered and overlap must be smaller."
+            )
+
         self._target = target_tokens
         self._minimum = min_tokens
         self._maximum = max_tokens
@@ -112,54 +165,79 @@ class DeterministicKnowledgeChunker:
         self,
         source: CorpusSource,
         source_sha256: str,
+        corpus_version: str,
         extracted: object,
     ) -> tuple[KnowledgeChunk, ...]:
         from .knowledge_models import ExtractedDocument
 
         if not isinstance(extracted, ExtractedDocument):
             raise TypeError("extracted must be an ExtractedDocument")
+
         cleaned = _remove_repeated_page_edges(extracted.pages)
         tokens = _structured_tokens(cleaned)
+
         if not tokens:
             return ()
 
         chunks: list[KnowledgeChunk] = []
-        start = 0
         sequence = 0
-        while start < len(tokens):
-            end = _choose_boundary(
-                tokens,
-                start=start,
-                minimum=self._minimum,
-                target=self._target,
-                maximum=self._maximum,
-            )
-            selected = tokens[start:end]
-            content = " ".join(token.text for token in selected).strip()
-            if content:
-                content_sha = hashlib.sha256(content.encode("utf-8")).hexdigest()
-                chunk_id = hashlib.sha256(
-                    f"{source.source_id}|{source_sha256}|{sequence}|{content_sha}".encode()
-                ).hexdigest()
-                sections = [token.section for token in selected if token.section is not None]
-                section = sections[0] if sections and len(set(sections)) == 1 else None
-                chunks.append(
-                    KnowledgeChunk(
-                        chunk_id=chunk_id,
-                        sequence=sequence,
-                        page_start=min(token.page for token in selected),
-                        page_end=max(token.page for token in selected),
-                        section=section,
-                        content=content,
-                        content_sha256=content_sha,
-                        crops=source.crops,
-                        factors=source.factors,
+
+        for span in _contiguous_section_spans(tokens):
+            start = 0
+
+            while start < len(span):
+                remaining = len(span) - start
+
+                if remaining <= self._maximum:
+                    end = len(span)
+                else:
+                    end = _choose_boundary(
+                        span,
+                        start=start,
+                        minimum=self._minimum,
+                        target=self._target,
+                        maximum=self._maximum,
                     )
-                )
-                sequence += 1
-            if end >= len(tokens):
-                break
-            start = max(start + 1, end - self._overlap)
+
+                selected = span[start:end]
+                content = " ".join(token.text for token in selected).strip()
+
+                if content:
+                    content_sha = hashlib.sha256(
+                        content.encode("utf-8")
+                    ).hexdigest()
+
+                    chunk_id = hashlib.sha256(
+                        (
+                            f"{corpus_version}|"
+                            f"{source.source_id}|"
+                            f"{source_sha256}|"
+                            f"{sequence}|"
+                            f"{content_sha}"
+                        ).encode()
+                    ).hexdigest()
+
+                    chunks.append(
+                        KnowledgeChunk(
+                            chunk_id=chunk_id,
+                            sequence=sequence,
+                            page_start=min(token.page for token in selected),
+                            page_end=max(token.page for token in selected),
+                            section=selected[0].section,
+                            content=content,
+                            content_sha256=content_sha,
+                            crops=source.crops,
+                            factors=source.factors,
+                        )
+                    )
+
+                    sequence += 1
+
+                if end >= len(span):
+                    break
+
+                start = max(start + 1, end - self._overlap)
+
         return tuple(chunks)
 
 
@@ -179,6 +257,7 @@ class KnowledgeIngestionService:
     ) -> None:
         if embedding_batch_size < 1:
             raise ValueError("embedding_batch_size must be positive")
+
         self._catalog = catalog
         self._extractor = extractor
         self._chunker = chunker
@@ -189,15 +268,28 @@ class KnowledgeIngestionService:
 
     def ingest(self, *, dry_run: bool = False) -> IngestionReport:
         manifest = self._catalog.load_manifest()
-        index = configured_embedding_index(self._embeddings, self._index_version)
+        index = configured_embedding_index(
+            self._embeddings,
+            self._index_version,
+        )
+
         if not dry_run:
             index = self._repository.ensure_embedding_index(index)
 
         results = tuple(
-            self._ingest_source(source, manifest.corpus_version, index, dry_run=dry_run)
+            self._ingest_source(
+                source,
+                manifest.corpus_version,
+                index,
+                dry_run=dry_run,
+            )
             for source in manifest.sources
         )
-        return IngestionReport(corpus_version=manifest.corpus_version, sources=results)
+
+        return IngestionReport(
+            corpus_version=manifest.corpus_version,
+            sources=results,
+        )
 
     def _ingest_source(
         self,
@@ -209,14 +301,23 @@ class KnowledgeIngestionService:
     ) -> IngestionSourceResult:
         source_bytes = self._catalog.read_source(source)
         source_sha = hashlib.sha256(source_bytes).hexdigest()
-        document_id = _document_id(source.source_id, source_sha, corpus_version)
+        document_id = _document_id(
+            source.source_id,
+            source_sha,
+            corpus_version,
+        )
+
         if not dry_run:
             existing = self._repository.find_document(
                 source.source_id,
                 source_sha,
                 corpus_version,
             )
-            if existing is not None and existing.status is KnowledgeDocumentStatus.READY:
+
+            if (
+                existing is not None
+                and existing.status is KnowledgeDocumentStatus.READY
+            ):
                 return IngestionSourceResult(
                     source_id=source.source_id,
                     status=existing.status,
@@ -232,18 +333,30 @@ class KnowledgeIngestionService:
 
         try:
             extracted = self._extractor.extract(source_bytes)
+
             status = (
                 KnowledgeDocumentStatus.NEEDS_OCR
                 if extracted.needs_ocr
                 else KnowledgeDocumentStatus.READY
             )
+
             chunks = (
                 ()
                 if status is KnowledgeDocumentStatus.NEEDS_OCR
-                else self._chunker.chunk(source, source_sha, extracted)
+                else self._chunker.chunk(
+                    source,
+                    source_sha,
+                    corpus_version,
+                    extracted,
+                )
             )
-            if status is KnowledgeDocumentStatus.READY and not chunks:
+
+            if (
+                status is KnowledgeDocumentStatus.READY
+                and not chunks
+            ):
                 status = KnowledgeDocumentStatus.NEEDS_OCR
+
             document = KnowledgeDocument(
                 document_id=document_id,
                 source=source,
@@ -255,9 +368,18 @@ class KnowledgeIngestionService:
                 pages_extracted=extracted.pages_extracted,
                 warnings=extracted.warnings,
             )
+
             if dry_run or status is not KnowledgeDocumentStatus.READY:
                 if not dry_run:
-                    self._repository.save_document(document, (), index, {}, None, 0)
+                    self._repository.save_document(
+                        document,
+                        (),
+                        index,
+                        {},
+                        None,
+                        0,
+                    )
+
                 return IngestionSourceResult(
                     source_id=source.source_id,
                     status=status,
@@ -271,9 +393,17 @@ class KnowledgeIngestionService:
                     warnings=extracted.warnings,
                 )
 
-            embeddings, input_tokens, request_count, embedded_count = self._embed_chunks(
-                chunks, index
+            (
+                embeddings,
+                input_tokens,
+                request_count,
+                embedded_count,
+            ) = self._embed_chunks(
+                source,
+                chunks,
+                index,
             )
+
             self._repository.save_document(
                 document,
                 chunks,
@@ -282,6 +412,7 @@ class KnowledgeIngestionService:
                 input_tokens,
                 request_count,
             )
+
             return IngestionSourceResult(
                 source_id=source.source_id,
                 status=status,
@@ -294,9 +425,11 @@ class KnowledgeIngestionService:
                 reused=False,
                 warnings=extracted.warnings,
             )
+
         except Exception as error:
             if dry_run:
                 raise
+
             failed = KnowledgeDocument(
                 document_id=document_id,
                 source=source,
@@ -306,9 +439,20 @@ class KnowledgeIngestionService:
                 ingested_at=datetime.now(UTC),
                 page_count=0,
                 pages_extracted=0,
-                warnings=(f"ingestion_failed:{type(error).__name__}",),
+                warnings=(
+                    f"ingestion_failed:{type(error).__name__}",
+                ),
             )
-            self._repository.save_document(failed, (), index, {}, None, 0)
+
+            self._repository.save_document(
+                failed,
+                (),
+                index,
+                {},
+                None,
+                0,
+            )
+
             return IngestionSourceResult(
                 source_id=source.source_id,
                 status=KnowledgeDocumentStatus.FAILED,
@@ -324,15 +468,28 @@ class KnowledgeIngestionService:
 
     def _embed_chunks(
         self,
+        source: CorpusSource,
         chunks: tuple[KnowledgeChunk, ...],
         index: EmbeddingIndex,
-    ) -> tuple[dict[str, tuple[float, ...]], int | None, int, int]:
-        hashes = tuple(chunk.content_sha256 for chunk in chunks)
-        reusable = self._repository.reusable_embeddings(hashes, index.index_id)
+    ) -> tuple[
+        dict[str, tuple[float, ...]],
+        int | None,
+        int,
+        int,
+    ]:
+        chunk_ids = tuple(chunk.chunk_id for chunk in chunks)
+
+        reusable = self._repository.reusable_embeddings(
+            chunk_ids,
+            index.index_id,
+        )
+
         by_chunk: dict[str, tuple[float, ...]] = {}
         missing: list[KnowledgeChunk] = []
+
         for chunk in chunks:
-            reused = reusable.get(chunk.content_sha256)
+            reused = reusable.get(chunk.chunk_id)
+
             if reused is None:
                 missing.append(chunk)
             else:
@@ -340,27 +497,58 @@ class KnowledgeIngestionService:
 
         total_tokens: int | None = 0
         request_count = 0
+
         for offset in range(0, len(missing), self._batch_size):
-            batch_chunks = tuple(missing[offset : offset + self._batch_size])
-            batch = self._embeddings.embed(tuple(chunk.content for chunk in batch_chunks))
+            batch_chunks = tuple(
+                missing[offset : offset + self._batch_size]
+            )
+
+            batch = self._embeddings.embed(
+                tuple(
+                    _embedding_text(source, chunk)
+                    for chunk in batch_chunks
+                )
+            )
+
             if len(batch.vectors) != len(batch_chunks):
-                raise RuntimeError("Embedding provider returned an unexpected vector count.")
+                raise RuntimeError(
+                    "Embedding provider returned an unexpected vector count."
+                )
+
             request_count += batch.request_count
+
             if batch.input_tokens is None:
                 total_tokens = None
             elif total_tokens is not None:
                 total_tokens += batch.input_tokens
-            for chunk, vector in zip(batch_chunks, batch.vectors, strict=True):
+
+            for chunk, vector in zip(
+                batch_chunks,
+                batch.vectors,
+                strict=True,
+            ):
                 if len(vector.values) != index.dimensions:
-                    raise RuntimeError("Embedding dimension does not match the configured index.")
+                    raise RuntimeError(
+                        "Embedding dimension does not match the configured index."
+                    )
+
                 by_chunk[chunk.chunk_id] = vector.values
-        return by_chunk, total_tokens, request_count, len(missing)
+
+        return (
+            by_chunk,
+            total_tokens,
+            request_count,
+            len(missing),
+        )
 
 
 class RecommendationContextBuilder:
     """Translate finalized public scientific evidence into one scenario context."""
 
-    def __init__(self, finalized_results: FinalizedEvaluationResultReader) -> None:
+    def __init__(
+        self,
+        finalized_results: FinalizedEvaluationResultReader,
+    ) -> None:
         self._finalized_results = finalized_results
 
     def build(
@@ -369,20 +557,37 @@ class RecommendationContextBuilder:
         crop_id: str,
         water_regime: WaterRegime,
     ) -> RecommendationContext:
-        finalized = self._finalized_results.get_finalized_evaluation_result(
-            GetFinalizedEvaluationResult(evaluation_id=evaluation_id, water_regime=water_regime)
+        finalized = (
+            self._finalized_results.get_finalized_evaluation_result(
+                GetFinalizedEvaluationResult(
+                    evaluation_id=evaluation_id,
+                    water_regime=water_regime,
+                )
+            )
         )
-        outcome = next((item for item in finalized.outcomes if item.crop_id == crop_id), None)
+
+        outcome = next(
+            (
+                item
+                for item in finalized.outcomes
+                if item.crop_id == crop_id
+            ),
+            None,
+        )
+
         if outcome is None:
             raise KnowledgeContextUnavailableError(
                 f"Crop {crop_id!r} is not part of evaluation {evaluation_id}."
             )
+
         if outcome.status is not FinalizedCropOutcomeStatus.SUCCEEDED:
             raise KnowledgeContextUnavailableError(
                 f"Crop {crop_id!r} does not have a successful scientific outcome."
             )
+
         limitation = outcome.limitation_evidence
         factors: tuple[RecommendationFactor, ...] = ()
+
         if limitation.availability in {
             FinalizedLimitationEvidenceAvailability.AVAILABLE,
             FinalizedLimitationEvidenceAvailability.PARTIAL,
@@ -396,11 +601,16 @@ class RecommendationContextBuilder:
                 )
                 for item in limitation.factors
             )
+
         return RecommendationContext(
             evaluation_id=evaluation_id,
             crop_id=crop_id,
             water_regime=water_regime.value,
-            suitability_mean=(outcome.suitability.mean if outcome.suitability else None),
+            suitability_mean=(
+                outcome.suitability.mean
+                if outcome.suitability
+                else None
+            ),
             factors=factors,
         )
 
@@ -431,10 +641,22 @@ class HybridKnowledgeRetriever(IKnowledgeRetriever):
         self._final_top_k = final_top_k
         self._retrieval_version = retrieval_version
 
-    def retrieve(self, context: RecommendationContext) -> RetrievedKnowledge:
-        factor_codes = tuple(item.factor_code for item in context.factors)
-        query = build_retrieval_query(context, self._taxonomy)
+    def retrieve(
+        self,
+        context: RecommendationContext,
+    ) -> RetrievedKnowledge:
+        factor_codes = tuple(
+            item.factor_code
+            for item in context.factors
+        )
+
+        query = build_retrieval_query(
+            context,
+            self._taxonomy,
+        )
+
         run_id = uuid4()
+
         if not factor_codes or not query:
             result = RetrievedKnowledge(
                 retrieval_run_id=run_id,
@@ -442,13 +664,16 @@ class HybridKnowledgeRetriever(IKnowledgeRetriever):
                 crop_id=context.crop_id,
                 water_regime=context.water_regime,
                 limiting_factors=factor_codes,
-                retrieval_status=RetrievalStatus.INSUFFICIENT_EVIDENCE,
+                retrieval_status=(
+                    RetrievalStatus.INSUFFICIENT_EVIDENCE
+                ),
                 query=query,
                 corpus_version=self._corpus_version,
                 retrieval_version=self._retrieval_version,
                 embedding_index=self._index,
                 evidence=(),
             )
+
             self._repository.persist_retrieval(result)
             return result
 
@@ -456,19 +681,40 @@ class HybridKnowledgeRetriever(IKnowledgeRetriever):
             query,
             context.crop_id,
             factor_codes,
+            self._corpus_version,
             self._lexical_top_k,
         )
-        embedded_query = self._embeddings.embed((query,))
+
+        embedded_query = self._embeddings.embed(
+            (query,)
+        )
+
         if len(embedded_query.vectors) != 1:
-            raise RuntimeError("Embedding provider did not return the query vector.")
+            raise RuntimeError(
+                "Embedding provider did not return the query vector."
+            )
+
         query_vector = embedded_query.vectors[0].values
+
         candidates = self._repository.vector_candidates(
             context.crop_id,
             factor_codes,
+            self._corpus_version,
             self._index.index_id,
         )
-        vector = _rank_vectors(query_vector, candidates, self._vector_top_k)
-        evidence = _fuse_hits(lexical, vector, self._final_top_k)
+
+        vector = _rank_vectors(
+            query_vector,
+            candidates,
+            self._vector_top_k,
+        )
+
+        evidence = _fuse_hits(
+            lexical,
+            vector,
+            self._final_top_k,
+        )
+
         result = RetrievedKnowledge(
             retrieval_run_id=run_id,
             evaluation_id=context.evaluation_id,
@@ -486,7 +732,9 @@ class HybridKnowledgeRetriever(IKnowledgeRetriever):
             embedding_index=self._index,
             evidence=evidence,
         )
+
         self._repository.persist_retrieval(result)
+
         return result
 
 
@@ -506,7 +754,10 @@ class RecommendationApplicationService:
         self._repository = repository
         self._prompt_version = prompt_version
 
-    def retrieve(self, context: RecommendationContext) -> RetrievedKnowledge:
+    def retrieve(
+        self,
+        context: RecommendationContext,
+    ) -> RetrievedKnowledge:
         return self._retriever.retrieve(context)
 
     def generate(
@@ -516,19 +767,30 @@ class RecommendationApplicationService:
         force_regenerate: bool = False,
     ) -> RecommendationRun:
         evidence = self._retriever.retrieve(context)
+
         cache_key = recommendation_cache_key(
             context,
             evidence,
             self._prompt_version,
             self._generator.model,
         )
+
         if not force_regenerate:
-            cached = self._repository.find_succeeded_by_cache_key(cache_key)
+            cached = (
+                self._repository.find_succeeded_by_cache_key(
+                    cache_key
+                )
+            )
+
             if cached is not None:
                 return cached
 
         created_at = datetime.now(UTC)
-        if evidence.retrieval_status is not RetrievalStatus.AVAILABLE:
+
+        if (
+            evidence.retrieval_status
+            is not RetrievalStatus.AVAILABLE
+        ):
             run = RecommendationRun(
                 run_id=uuid4(),
                 evaluation_id=context.evaluation_id,
@@ -549,12 +811,25 @@ class RecommendationApplicationService:
                 output_tokens=None,
                 created_at=created_at,
             )
-            self._repository.save(run, evidence)
+
+            self._repository.save(
+                run,
+                evidence,
+            )
+
             return run
 
         try:
-            generated = self._generator.generate(context, evidence)
-            validate_recommendation(generated.recommendation, evidence)
+            generated = self._generator.generate(
+                context,
+                evidence,
+            )
+
+            validate_recommendation(
+                generated.recommendation,
+                evidence,
+            )
+
             run = RecommendationRun(
                 run_id=uuid4(),
                 evaluation_id=context.evaluation_id,
@@ -575,6 +850,7 @@ class RecommendationApplicationService:
                 output_tokens=generated.output_tokens,
                 created_at=created_at,
             )
+
         except Exception as error:
             run = RecommendationRun(
                 run_id=uuid4(),
@@ -591,25 +867,59 @@ class RecommendationApplicationService:
                 embedding_index_id=evidence.embedding_index.index_id,
                 cache_key=cache_key,
                 recommendation=None,
-                failure_reason=f"generation_failed:{type(error).__name__}",
+                failure_reason=(
+                    f"generation_failed:{type(error).__name__}"
+                ),
                 input_tokens=None,
                 output_tokens=None,
                 created_at=created_at,
             )
-        self._repository.save(run, evidence)
+
+        self._repository.save(
+            run,
+            evidence,
+        )
+
         return run
 
-    def list_for_evaluation(self, evaluation_id: UUID) -> tuple[RecommendationRun, ...]:
-        return self._repository.list_for_evaluation(evaluation_id)
+    def list_for_evaluation(
+        self,
+        evaluation_id: UUID,
+    ) -> tuple[RecommendationRun, ...]:
+        return self._repository.list_for_evaluation(
+            evaluation_id
+        )
 
 
-def build_retrieval_query(context: RecommendationContext, taxonomy: Taxonomy) -> str:
+def build_retrieval_query(
+    context: RecommendationContext,
+    taxonomy: Taxonomy,
+) -> str:
     terms: list[str] = []
-    terms.extend(taxonomy.expand_crop(context.crop_id))
+
+    terms.extend(
+        taxonomy.expand_crop(context.crop_id)
+    )
+
     for factor in context.factors:
-        terms.extend(taxonomy.expand_factor(factor.factor_code))
-    terms.extend(taxonomy.expand_water_regime(context.water_regime))
-    escaped = [f'"{term.replace(chr(34), "")}"' for term in _unique_terms(tuple(terms)) if term]
+        terms.extend(
+            taxonomy.expand_factor(
+                factor.factor_code
+            )
+        )
+
+    terms.extend(
+        taxonomy.expand_water_regime(
+            context.water_regime
+        )
+    )
+
+    escaped = [
+        f'"{term.replace(chr(34), "")}"'
+        for term in _unique_terms(tuple(terms))
+        if term
+    ]
+
     return " OR ".join(escaped)
 
 
@@ -617,17 +927,39 @@ def validate_recommendation(
     recommendation: StructuredRecommendation,
     evidence: RetrievedKnowledge,
 ) -> None:
-    allowed = {item.evidence_id for item in evidence.evidence}
-    if recommendation.recommendations and not recommendation.citation_ids:
-        raise InvalidRecommendationError("Recommendation output must cite supplied evidence.")
-    unknown_top = set(recommendation.citation_ids) - allowed
+    allowed = {
+        item.evidence_id
+        for item in evidence.evidence
+    }
+
+    if (
+        recommendation.recommendations
+        and not recommendation.citation_ids
+    ):
+        raise InvalidRecommendationError(
+            "Recommendation output must cite supplied evidence."
+        )
+
+    unknown_top = (
+        set(recommendation.citation_ids)
+        - allowed
+    )
+
     if unknown_top:
-        raise InvalidRecommendationError("Recommendation output contains an unknown citation id.")
+        raise InvalidRecommendationError(
+            "Recommendation output contains an unknown citation id."
+        )
+
     for item in recommendation.recommendations:
         if not item.citation_ids:
-            raise InvalidRecommendationError("Every recommendation must contain a citation id.")
+            raise InvalidRecommendationError(
+                "Every recommendation must contain a citation id."
+            )
+
         if set(item.citation_ids) - allowed:
-            raise InvalidRecommendationError("A recommendation contains an unknown citation id.")
+            raise InvalidRecommendationError(
+                "A recommendation contains an unknown citation id."
+            )
 
 
 def recommendation_cache_key(
@@ -646,10 +978,16 @@ def recommendation_cache_key(
             evidence.corpus_version,
             evidence.retrieval_version,
             evidence.embedding_index.index_version,
-            *(f"{item.evidence_id}:{item.chunk_id}" for item in evidence.evidence),
+            *(
+                f"{item.evidence_id}:{item.chunk_id}"
+                for item in evidence.evidence
+            ),
         )
     )
-    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+    return hashlib.sha256(
+        payload.encode("utf-8")
+    ).hexdigest()
 
 
 def configured_embedding_index(
@@ -678,68 +1016,384 @@ class _Token:
     section: str | None
 
 
-def _unique_terms(values: tuple[str, ...]) -> tuple[str, ...]:
+def _unique_terms(
+    values: tuple[str, ...],
+) -> tuple[str, ...]:
     seen: set[str] = set()
     ordered: list[str] = []
+
     for value in values:
-        normalized = " ".join(value.strip().casefold().split())
+        normalized = " ".join(
+            value.strip().casefold().split()
+        )
+
         if normalized and normalized not in seen:
             seen.add(normalized)
             ordered.append(normalized)
+
     return tuple(ordered)
 
 
-def _remove_repeated_page_edges(pages: tuple[object, ...]) -> tuple[tuple[int, str], ...]:
+def _embedding_text(
+    source: CorpusSource,
+    chunk: KnowledgeChunk,
+) -> str:
+    parts = [
+        f"Document: {source.title}"
+    ]
+
+    if chunk.section:
+        parts.append(
+            f"Section: {chunk.section}"
+        )
+
+    parts.append(
+        chunk.content
+    )
+
+    return "\n\n".join(parts)
+
+
+def _remove_repeated_page_edges(
+    pages: tuple[object, ...],
+) -> tuple[tuple[int, str], ...]:
     from .knowledge_models import ExtractedPage
 
-    typed = tuple(page for page in pages if isinstance(page, ExtractedPage))
+    typed = tuple(
+        page
+        for page in pages
+        if isinstance(page, ExtractedPage)
+    )
+
     if not typed:
         return ()
+
     first_counts: dict[str, int] = {}
     last_counts: dict[str, int] = {}
-    page_lines: list[tuple[int, list[str]]] = []
+    page_lines: list[
+        tuple[int, list[str]]
+    ] = []
+
     for page in typed:
-        lines = [line.strip() for line in page.text.splitlines() if line.strip()]
-        page_lines.append((page.page_number, lines))
+        lines = [
+            line.strip()
+            for line in page.text.splitlines()
+            if line.strip()
+        ]
+
+        page_lines.append(
+            (
+                page.page_number,
+                lines,
+            )
+        )
+
         if lines:
-            first_counts[lines[0]] = first_counts.get(lines[0], 0) + 1
-            last_counts[lines[-1]] = last_counts.get(lines[-1], 0) + 1
-    threshold = max(3, math.ceil(len(typed) / 2))
-    repeated_first = {line for line, count in first_counts.items() if count >= threshold}
-    repeated_last = {line for line, count in last_counts.items() if count >= threshold}
-    cleaned: list[tuple[int, str]] = []
+            first_counts[lines[0]] = (
+                first_counts.get(
+                    lines[0],
+                    0,
+                )
+                + 1
+            )
+
+            last_counts[lines[-1]] = (
+                last_counts.get(
+                    lines[-1],
+                    0,
+                )
+                + 1
+            )
+
+    threshold = max(
+        3,
+        math.ceil(len(typed) / 2),
+    )
+
+    repeated_first = {
+        line
+        for line, count in first_counts.items()
+        if count >= threshold
+    }
+
+    repeated_last = {
+        line
+        for line, count in last_counts.items()
+        if count >= threshold
+    }
+
+    cleaned: list[
+        tuple[int, str]
+    ] = []
+
     for page_number, lines in page_lines:
-        if lines and lines[0] in repeated_first:
+        if (
+            lines
+            and lines[0] in repeated_first
+        ):
             lines = lines[1:]
-        if lines and lines[-1] in repeated_last:
+
+        if (
+            lines
+            and lines[-1] in repeated_last
+        ):
             lines = lines[:-1]
-        cleaned.append((page_number, "\n".join(lines)))
+
+        cleaned.append(
+            (
+                page_number,
+                "\n".join(lines),
+            )
+        )
+
     return tuple(cleaned)
 
 
-def _structured_tokens(pages: tuple[tuple[int, str], ...]) -> tuple[_Token, ...]:
+def _structured_tokens(
+    pages: tuple[tuple[int, str], ...],
+) -> tuple[_Token, ...]:
     tokens: list[_Token] = []
     section: str | None = None
+
     for page_number, text in pages:
         for raw_line in text.splitlines():
-            line = " ".join(raw_line.split())
+            line = " ".join(
+                raw_line.split()
+            )
+
             if not line:
                 continue
-            if _looks_like_heading(line):
+
+            if _looks_like_heading(
+                raw_line,
+                line,
+            ):
                 section = line
-            tokens.extend(_Token(word, page_number, section) for word in line.split())
+
+            tokens.extend(
+                _Token(
+                    word,
+                    page_number,
+                    section,
+                )
+                for word in line.split()
+            )
+
     return tuple(tokens)
 
 
-def _looks_like_heading(line: str) -> bool:
-    if len(line) > 120 or len(line.split()) > 14:
+def _contiguous_section_spans(
+    tokens: tuple[_Token, ...],
+) -> tuple[tuple[_Token, ...], ...]:
+    if not tokens:
+        return ()
+
+    spans: list[
+        tuple[_Token, ...]
+    ] = []
+
+    start = 0
+    current_section = tokens[0].section
+
+    for index in range(
+        1,
+        len(tokens),
+    ):
+        if (
+            tokens[index].section
+            != current_section
+        ):
+            spans.append(
+                tokens[start:index]
+            )
+
+            start = index
+            current_section = (
+                tokens[index].section
+            )
+
+    spans.append(
+        tokens[start:]
+    )
+
+    return tuple(spans)
+
+
+def _looks_like_heading(
+    raw_line: str,
+    normalized_line: str | None = None,
+) -> bool:
+    line = (
+        " ".join(raw_line.split())
+        if normalized_line is None
+        else normalized_line.strip()
+    )
+
+    if (
+        not line
+        or len(line) > 80
+        or len(line.split()) > 10
+    ):
         return False
-    if re.match(r"^\d+(?:\.\d+)*[\.)]?\s+\S+", line):
-        return True
-    letters = [char for char in line if char.isalpha()]
-    return bool(letters) and len(letters) >= 4 and sum(char.isupper() for char in letters) / len(
-        letters
-    ) >= 0.85
+
+    numbered = _NUMBERED_HEADING.fullmatch(line)
+
+    if numbered is not None:
+        return _looks_like_numbered_heading(
+            raw_line,
+            numbered.group("number"),
+            numbered.group("terminator"),
+            numbered.group("title"),
+        )
+
+    if (
+        any(char.isdigit() for char in line)
+        or _has_table_spacing(raw_line)
+        or _has_formula_or_url(line)
+        or _has_unbalanced_delimiters(line)
+        or "." in line
+        or line.endswith(("/", "\\"))
+        or line.count(",") >= 2
+    ):
+        return False
+
+    letters = [
+        char
+        for char in line
+        if char.isalpha()
+    ]
+
+    if (
+        not letters
+        or len(letters) < 4
+        or (
+            sum(
+                char.isupper()
+                for char in letters
+            )
+            / len(letters)
+        )
+        < 0.95
+    ):
+        return False
+
+    words = [
+        word.strip("'\".,:;()[]{}")
+        for word in line.split()
+        if word.strip("'\".,:;()[]{}")
+    ]
+
+    if len(words) == 1:
+        return _heading_key(words[0]) in _GENERIC_SINGLE_WORD_HEADINGS
+
+    alpha_words = [
+        "".join(
+            char
+            for char in word
+            if char.isalpha()
+        )
+        for word in words
+    ]
+    alpha_words = [word for word in alpha_words if word]
+
+    return not (
+        len(alpha_words) >= 2
+        and all(len(word) <= 4 for word in alpha_words)
+    )
+
+
+def _looks_like_numbered_heading(
+    raw_line: str,
+    number: str,
+    terminator: str,
+    title: str,
+) -> bool:
+    components = number.split(".")
+
+    if (
+        components[0] == "0"
+        or (len(components) == 1 and not terminator)
+        or _has_table_spacing(raw_line)
+        or _has_formula_or_url(title)
+        or re.search(r"\.{3,}", title)
+        or re.search(r"\s\d{1,3}$", title)
+        or title.endswith((".", ",", ";"))
+        or not title[0].isalpha()
+        or _has_unbalanced_delimiters(title)
+        or _has_mixed_alphanumeric_token(title)
+        or title.casefold().rstrip(" ,;:").split()[-1] in _TRAILING_CONNECTORS
+        or re.search(
+            r"(?:^|\s)\d{1,2}(?:\.\d{1,2}){0,3}[.)]\s+",
+            title,
+        )
+    ):
+        return False
+
+    first_word = title.split()[0].strip("'\".,:;()[]{}")
+    first_key = _heading_key(first_word).casefold()
+    first_letter = next(
+        (
+            char
+            for char in first_word
+            if char.isalpha()
+        ),
+        "",
+    )
+
+    if (
+        not first_letter
+        or first_letter.islower()
+        or first_key in _DATA_PREFIXES
+    ):
+        return False
+
+    title_tokens = title.split()
+    numeric_tokens = sum(
+        any(char.isdigit() for char in token)
+        for token in title_tokens
+    )
+
+    return numeric_tokens <= max(1, len(title_tokens) // 3)
+
+
+def _has_table_spacing(raw_line: str) -> bool:
+    return "\t" in raw_line or re.search(r"\S {3,}\S", raw_line) is not None
+
+
+def _has_formula_or_url(line: str) -> bool:
+    lowered = line.casefold()
+
+    return (
+        "://" in lowered
+        or "www." in lowered
+        or "doi.org" in lowered
+        or "=" in line
+        or "<" in line
+        or ">" in line
+        or "%" in line
+        or re.search(r"\d\s*[x×*/+]\s*\d", line, re.IGNORECASE) is not None
+    )
+
+
+def _has_unbalanced_delimiters(line: str) -> bool:
+    return line.count("(") != line.count(")") or line.count("[") != line.count("]")
+
+
+def _has_mixed_alphanumeric_token(line: str) -> bool:
+    return any(
+        any(char.isalpha() for char in token)
+        and any(char.isdigit() for char in token)
+        for token in line.split()
+    )
+
+
+def _heading_key(value: str) -> str:
+    decomposed = unicodedata.normalize("NFKD", value)
+    return "".join(
+        char
+        for char in decomposed
+        if not unicodedata.combining(char)
+    ).upper()
 
 
 def _choose_boundary(
@@ -751,75 +1405,254 @@ def _choose_boundary(
     maximum: int,
 ) -> int:
     remaining = len(tokens) - start
+
     if remaining <= maximum:
         return len(tokens)
+
     low = start + minimum
-    high = min(len(tokens), start + maximum)
-    preferred = min(high, start + target)
+    high = min(
+        len(tokens),
+        start + maximum,
+    )
+
+    preferred = min(
+        high,
+        start + target,
+    )
+
     boundaries = [
         index
-        for index in range(low, high)
-        if tokens[index - 1].page != tokens[index].page
-        or tokens[index - 1].section != tokens[index].section
+        for index in range(
+            low,
+            high,
+        )
+        if (
+            tokens[index - 1].page
+            != tokens[index].page
+            or tokens[index - 1].section
+            != tokens[index].section
+        )
     ]
+
     if boundaries:
-        return min(boundaries, key=lambda index: (abs(index - preferred), index))
+        return min(
+            boundaries,
+            key=lambda index: (
+                abs(index - preferred),
+                index,
+            ),
+        )
+
     return preferred
 
 
 def _rank_vectors(
     query_vector: tuple[float, ...],
-    candidates: tuple[VectorSearchCandidate, ...],
+    candidates: tuple[
+        VectorSearchCandidate,
+        ...,
+    ],
     limit: int,
-) -> tuple[tuple[StoredChunk, int, float], ...]:
+) -> tuple[
+    tuple[
+        StoredChunk,
+        int,
+        float,
+    ],
+    ...,
+]:
     scored = [
-        (candidate.chunk, _cosine_similarity(query_vector, candidate.vector))
+        (
+            candidate.chunk,
+            _cosine_similarity(
+                query_vector,
+                candidate.vector,
+            ),
+        )
         for candidate in candidates
     ]
-    scored.sort(key=lambda item: (-item[1], item[0].chunk_id))
-    return tuple((chunk, rank, score) for rank, (chunk, score) in enumerate(scored[:limit], 1))
+
+    scored.sort(
+        key=lambda item: (
+            -item[1],
+            item[0].chunk_id,
+        )
+    )
+
+    return tuple(
+        (
+            chunk,
+            rank,
+            score,
+        )
+        for rank, (
+            chunk,
+            score,
+        ) in enumerate(
+            scored[:limit],
+            1,
+        )
+    )
 
 
-def _cosine_similarity(left: tuple[float, ...], right: tuple[float, ...]) -> float:
-    if len(left) != len(right) or not left:
+def _cosine_similarity(
+    left: tuple[float, ...],
+    right: tuple[float, ...],
+) -> float:
+    if (
+        len(left) != len(right)
+        or not left
+    ):
         return -1.0
-    numerator = sum(a * b for a, b in zip(left, right, strict=True))
-    left_norm = math.sqrt(sum(value * value for value in left))
-    right_norm = math.sqrt(sum(value * value for value in right))
-    if left_norm == 0 or right_norm == 0:
+
+    numerator = sum(
+        a * b
+        for a, b in zip(
+            left,
+            right,
+            strict=True,
+        )
+    )
+
+    left_norm = math.sqrt(
+        sum(
+            value * value
+            for value in left
+        )
+    )
+
+    right_norm = math.sqrt(
+        sum(
+            value * value
+            for value in right
+        )
+    )
+
+    if (
+        left_norm == 0
+        or right_norm == 0
+    ):
         return -1.0
-    return numerator / (left_norm * right_norm)
+
+    return numerator / (
+        left_norm * right_norm
+    )
 
 
 def _fuse_hits(
     lexical: tuple[object, ...],
-    vector: tuple[tuple[StoredChunk, int, float], ...],
+    vector: tuple[
+        tuple[
+            StoredChunk,
+            int,
+            float,
+        ],
+        ...,
+    ],
     limit: int,
 ) -> tuple[EvidenceItem, ...]:
     from .knowledge_models import LexicalSearchHit
 
-    chunks: dict[str, StoredChunk] = {}
-    lexical_ranks: dict[str, int] = {}
-    vector_ranks: dict[str, int] = {}
-    scores: dict[str, float] = {}
+    chunks: dict[
+        str,
+        StoredChunk,
+    ] = {}
+
+    lexical_ranks: dict[
+        str,
+        int,
+    ] = {}
+
+    vector_ranks: dict[
+        str,
+        int,
+    ] = {}
+
+    scores: dict[
+        str,
+        float,
+    ] = {}
+
     for hit in lexical:
-        if not isinstance(hit, LexicalSearchHit):
+        if not isinstance(
+            hit,
+            LexicalSearchHit,
+        ):
             continue
+
         chunk_id = hit.chunk.chunk_id
+
         chunks[chunk_id] = hit.chunk
-        lexical_ranks[chunk_id] = hit.rank
-        scores[chunk_id] = scores.get(chunk_id, 0.0) + 1.0 / (_RRF_K + hit.rank)
-    for chunk, rank, _similarity in vector:
+
+        lexical_ranks[chunk_id] = (
+            hit.rank
+        )
+
+        scores[chunk_id] = (
+            scores.get(
+                chunk_id,
+                0.0,
+            )
+            + 1.0
+            / (
+                _RRF_K
+                + hit.rank
+            )
+        )
+
+    for (
+        chunk,
+        rank,
+        _similarity,
+    ) in vector:
         chunks[chunk.chunk_id] = chunk
-        vector_ranks[chunk.chunk_id] = rank
-        scores[chunk.chunk_id] = scores.get(chunk.chunk_id, 0.0) + 1.0 / (_RRF_K + rank)
-    ordered = sorted(scores, key=lambda chunk_id: (-scores[chunk_id], chunk_id))[:limit]
-    evidence: list[EvidenceItem] = []
-    for ordinal, chunk_id in enumerate(ordered, 1):
-        chunk = chunks[chunk_id]
+
+        vector_ranks[
+            chunk.chunk_id
+        ] = rank
+
+        scores[
+            chunk.chunk_id
+        ] = (
+            scores.get(
+                chunk.chunk_id,
+                0.0,
+            )
+            + 1.0
+            / (
+                _RRF_K
+                + rank
+            )
+        )
+
+    ordered = sorted(
+        scores,
+        key=lambda chunk_id: (
+            -scores[chunk_id],
+            chunk_id,
+        ),
+    )[:limit]
+
+    evidence: list[
+        EvidenceItem
+    ] = []
+
+    for (
+        ordinal,
+        chunk_id,
+    ) in enumerate(
+        ordered,
+        1,
+    ):
+        chunk = chunks[
+            chunk_id
+        ]
+
         evidence.append(
             EvidenceItem(
-                evidence_id=f"SOURCE_{ordinal}",
+                evidence_id=(
+                    f"SOURCE_{ordinal}"
+                ),
                 chunk_id=chunk.chunk_id,
                 organization=chunk.organization,
                 title=chunk.title,
@@ -828,21 +1661,58 @@ def _fuse_hits(
                 page_end=chunk.page_end,
                 section=chunk.section,
                 content=chunk.content,
-                source_reference=chunk.source_reference or chunk.relative_path,
-                lexical_rank=lexical_ranks.get(chunk_id),
-                vector_rank=vector_ranks.get(chunk_id),
-                fused_score=scores[chunk_id],
+                source_reference=(
+                    chunk.source_reference
+                    or chunk.relative_path
+                ),
+                lexical_rank=(
+                    lexical_ranks.get(
+                        chunk_id
+                    )
+                ),
+                vector_rank=(
+                    vector_ranks.get(
+                        chunk_id
+                    )
+                ),
+                fused_score=(
+                    scores[chunk_id]
+                ),
             )
         )
+
     return tuple(evidence)
 
 
-def _document_id(source_id: str, source_sha256: str, corpus_version: str) -> UUID:
-    return uuid5(NAMESPACE_URL, f"via:knowledge:{source_id}:{source_sha256}:{corpus_version}")
-
-
-def _embedding_index_id(provider: str, model: str, dimensions: int, index_version: str) -> UUID:
+def _document_id(
+    source_id: str,
+    source_sha256: str,
+    corpus_version: str,
+) -> UUID:
     return uuid5(
         NAMESPACE_URL,
-        f"via:embedding-index:{provider}:{model}:{dimensions}:{index_version}",
+        (
+            "via:knowledge:"
+            f"{source_id}:"
+            f"{source_sha256}:"
+            f"{corpus_version}"
+        ),
+    )
+
+
+def _embedding_index_id(
+    provider: str,
+    model: str,
+    dimensions: int,
+    index_version: str,
+) -> UUID:
+    return uuid5(
+        NAMESPACE_URL,
+        (
+            "via:embedding-index:"
+            f"{provider}:"
+            f"{model}:"
+            f"{dimensions}:"
+            f"{index_version}"
+        ),
     )

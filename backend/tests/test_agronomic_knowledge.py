@@ -46,6 +46,7 @@ from via_backend.contexts.decision_support.application.knowledge_services import
     KnowledgeIngestionService,
     RecommendationApplicationService,
     Taxonomy,
+    _looks_like_heading,
     configured_embedding_index,
 )
 from via_backend.contexts.decision_support.infrastructure import openai_knowledge
@@ -292,7 +293,7 @@ class _KnowledgeRepository:
         self.persisted: list[RetrievedKnowledge] = []
         self.lexical: tuple[LexicalSearchHit, ...] = ()
         self.vectors: tuple[VectorSearchCandidate, ...] = ()
-        self.last_filters: tuple[str, tuple[str, ...]] | None = None
+        self.last_filters: tuple[str, tuple[str, ...], str] | None = None
 
     def find_document(
         self, source_id: str, source_sha256: str, corpus_version: str
@@ -303,9 +304,10 @@ class _KnowledgeRepository:
         return index
 
     def reusable_embeddings(
-        self, content_hashes: tuple[str, ...], embedding_index_id: UUID
+        self, chunk_ids: tuple[str, ...], embedding_index_id: UUID
     ) -> dict[str, tuple[float, ...]]:
         assert embedding_index_id
+        assert all(chunk_ids)
         return {}
 
     def save_document(
@@ -327,25 +329,26 @@ class _KnowledgeRepository:
         query: str,
         crop_id: str,
         factor_codes: tuple[str, ...],
+        corpus_version: str,
         limit: int,
     ) -> tuple[LexicalSearchHit, ...]:
         assert query and limit > 0
-        self.last_filters = (crop_id, factor_codes)
+        self.last_filters = (crop_id, factor_codes, corpus_version)
         return self.lexical[:limit]
 
     def vector_candidates(
         self,
         crop_id: str,
         factor_codes: tuple[str, ...],
+        corpus_version: str,
         embedding_index_id: UUID,
     ) -> tuple[VectorSearchCandidate, ...]:
         assert embedding_index_id
-        self.last_filters = (crop_id, factor_codes)
+        self.last_filters = (crop_id, factor_codes, corpus_version)
         return self.vectors
 
     def persist_retrieval(self, retrieved: RetrievedKnowledge) -> None:
         self.persisted.append(retrieved)
-
 
 class _Retriever:
     def __init__(self, evidence: RetrievedKnowledge) -> None:
@@ -459,7 +462,7 @@ def test_packaged_manifest_loads_without_external_source_directory() -> None:
     catalog = YamlFilesystemKnowledgeSourceCatalog()
     manifest = catalog.load_manifest()
 
-    assert manifest.corpus_version == "2026-09-18"
+    assert manifest.corpus_version == "2026-09-19"
     assert manifest.sources
     with pytest.raises(RuntimeError, match="VIA_KNOWLEDGE_SOURCE_DIR"):
         catalog.read_source(manifest.sources[0])
@@ -496,14 +499,170 @@ def test_chunking_is_deterministic_and_preserves_page_provenance() -> None:
         total_pages=2,
         pages_extracted=2,
     )
-    first = chunker.chunk(_source(), "b" * 64, extracted)
-    second = chunker.chunk(_source(), "b" * 64, extracted)
+    first = chunker.chunk(_source(), "b" * 64, "test-corpus-v1", extracted)
+    second = chunker.chunk(_source(), "b" * 64, "test-corpus-v1", extracted)
     assert first == second
     assert len(first) >= 2
     assert all(chunk.page_start >= 1 and chunk.page_end >= chunk.page_start for chunk in first)
     assert all(len(chunk.chunk_id) == 64 and len(chunk.content_sha256) == 64 for chunk in first)
     assert set(first[0].content.split()) & set(first[1].content.split())
 
+
+@pytest.mark.parametrize(
+    "line",
+    (
+        "8. Riegos",
+        "6.1.2 Agua",
+        "14. Referencias",
+        "10. Fertilización",
+        "10.1 Fertilización química",
+        "10.1.1 Macronutrientes (Nutrientes primarios)",
+        "2. REQUERIMIENTOS AGROCLIMÁTICOS",
+        "2.1 Exigencias en clima",
+        "4.5 Riego",
+        "1. Introduction",
+        "10. Agro-ecological Zones",
+    ),
+)
+def test_numbered_heading_detection_preserves_structural_headings(line: str) -> None:
+    assert _looks_like_heading(line) is True
+
+
+@pytest.mark.parametrize(
+    "line",
+    (
+        "2018 Producción nacional de maíz",
+        "20 kg por hectárea",
+        "2024 resultados del cultivo",
+        "0.3 1.0",
+        "1.0 meq de Ca/100 g = 500 kg de Ca/ha",
+        "4. U daytime>emisee",
+        "3. U daytime5-Imina",
+        "139. https://doi.org/10.1080/00103620009370424",
+        "1. Introducción 9",
+        "10. Fertilización 82",
+        "34. Corrigendum 288",
+        "1. Plumas libre de virus 1. Se uniformiza la variedad",
+        "4. Number of individual growing periods;",
+        "4. Snow balance (Sb), and",
+        "5. Module III (Agro-climatic",
+        "1.2.3.4.5 Too deep",
+        "1.123 Invalid component",
+    ),
+)
+def test_numbered_heading_detection_rejects_data_and_list_items(line: str) -> None:
+    assert _looks_like_heading(line) is False
+
+
+@pytest.mark.parametrize(
+    "line",
+    (
+        "MANEJO DEL RIEGO",
+        "CALCULATION PROCEDURES",
+        "REFERENCES",
+        "REFERENCIAS",
+        "INTRODUCTION",
+        "CONCLUSIONES",
+    ),
+)
+def test_uppercase_heading_detection_preserves_textual_headings(line: str) -> None:
+    assert _looks_like_heading(line) is True
+
+
+@pytest.mark.parametrize(
+    "line",
+    (
+        "TOTAL",
+        "MEAN",
+        "CROP-",
+        "LAND",
+        "SHRUB",
+        "COVER",
+        "DATA",
+        "DAVIS",
+        "COPENHAGEN",
+        "YANGAMBI",
+        "HIGH INT LOW",
+        "H, I, L H, I H, I H, I",
+        "CROP NAME",
+        "JJA SOND",
+        "BRAW LEY",
+        "MOM. MIMSNOINIMPINMKIIMBO",
+        "STATIONDAVIS CALIFORNIA.",
+        "NON-FORAGE CROP///",
+        "𝑅) IIASA",
+        "+----BL-:CR.",
+        "DDTDDF",
+        "RLANX",
+        "DOSIS 20 KG/HA",
+        (
+            "MANEJO DEL RIEGO Y RECOMENDACIONES AGRONÓMICAS PARA EL CULTIVO "
+            "BAJO CONDICIONES DE DISPONIBILIDAD HÍDRICA LIMITADA"
+        ),
+    ),
+)
+def test_uppercase_heading_detection_rejects_table_and_ocr_fragments(
+    line: str,
+) -> None:
+    assert _looks_like_heading(line) is False
+
+
+def test_heading_detection_uses_raw_spacing_before_content_normalization() -> None:
+    raw_table_row = "NITRÓGENO    FÓSFORO    POTASIO"
+    normalized_table_row = "NITRÓGENO FÓSFORO POTASIO"
+
+    assert _looks_like_heading(raw_table_row, normalized_table_row) is False
+
+    chunker = DeterministicKnowledgeChunker()
+    extracted = ExtractedDocument(
+        pages=(
+            ExtractedPage(
+                1,
+                "MANEJO DEL RIEGO\n"
+                f"{raw_table_row}\n"
+                "Contenido agronómico que continúa bajo el heading real.",
+            ),
+        ),
+        total_pages=1,
+        pages_extracted=1,
+    )
+
+    chunks = chunker.chunk(_source(), "b" * 64, "test-corpus-v1", extracted)
+
+    assert len(chunks) == 1
+    assert chunks[0].section == "MANEJO DEL RIEGO"
+    assert normalized_table_row in chunks[0].content
+
+
+def test_chunking_does_not_cross_detected_sections() -> None:
+    chunker = DeterministicKnowledgeChunker()
+
+    water_content = " ".join(["water"] * 220)
+    irrigation_content = " ".join(["irrigation"] * 240)
+
+    extracted = ExtractedDocument(
+        pages=(
+            ExtractedPage(
+                1,
+                f"6.1.2 Agua\n{water_content}\n"
+                f"8. Riegos\n{irrigation_content}",
+            ),
+        ),
+        total_pages=1,
+        pages_extracted=1,
+    )
+
+    chunks = chunker.chunk(_source(), "b" * 64, "test-corpus-v1", extracted)
+
+    assert len(chunks) == 2
+    assert chunks[0].section == "6.1.2 Agua"
+    assert chunks[1].section == "8. Riegos"
+
+    assert "water" in chunks[0].content
+    assert "irrigation" not in chunks[0].content
+
+    assert "irrigation" in chunks[1].content
+    assert "water" not in chunks[1].content
 
 def test_ingestion_is_sha_idempotent_and_reingests_changed_source() -> None:
     catalog = _Catalog(b"alpha")
@@ -532,6 +691,32 @@ def test_ingestion_is_sha_idempotent_and_reingests_changed_source() -> None:
     assert third.sources[0].reused is False
     assert len(embeddings.calls) > first_embedding_calls
 
+def test_ingestion_embeds_document_and_section_context() -> None:
+    catalog = _Catalog(b"alpha")
+    embeddings = _FakeEmbeddings()
+    repository = _KnowledgeRepository()
+
+    service = KnowledgeIngestionService(
+        catalog=catalog,
+        extractor=_Extractor(),
+        chunker=DeterministicKnowledgeChunker(),
+        embeddings=embeddings,
+        repository=repository,
+        embedding_index_version="test-v2",
+        embedding_batch_size=10,
+    )
+
+    service.ingest()
+
+    embedded_texts = tuple(
+        text
+        for call in embeddings.calls
+        for text in call
+    )
+
+    assert embedded_texts
+    assert any("Document:" in text for text in embedded_texts)
+    assert any("Heading" in text for text in embedded_texts)
 
 def test_dry_run_does_not_embed_or_persist() -> None:
     catalog = _Catalog(b"alpha")
@@ -586,7 +771,7 @@ def test_hybrid_retrieval_uses_crop_factor_filters_and_deterministic_rrf() -> No
     assert result.retrieval_status is RetrievalStatus.AVAILABLE
     assert [item.evidence_id for item in result.evidence] == ["SOURCE_1", "SOURCE_2"]
     assert result.evidence[0].chunk_id == "chunk-a"
-    assert repository.last_filters == ("maize", ("precipitation",))
+    assert repository.last_filters == ("maize", ("precipitation",), "test-v1")
     assert repository.persisted == [result]
     assert all(not Path(item.source_reference).is_absolute() for item in result.evidence)
 

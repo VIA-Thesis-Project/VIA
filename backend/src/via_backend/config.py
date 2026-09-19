@@ -26,7 +26,7 @@ class Settings:
     openai_embedding_model: str = "text-embedding-3-small"
     openai_embedding_dimensions: int = 1536
     openai_recommendation_model: str = "gpt-5.6-luna"
-    rag_embedding_index_version: str = "openai-embedding-v1"
+    rag_embedding_index_version: str = "openai-embedding-v2"
     rag_vector_top_k: int = 10
     rag_lexical_top_k: int = 10
     rag_final_top_k: int = 5
@@ -124,7 +124,7 @@ class Settings:
                 "VIA_OPENAI_RECOMMENDATION_MODEL", "gpt-5.6-luna"
             ),
             rag_embedding_index_version=os.getenv(
-                "VIA_RAG_EMBEDDING_INDEX_VERSION", "openai-embedding-v1"
+                "VIA_RAG_EMBEDDING_INDEX_VERSION", "openai-embedding-v2"
             ),
             rag_vector_top_k=_environment_integer("VIA_RAG_VECTOR_TOP_K", 10),
             rag_lexical_top_k=_environment_integer("VIA_RAG_LEXICAL_TOP_K", 10),

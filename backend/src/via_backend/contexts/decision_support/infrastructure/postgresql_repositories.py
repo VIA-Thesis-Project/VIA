@@ -305,31 +305,27 @@ class PostgreSQLKnowledgeCorpusRepository:
 
     def reusable_embeddings(
         self,
-        content_hashes: tuple[str, ...],
+        chunk_ids: tuple[str, ...],
         embedding_index_id: UUID,
     ) -> dict[str, tuple[float, ...]]:
-        if not content_hashes:
+        if not chunk_ids:
             return {}
+
         with self._sessions() as session:
             rows = session.execute(
                 select(
-                    KnowledgeChunkRecord.content_sha256,
+                    KnowledgeEmbeddingRecord.chunk_id,
                     KnowledgeEmbeddingRecord.vector,
-                )
-                .join(
-                    KnowledgeEmbeddingRecord,
-                    KnowledgeEmbeddingRecord.chunk_id == KnowledgeChunkRecord.chunk_id,
-                )
-                .where(
+                ).where(
                     KnowledgeEmbeddingRecord.embedding_index_id == embedding_index_id,
-                    KnowledgeChunkRecord.content_sha256.in_(content_hashes),
+                    KnowledgeEmbeddingRecord.chunk_id.in_(chunk_ids),
                 )
-                .order_by(KnowledgeChunkRecord.chunk_id)
             ).all()
-        reusable: dict[str, tuple[float, ...]] = {}
-        for content_sha256, vector in rows:
-            reusable.setdefault(content_sha256, tuple(float(value) for value in vector))
-        return reusable
+
+        return {
+            chunk_id: tuple(float(value) for value in vector)
+            for chunk_id, vector in rows
+        }
 
     def save_document(
         self,
@@ -400,6 +396,7 @@ class PostgreSQLKnowledgeCorpusRepository:
         query: str,
         crop_id: str,
         factor_codes: tuple[str, ...],
+        corpus_version: str,
         limit: int,
     ) -> tuple[LexicalSearchHit, ...]:
         if not query or limit < 1:
@@ -416,6 +413,7 @@ class PostgreSQLKnowledgeCorpusRepository:
                 )
                 .where(
                     KnowledgeDocumentRecord.status == KnowledgeDocumentStatus.READY.value,
+                    KnowledgeDocumentRecord.corpus_version == corpus_version,
                     KnowledgeChunkRecord.search_vector.op("@@")(tsquery),
                     *filters,
                 )
@@ -435,6 +433,7 @@ class PostgreSQLKnowledgeCorpusRepository:
         self,
         crop_id: str,
         factor_codes: tuple[str, ...],
+        corpus_version: str,
         embedding_index_id: UUID,
     ) -> tuple[VectorSearchCandidate, ...]:
         filters = _knowledge_metadata_filters(crop_id, factor_codes)
@@ -455,6 +454,7 @@ class PostgreSQLKnowledgeCorpusRepository:
                 )
                 .where(
                     KnowledgeDocumentRecord.status == KnowledgeDocumentStatus.READY.value,
+                    KnowledgeDocumentRecord.corpus_version == corpus_version,
                     KnowledgeEmbeddingRecord.embedding_index_id == embedding_index_id,
                     *filters,
                 )
