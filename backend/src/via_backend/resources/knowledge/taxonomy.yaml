@@ -1,4 +1,4 @@
-taxonomy_version: "2026-09-18"
+taxonomy_version: "2026-09-19"
 factors:
   precipitation:
     - precipitation
@@ -18,6 +18,78 @@ factors:
     - profundidad del suelo
     - profundidad efectiva
     - profundidad radicular
+  parameter_base_saturation:
+    - base saturation
+    - base saturation percentage
+    - saturation of bases
+    - saturación de bases
+    - porcentaje de saturación de bases
+  parameter_coarse_fragments:
+    - coarse fragments
+    - rock fragments
+    - gravel content
+    - stoniness
+    - fragmentos gruesos
+    - fragmentos de roca
+    - contenido de grava
+    - pedregosidad
+  parameter_gypsum:
+    - gypsum
+    - gypsum content
+    - soil gypsum
+    - yeso
+    - contenido de yeso
+    - yeso del suelo
+  parameter_ph:
+    - soil pH
+    - pH
+    - soil acidity
+    - soil alkalinity
+    - pH del suelo
+    - acidez del suelo
+    - alcalinidad del suelo
+  parameter_salinity:
+    - soil salinity
+    - salinity
+    - electrical conductivity
+    - EC
+    - ECe
+    - salinidad
+    - salinidad del suelo
+    - conductividad eléctrica
+  parameter_texture:
+    - soil texture
+    - texture
+    - textural class
+    - textura del suelo
+    - textura
+    - clase textural
+  parameter_soil_organic_carbon:
+    - soil organic carbon
+    - organic carbon
+    - SOC
+    - soil organic matter
+    - organic matter
+    - carbono orgánico del suelo
+    - carbono orgánico
+    - materia orgánica
+  parameter_sodicity:
+    - sodicity
+    - exchangeable sodium percentage
+    - ESP
+    - exchangeable sodium
+    - sodic soil
+    - sodicidad
+    - porcentaje de sodio intercambiable
+    - suelo sódico
+  parameter_slope:
+    - slope
+    - terrain slope
+    - land slope
+    - slope gradient
+    - pendiente
+    - pendiente del terreno
+    - gradiente de pendiente
   temperature:
     - temperature
     - minimum temperature

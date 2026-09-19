@@ -791,7 +791,7 @@ def _write_limitation_engine(
         "1 - precipitation",
         "2 - climate variability",
         "3 - photoperiod",
-        "4 - soil ph",
+        "4 - base saturation",
     ),
     include_limitation_artifact: bool = True,
     vary_by_irrigation: bool = False,
@@ -935,7 +935,7 @@ def test_real_execution_extracts_same_run_limiting_factor_evidence(tmp_path: Pat
         1: "precipitation",
         2: "crop_failure_frequency",
         3: "photoperiod",
-        4: "parameter_soil_ph",
+        4: "parameter_base_saturation",
     }
     assert factors[4].affected_area_m2 == pytest.approx(50.0)
     assert factors[4].affected_fraction == pytest.approx(50.0 / 150.0)
@@ -950,6 +950,47 @@ def test_real_execution_extracts_same_run_limiting_factor_evidence(tmp_path: Pat
     assert {artifact.role for artifact in result.artifacts} == {
         ScientificArtifactRole.CROP_SUITABILITY,
         ScientificArtifactRole.CROP_LIMITING_FACTOR,
+    }
+
+
+def test_real_execution_uses_canonical_parameter_codes_from_inf_labels(
+    tmp_path: Path,
+) -> None:
+    request = _request()
+    expected = {
+        4: ("base saturation", "parameter_base_saturation"),
+        5: ("coarse fragments", "parameter_coarse_fragments"),
+        6: ("gypsum", "parameter_gypsum"),
+        7: ("soil ph", "parameter_ph"),
+        8: ("salinity", "parameter_salinity"),
+        9: ("texture", "parameter_texture"),
+        10: ("soil organic carbon", "parameter_soil_organic_carbon"),
+        11: ("sodicity", "parameter_sodicity"),
+        12: ("soildepth", "parameter_soildepth"),
+        13: ("slope", "parameter_slope"),
+    }
+    _write_limitation_engine(
+        tmp_path / "engine",
+        values=[list(expected)],
+        areas=[[1.0] * len(expected)],
+        info_lines=(
+            "value - limiting factor",
+            "0 - temperature",
+            "1 - precipitation",
+            "2 - climate variability",
+            "3 - photoperiod",
+            *(f"{code} - {label}" for code, (label, _) in expected.items()),
+        ),
+    )
+
+    result = _real_limitation_adapter(tmp_path, request).evaluate(request)
+
+    factors = {factor.raw_code: factor for factor in result.limitation_evidence.factors}
+    assert {code: factor.factor_code for code, factor in factors.items()} == {
+        code: factor_code for code, (_, factor_code) in expected.items()
+    }
+    assert {code: factor.label for code, factor in factors.items()} == {
+        code: label for code, (label, _) in expected.items()
     }
 
 
@@ -979,11 +1020,15 @@ def test_real_inf_header_does_not_warn_for_fixed_precipitation_code(tmp_path: Pa
     assert evidence.factors[0].factor_code == "precipitation"
 
 
-def test_real_inf_dynamic_code_is_derived_from_same_run_mapping(tmp_path: Path) -> None:
+@pytest.mark.parametrize("raw_code", [4, 12, 19])
+def test_real_inf_dynamic_code_is_derived_from_same_run_label(
+    tmp_path: Path,
+    raw_code: int,
+) -> None:
     request = _request()
     _write_limitation_engine(
         tmp_path / "engine",
-        values=[[12]],
+        values=[[raw_code]],
         areas=[[25.0]],
         info_lines=(
             "value - limiting factor",
@@ -991,7 +1036,7 @@ def test_real_inf_dynamic_code_is_derived_from_same_run_mapping(tmp_path: Path) 
             "1 - precipitation",
             "2 - climate variability",
             "3 - photoperiod",
-            "12 - soildepth",
+            f"{raw_code} - soildepth",
         ),
     )
 
@@ -1002,7 +1047,7 @@ def test_real_inf_dynamic_code_is_derived_from_same_run_mapping(tmp_path: Path) 
     assert evidence.reason is None
     assert evidence.warnings == ()
     assert len(evidence.factors) == 1
-    assert evidence.factors[0].raw_code == 12
+    assert evidence.factors[0].raw_code == raw_code
     assert evidence.factors[0].factor_code == "parameter_soildepth"
     assert evidence.factors[0].label == "soildepth"
 

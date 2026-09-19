@@ -649,6 +649,7 @@ def test_limitations_endpoint_exposes_traceable_evidence_without_host_paths() ->
     assert evidence["factors"][0] == {
         "factor_code": "precipitation",
         "label": "precipitation",
+        "display_label": "Precipitación",
         "raw_code": 1,
         "affected_cells": 2,
         "affected_area_m2": 25.0,

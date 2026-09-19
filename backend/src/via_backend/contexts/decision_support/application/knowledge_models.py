@@ -149,6 +149,7 @@ class RecommendationFactor:
     label: str
     affected_fraction: float
     dominant: bool
+    display_label: str | None = None
 
 
 @dataclass(frozen=True, slots=True)

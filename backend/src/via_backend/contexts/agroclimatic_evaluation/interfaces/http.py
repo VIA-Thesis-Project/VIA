@@ -222,6 +222,7 @@ class LimitingFactorResponse(BaseModel):
 
     factor_code: str
     label: str
+    display_label: str
     raw_code: int
     affected_cells: int
     affected_area_m2: float

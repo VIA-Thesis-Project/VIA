@@ -48,6 +48,7 @@ from via_backend.contexts.decision_support.application.knowledge_services import
     Taxonomy,
     _looks_like_heading,
     configured_embedding_index,
+    recommendation_cache_key,
 )
 from via_backend.contexts.decision_support.infrastructure import openai_knowledge
 from via_backend.contexts.decision_support.infrastructure import orm as decision_support_orm
@@ -161,6 +162,7 @@ def _context() -> RecommendationContext:
                 label="precipitation",
                 affected_fraction=1.0,
                 dominant=True,
+                display_label="Precipitación",
             ),
         ),
     )
@@ -478,11 +480,54 @@ def test_packaged_manifest_loads_without_external_source_directory() -> None:
 
 def test_repo_taxonomy_covers_known_and_future_factors() -> None:
     taxonomy = load_taxonomy()
+    assert taxonomy.version == "2026-09-19"
     assert "déficit hídrico" in taxonomy.expand_factor("precipitation")
+    assert "precipitación" in taxonomy.expand_factor("precipitation")
     assert "profundidad efectiva" in taxonomy.expand_factor("parameter_soildepth")
+    assert "saturación de bases" in taxonomy.expand_factor("parameter_base_saturation")
+    assert "fragmentos gruesos" in taxonomy.expand_factor("parameter_coarse_fragments")
+    assert "contenido de yeso" in taxonomy.expand_factor("parameter_gypsum")
+    assert "ph del suelo" in taxonomy.expand_factor("parameter_ph")
+    assert "ece" in taxonomy.expand_factor("parameter_salinity")
+    assert "conductividad eléctrica" in taxonomy.expand_factor("parameter_salinity")
+    assert "clase textural" in taxonomy.expand_factor("parameter_texture")
+    assert "soc" in taxonomy.expand_factor("parameter_soil_organic_carbon")
+    assert "esp" in taxonomy.expand_factor("parameter_sodicity")
+    assert "sodicidad" in taxonomy.expand_factor("parameter_sodicity")
+    assert "pendiente del terreno" in taxonomy.expand_factor("parameter_slope")
+    assert "pendiente" in taxonomy.expand_factor("parameter_slope")
+    assert "temperatura mínima" in taxonomy.expand_factor("temperature")
+    assert "frío" in taxonomy.expand_factor("temperature")
     assert "maíz amarillo duro" in taxonomy.expand_crop("maize")
+    assert "maíz" in taxonomy.expand_crop("maize")
     assert "riego" in taxonomy.expand_water_regime("irrigated")
     assert taxonomy.expand_factor("parameter_custom")
+
+
+def test_repo_taxonomy_file_is_valid_utf8_without_mojibake() -> None:
+    taxonomy_path = (
+        ROOT
+        / "backend"
+        / "src"
+        / "via_backend"
+        / "resources"
+        / "knowledge"
+        / "taxonomy.yaml"
+    )
+    text = taxonomy_path.read_bytes().decode("utf-8")
+    assert "Ã" not in text
+    for expected in (
+        "precipitación",
+        "déficit hídrico",
+        "temperatura mínima",
+        "frío",
+        "maíz",
+        "saturación de bases",
+        "conductividad eléctrica",
+        "sodicidad",
+        "pendiente",
+    ):
+        assert expected in text
 
 
 def test_blank_pdf_is_marked_as_needing_ocr() -> None:
@@ -1175,6 +1220,14 @@ def test_recommendation_validates_citations_and_reuses_cache() -> None:
     assert failed.failure_reason == "generation_failed:InvalidRecommendationError"
 
 
+def test_recommendation_cache_key_changes_with_prompt_version() -> None:
+    context = _context()
+    evidence = _retrieved(context)
+    v1 = recommendation_cache_key(context, evidence, "agronomic-recommendation-v1", "model")
+    v2 = recommendation_cache_key(context, evidence, "agronomic-recommendation-v2", "model")
+    assert v1 != v2
+
+
 def test_recommendation_without_item_citation_is_rejected() -> None:
     context = _context()
     evidence = _retrieved(context)
@@ -1210,17 +1263,17 @@ def test_openai_responses_adapter_uses_strict_schema_and_no_tools(
         status="completed",
         output_text=json.dumps(
             {
-                "summary": "Summary",
-                "observations": ["Observation"],
-                "scenario_interpretation": "Rainfed remains rainfed.",
+                "summary": "Resumen",
+                "observations": ["Observación"],
+                "scenario_interpretation": "El escenario permanece en secano.",
                 "recommendations": [
                     {
-                        "text": "Action",
-                        "rationale": "Reason",
+                        "text": "Acción",
+                        "rationale": "Razón",
                         "citation_ids": ["SOURCE_1"],
                     }
                 ],
-                "uncertainties": ["Irrigation availability is unknown."],
+                "uncertainties": ["La disponibilidad de riego es desconocida."],
                 "citation_ids": ["SOURCE_1"],
             }
         ),
@@ -1229,6 +1282,8 @@ def test_openai_responses_adapter_uses_strict_schema_and_no_tools(
 
     class _Responses:
         def create(self, **kwargs: object) -> object:
+            assert "call_count" not in captured
+            captured["call_count"] = 1
             captured.update(kwargs)
             return response
 
@@ -1243,6 +1298,7 @@ def test_openai_responses_adapter_uses_strict_schema_and_no_tools(
         api_key="test-key", model="test-model"
     ).generate(context, _retrieved(context))
     assert generation.recommendation.citation_ids == ("SOURCE_1",)
+    assert captured["call_count"] == 1
     assert captured["tools"] == []
     assert captured["store"] is False
     text_config = captured["text"]
@@ -1252,9 +1308,23 @@ def test_openai_responses_adapter_uses_strict_schema_and_no_tools(
     payload = json.loads(str(captured["input"]))
     assert payload["scientific_context"]["suitability_mean"] == 0.0
     assert payload["scientific_context"]["water_regime"] == "rainfed"
+    assert payload["scientific_context"]["limiting_factors"][0]["factor_code"] == (
+        "precipitation"
+    )
+    assert payload["scientific_context"]["limiting_factors"][0]["label"] == (
+        "precipitation"
+    )
+    assert payload["scientific_context"]["limiting_factors"][0]["display_label"] == (
+        "Precipitación"
+    )
     instructions = str(captured["instructions"]).lower()
     assert "untrusted" in instructions
     assert "irrigation" in instructions
+    assert "directly in spanish" in instructions
+    assert "do not translate factor_code" in instructions
+    assert "amendment doses" in instructions
+    assert "quantitative prescription" in instructions
+    assert "evidence source ids exactly" in instructions
 
 
 @pytest.mark.integration

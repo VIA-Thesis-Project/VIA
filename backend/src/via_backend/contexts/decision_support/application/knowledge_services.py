@@ -49,7 +49,7 @@ from .knowledge_ports import (
 )
 
 DEFAULT_RETRIEVAL_VERSION = "hybrid-rrf-v4"
-DEFAULT_PROMPT_VERSION = "agronomic-recommendation-v1"
+DEFAULT_PROMPT_VERSION = "agronomic-recommendation-v2"
 _RRF_K = 60
 
 _LOW_VALUE_SECTION_TITLES = frozenset(
@@ -624,6 +624,7 @@ class RecommendationContextBuilder:
                     label=item.label,
                     affected_fraction=item.affected_fraction,
                     dominant=item.dominant,
+                    display_label=item.display_label,
                 )
                 for item in limitation.factors
             )

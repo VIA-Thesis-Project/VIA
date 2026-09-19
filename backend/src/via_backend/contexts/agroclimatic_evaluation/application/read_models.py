@@ -14,6 +14,7 @@ from ..domain.outcomes import (
     LimitationEvidenceAvailability,
 )
 from ..domain.water_regime import WaterRegime
+from .factor_labels import factor_display_label
 
 
 class EvaluationResultAvailability(StrEnum):
@@ -319,6 +320,10 @@ class LimitingFactorResult:
     dominant: bool
     source_storage_reference: str | None
     source_sha256: str
+
+    @property
+    def display_label(self) -> str:
+        return factor_display_label(self.factor_code, raw_label=self.label)
 
 
 @dataclass(frozen=True, slots=True)

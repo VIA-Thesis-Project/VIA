@@ -125,15 +125,41 @@ if collect_artifact_metadata:
         return parsed, warnings
 
     def stable_factor_code(raw_code, label):
-        fixed = {
+        fixed_climate_factors = {
             0: "temperature",
             1: "precipitation",
             2: "crop_failure_frequency",
             3: "photoperiod",
         }
-        if raw_code in fixed:
-            return fixed[raw_code]
+        if raw_code in fixed_climate_factors:
+            return fixed_climate_factors[raw_code]
+
         normalized = re.sub(r"[^a-z0-9]+", "_", label.lower()).strip("_")
+        parameter_aliases = {
+            "base_saturation": "parameter_base_saturation",
+            "base_saturation_percentage": "parameter_base_saturation",
+            "saturation_of_bases": "parameter_base_saturation",
+            "coarse_fragments": "parameter_coarse_fragments",
+            "rock_fragments": "parameter_coarse_fragments",
+            "gypsum": "parameter_gypsum",
+            "gypsum_content": "parameter_gypsum",
+            "ph": "parameter_ph",
+            "soil_ph": "parameter_ph",
+            "salinity": "parameter_salinity",
+            "soil_salinity": "parameter_salinity",
+            "texture": "parameter_texture",
+            "soil_texture": "parameter_texture",
+            "soil_organic_carbon": "parameter_soil_organic_carbon",
+            "organic_carbon": "parameter_soil_organic_carbon",
+            "sodicity": "parameter_sodicity",
+            "soil_sodicity": "parameter_sodicity",
+            "soildepth": "parameter_soildepth",
+            "soil_depth": "parameter_soildepth",
+            "slope": "parameter_slope",
+            "terrain_slope": "parameter_slope",
+        }
+        if normalized in parameter_aliases:
+            return parameter_aliases[normalized]
         if normalized:
             return f"parameter_{normalized}"
         return f"parameter_raw_{raw_code}"

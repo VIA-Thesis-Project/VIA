@@ -8,6 +8,8 @@ from enum import StrEnum
 from typing import Protocol, runtime_checkable
 from uuid import UUID
 
+from .factor_labels import factor_display_label
+
 
 class WaterRegime(StrEnum):
     """Published water-regime values shared with consumer bounded contexts."""
@@ -69,6 +71,10 @@ class FinalizedLimitingFactorEvidence:
     dominant: bool
     source_storage_reference: str | None
     source_sha256: str
+
+    @property
+    def display_label(self) -> str:
+        return factor_display_label(self.factor_code, raw_label=self.label)
 
 
 @dataclass(frozen=True, slots=True)
