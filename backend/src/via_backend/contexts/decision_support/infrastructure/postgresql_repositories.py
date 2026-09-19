@@ -484,6 +484,11 @@ class PostgreSQLKnowledgeCorpusRepository:
                     embedding_index_id=retrieved.embedding_index.index_id,
                 )
             )
+
+            # The retrieval run is the FK parent of retrieval_hits.
+            # Flush it first while keeping the whole operation atomic.
+            session.flush()
+
             for rank, item in enumerate(retrieved.evidence, start=1):
                 session.add(
                     RetrievalHitRecord(
@@ -561,12 +566,18 @@ class PostgreSQLRecommendationRepository:
                     created_at=run.created_at,
                 )
             )
+
+            # The recommendation run is the FK parent of citations.
+            session.flush()
+
             if run.recommendation is None:
                 return
+
             by_evidence_id = {item.evidence_id: item for item in evidence.evidence}
             citation_ids = list(run.recommendation.citation_ids)
             for item in run.recommendation.recommendations:
                 citation_ids.extend(item.citation_ids)
+
             for evidence_id in dict.fromkeys(citation_ids):
                 item = by_evidence_id[evidence_id]
                 session.add(

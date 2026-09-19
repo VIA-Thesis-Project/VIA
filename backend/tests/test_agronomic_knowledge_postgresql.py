@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import os
 from collections.abc import Iterator
 from datetime import UTC, datetime
@@ -114,7 +115,7 @@ def _chunk(
         page_end=sequence + 1,
         section=None,
         content=content,
-        content_sha256=f"sha-{chunk_id}",
+        content_sha256=hashlib.sha256(content.encode("utf-8")).hexdigest(),
         crops=crops,
         factors=factors,
     )
@@ -130,7 +131,7 @@ def _save_document(
         document_id=uuid4(),
         source=_source(),
         corpus_version="test-corpus-v1",
-        source_sha256="source-sha",
+        source_sha256="a" * 64,
         status=KnowledgeDocumentStatus.READY,
         ingested_at=datetime.now(UTC),
         page_count=len(chunks),
