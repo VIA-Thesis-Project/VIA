@@ -2064,9 +2064,9 @@
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py": {
-    "mtime": 1789842300.8438194,
-    "seen": 1789843087.393234,
-    "ast_hash": "db61ba7a6791e096052ae63d75776e5d",
+    "mtime": 1789844728.9855833,
+    "seen": 1789845015.2530754,
+    "ast_hash": "696431ae75f878cb89fa67462ecd3d97",
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/decision_support/infrastructure/knowledge_manifest.py": {
@@ -2100,9 +2100,9 @@
     "semantic_hash": ""
   },
   "backend/tests/test_agronomic_knowledge.py": {
-    "mtime": 1789842483.358251,
-    "seen": 1789843087.393304,
-    "ast_hash": "01aad9d5d643fe2611eca9020da9211b",
+    "mtime": 1789844870.6130116,
+    "seen": 1789845015.2532012,
+    "ast_hash": "35108d1a01c0d5ba76ec4c3ff75d0c22",
     "semantic_hash": ""
   },
   "backend/tests/test_agronomic_knowledge_http.py": {
