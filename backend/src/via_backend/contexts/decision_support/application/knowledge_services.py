@@ -48,7 +48,7 @@ from .knowledge_ports import (
     IRecommendationRepository,
 )
 
-DEFAULT_RETRIEVAL_VERSION = "hybrid-rrf-v2"
+DEFAULT_RETRIEVAL_VERSION = "hybrid-rrf-v3"
 DEFAULT_PROMPT_VERSION = "agronomic-recommendation-v1"
 _RRF_K = 60
 
@@ -981,37 +981,43 @@ def build_semantic_retrieval_query(
     factor_terms: list[str] = []
 
     for factor in context.factors:
-        factor_terms.extend(
-            taxonomy.expand_factor(
-                factor.factor_code
-            )
+        expanded = taxonomy.expand_factor(
+            factor.factor_code
         )
+
+        for term in expanded:
+            if (
+                factor.factor_code.startswith("parameter_")
+                and term == factor.factor_code
+            ):
+                continue
+
+            factor_terms.append(term)
+
+    factor_terms = list(
+        _unique_terms(tuple(factor_terms))
+    )
 
     if not factor_terms:
         return ""
 
-    focus_terms = _unique_terms(
-        (
-            *factor_terms,
-            *taxonomy.expand_water_regime(
-                context.water_regime
-            ),
-        )
+    crop = (
+        context.crop_id
+        .replace("_", " ")
+        .strip()
     )
-
-    crop = context.crop_id.replace("_", " ").strip()
     water_regime = (
         context.water_regime
         .replace("_", " ")
         .strip()
     )
 
-    focus = ", ".join(focus_terms)
+    focus = ", ".join(factor_terms)
 
     return (
-        f"Agronomic evidence for {crop} "
-        f"under {water_regime} conditions "
-        f"about {focus}."
+        f"Agronomic evidence about {focus} for {crop}. "
+        "Focus on the limiting factor and its agronomic implications. "
+        f"Scenario context: {water_regime} conditions."
     )
 
 

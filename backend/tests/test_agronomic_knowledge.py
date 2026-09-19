@@ -784,7 +784,7 @@ def test_hybrid_retrieval_uses_crop_factor_filters_and_deterministic_rrf() -> No
     assert all(not Path(item.source_reference).is_absolute() for item in result.evidence)
 
 
-def test_hybrid_retrieval_v2_uses_semantic_query_and_filters_low_value_chunks() -> None:
+def test_hybrid_retrieval_v3_filters_noise_with_factor_focused_query() -> None:
     context = _context()
     repository = _KnowledgeRepository()
 
@@ -897,7 +897,7 @@ def test_hybrid_retrieval_v2_uses_semantic_query_and_filters_low_value_chunks() 
     second = retriever.retrieve(context)
 
     assert first.retrieval_status is RetrievalStatus.AVAILABLE
-    assert first.retrieval_version == "hybrid-rrf-v2"
+    assert first.retrieval_version == "hybrid-rrf-v3"
 
     assert [
         item.chunk_id
@@ -936,7 +936,11 @@ def test_hybrid_retrieval_v2_uses_semantic_query_and_filters_low_value_chunks() 
 
     semantic_query = embeddings.calls[0][0]
 
-    assert "Agronomic evidence for maize" in semantic_query
+    assert semantic_query.startswith(
+        "Agronomic evidence about precipitation, rainfall, water deficit"
+    )
+    assert "for maize." in semantic_query
+    assert "Scenario context: rainfed conditions." in semantic_query
     assert "rainfall" in semantic_query
     assert "water deficit" in semantic_query
     assert "rainfed" in semantic_query
@@ -960,7 +964,116 @@ def test_hybrid_retrieval_v2_uses_semantic_query_and_filters_low_value_chunks() 
     assert semantic_line.removeprefix("semantic: ") == semantic_query
 
 
-def test_hybrid_retrieval_v2_preserves_useful_introduction_sections() -> None:
+def test_hybrid_retrieval_v3_keeps_water_regime_secondary_to_soil_factor() -> None:
+    context = RecommendationContext(
+        evaluation_id=uuid4(),
+        crop_id="maize",
+        water_regime="irrigated",
+        suitability_mean=12.5,
+        factors=(
+            RecommendationFactor(
+                factor_code="parameter_soildepth",
+                label="soil depth",
+                affected_fraction=1.0,
+                dominant=True,
+            ),
+        ),
+    )
+
+    repository = _KnowledgeRepository()
+
+    soil = _stored_chunk(
+        "chunk-soil-depth",
+        content=(
+            "Rooting conditions and effective soil depth can limit "
+            "crop suitability."
+        ),
+        title="GAEZ",
+        section="Rooting conditions",
+    )
+
+    repository.lexical = (
+        LexicalSearchHit(
+            chunk=soil,
+            rank=1,
+            score=1.0,
+        ),
+    )
+    repository.vectors = (
+        VectorSearchCandidate(
+            chunk=soil,
+            vector=(1.0, 0.0, 0.0),
+        ),
+    )
+
+    embeddings = _FakeEmbeddings()
+
+    retriever = HybridKnowledgeRetriever(
+        repository=repository,
+        embeddings=embeddings,
+        taxonomy=Taxonomy(
+            version="test",
+            factors={
+                "parameter_soildepth": (
+                    "soil depth",
+                    "effective soil depth",
+                    "rooting depth",
+                    "shallow soil",
+                )
+            },
+            crops={
+                "maize": (
+                    "corn",
+                )
+            },
+            water_regimes={
+                "irrigated": (
+                    "irrigation",
+                    "bajo riego",
+                    "irrigado",
+                    "riego",
+                )
+            },
+        ),
+        embedding_index=configured_embedding_index(
+            embeddings,
+            "test-v1",
+        ),
+        corpus_version="test-v1",
+        vector_top_k=1,
+        lexical_top_k=1,
+        final_top_k=1,
+    )
+
+    result = retriever.retrieve(context)
+
+    semantic_query = embeddings.calls[0][0]
+    lexical_line, semantic_line = result.query.splitlines()
+
+    assert result.retrieval_version == "hybrid-rrf-v3"
+
+    assert "soil depth" in semantic_query
+    assert "effective soil depth" in semantic_query
+    assert "rooting depth" in semantic_query
+    assert "shallow soil" in semantic_query
+
+    assert "parameter_soildepth" not in semantic_query
+
+    assert "Scenario context: irrigated conditions." in semantic_query
+
+    assert "irrigation" not in semantic_query
+    assert "bajo riego" not in semantic_query
+    assert "irrigado" not in semantic_query
+    assert "riego" not in semantic_query
+
+    assert '"irrigated"' in lexical_line
+    assert '"irrigation"' in lexical_line
+    assert '"riego"' in lexical_line
+
+    assert semantic_line.removeprefix("semantic: ") == semantic_query
+
+
+def test_hybrid_retrieval_v3_preserves_useful_introduction_sections() -> None:
     context = _context()
     repository = _KnowledgeRepository()
 
