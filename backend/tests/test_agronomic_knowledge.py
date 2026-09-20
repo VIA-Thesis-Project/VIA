@@ -472,7 +472,7 @@ def test_packaged_manifest_loads_without_external_source_directory() -> None:
     catalog = YamlFilesystemKnowledgeSourceCatalog()
     manifest = catalog.load_manifest()
 
-    assert manifest.corpus_version == "2026-09-19"
+    assert manifest.corpus_version == "2026-09-20"
     assert manifest.sources
     with pytest.raises(RuntimeError, match="VIA_KNOWLEDGE_SOURCE_DIR"):
         catalog.read_source(manifest.sources[0])

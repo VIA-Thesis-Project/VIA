@@ -1,4 +1,4 @@
-corpus_version: "2026-09-19"
+corpus_version: "2026-09-20"
 sources:
   - source_id: fao_crop_water_requirements
     organization: FAO
@@ -68,3 +68,121 @@ sources:
     factors:
       - precipitation
       - parameter_soildepth
+
+  - source_id: fao_icba_salt_affected_areas
+    organization: FAO/ICBA
+    title: "Thematic 1: Farmers' guidelines on soil and water management in salt-affected areas"
+    source_type: pdf
+    source_roles:
+      - soil_management
+      - water_management
+      - management_guidance
+    language: en
+    relative_path: "fao/FAO-ICBA-Soil and Water Management in Salt-Affected Areas.pdf"
+    crops: []
+    factors:
+      - parameter_salinity
+      - parameter_sodicity
+
+  - source_id: fao_plant_nutrition_food_security
+    organization: FAO
+    title: "Plant nutrition for food security: A guide for integrated nutrient management"
+    source_type: pdf
+    source_roles:
+      - methodology
+      - soil_management
+      - management_guidance
+    language: en
+    relative_path: "fao/FAO-Plant Nutrition for Food Security.pdf"
+    crops: []
+    factors:
+      - parameter_base_saturation
+      - parameter_ph
+      - parameter_texture
+      - parameter_soil_organic_carbon
+
+  - source_id: fao_integrated_soil_management_conservation
+    organization: FAO
+    title: Manual on integrated soil management and conservation practices
+    source_type: pdf
+    source_roles:
+      - soil_management
+      - management_guidance
+    language: en
+    relative_path: "fao/FAO-Soil Management and Conservation Practices.pdf"
+    crops: []
+    factors:
+      - parameter_texture
+      - parameter_soil_organic_carbon
+      - parameter_slope
+
+  - source_id: fao_water_quality_agriculture
+    organization: FAO
+    title: Water quality for agriculture
+    source_type: pdf
+    source_roles:
+      - methodology
+      - water_management
+    language: en
+    relative_path: "fao/FAO-Water Quality for Agriculture.pdf"
+    crops: []
+    factors:
+      - parameter_salinity
+      - parameter_sodicity
+
+  - source_id: senamhi_agroclimatic_maize_huaura_2024_06
+    organization: SENAMHI
+    title: Boletín Agroclimático Mensual DZ 4 - Junio 2024
+    source_type: pdf
+    source_roles:
+      - crop_requirements
+      - agroclimatic_monitoring
+    language: es
+    country: Peru
+    relative_path: "senamhi/SENAMHI-Maiz Amarillo Duro-Cuenca Huaura.pdf"
+    crops:
+      - maize
+    factors:
+      - temperature
+
+  - source_id: usda_nrcs_soil_survey_manual
+    organization: USDA-NRCS
+    title: Soil Survey Manual
+    source_type: pdf
+    source_roles:
+      - methodology
+      - soil_management
+    language: en
+    relative_path: "usda/USDA-NRCS-Soil Survey Manual.pdf"
+    crops: []
+    factors:
+      - parameter_coarse_fragments
+      - parameter_texture
+      - parameter_soildepth
+      - parameter_slope
+
+  - source_id: usda_nrcs_total_organic_carbon
+    organization: USDA-NRCS
+    title: "Soil Quality Indicators: Total Organic Carbon"
+    source_type: pdf
+    source_roles:
+      - methodology
+      - soil_management
+    language: en
+    relative_path: "usda/USDA-NRCS-Total Organic Carbon.pdf"
+    crops: []
+    factors:
+      - parameter_soil_organic_carbon
+
+  - source_id: fao_management_gypsiferous_soils
+    organization: FAO
+    title: Management of Gypsiferous Soils
+    source_type: pdf
+    source_roles:
+      - soil_management
+      - management_guidance
+    language: en
+    relative_path: "fao/FAO-Management of Gypsiferous Soils.pdf"
+    crops: []
+    factors:
+      - parameter_gypsum
