@@ -30,6 +30,7 @@ class InMemoryEvaluationRepository:
                 or current.requested_water_regimes
                 != evaluation.requested_water_regimes
                 or current.created_at != evaluation.created_at
+                or current.owner_user_id != evaluation.owner_user_id
                 or current.environmental_input_references
                 != evaluation.environmental_input_references
                 or (

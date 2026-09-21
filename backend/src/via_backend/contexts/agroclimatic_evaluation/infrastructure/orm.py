@@ -45,12 +45,16 @@ class EvaluationRecord(Base):
             "'succeeded', 'failed', 'cancelled')",
             name="evaluation_status_supported",
         ),
+        Index("ix_evaluations_owner_user_id", "owner_user_id"),
         Index("ix_evaluations_parcel_id", "parcel_id"),
         Index("ix_evaluations_status_created_at_id", "status", "created_at", "id"),
         Index("ix_evaluations_snapshot_geometry", "snapshot_geometry", postgresql_using="gist"),
     )
 
     id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), primary_key=True, nullable=False)
+    owner_user_id: Mapped[UUID | None] = mapped_column(
+        PostgreSQLUUID(as_uuid=True), nullable=True
+    )
     project_id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), nullable=False)
     parcel_id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), nullable=False)
     parcel_version: Mapped[int] = mapped_column(Integer, nullable=False)

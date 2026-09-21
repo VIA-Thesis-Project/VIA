@@ -17,6 +17,7 @@ class Project:
     id: UUID
     name: str
     created_at: datetime
+    owner_user_id: UUID | None = None
 
     def __post_init__(self) -> None:
         _validate_name(self.name, "Project")
@@ -77,4 +78,3 @@ def _validate_name(name: str, subject: str) -> None:
         raise DomainValidationError(f"{subject} name must be non-empty and trimmed.")
     if len(name) > 120:
         raise DomainValidationError(f"{subject} name must be at most 120 characters.")
-

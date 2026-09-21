@@ -122,6 +122,22 @@ def test_project_survives_a_new_repository_instance(
     assert PostgreSQLProjectRepository(sessions).get(project.id) == project
 
 
+def test_project_owner_user_id_round_trips_without_identity_foreign_key(
+    database: tuple[Engine, SessionFactory],
+) -> None:
+    _, sessions = database
+    project = Project(
+        id=uuid4(),
+        name="Owned Huaura trial",
+        created_at=datetime(2026, 9, 12, tzinfo=UTC),
+        owner_user_id=uuid4(),
+    )
+
+    PostgreSQLProjectRepository(sessions).add(project)
+
+    assert PostgreSQLProjectRepository(sessions).get(project.id) == project
+
+
 @pytest.mark.parametrize("geometry", [_polygon(), _multi_polygon()])
 def test_parcel_geometry_round_trips_through_postgis(
     database: tuple[Engine, SessionFactory], geometry: ParcelGeometry

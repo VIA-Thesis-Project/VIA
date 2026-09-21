@@ -15,9 +15,13 @@ from .database import FARM_MANAGEMENT_SCHEMA, Base
 
 class ProjectRecord(Base):
     __tablename__ = "projects"
+    __table_args__ = (Index("ix_projects_owner_user_id", "owner_user_id"),)
 
     id: Mapped[UUID] = mapped_column(
         PostgreSQLUUID(as_uuid=True), primary_key=True, nullable=False
+    )
+    owner_user_id: Mapped[UUID | None] = mapped_column(
+        PostgreSQLUUID(as_uuid=True), nullable=True
     )
     name: Mapped[str] = mapped_column(String(120), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)

@@ -33,6 +33,15 @@ from via_backend.contexts.farm_management.infrastructure.database import (
 from via_backend.contexts.farm_management.infrastructure.database import (
     Base as FarmManagementBase,
 )
+from via_backend.contexts.identity_access.infrastructure import (
+    orm as identity_orm,  # noqa: F401
+)
+from via_backend.contexts.identity_access.infrastructure.database import (
+    IDENTITY_ACCESS_SCHEMA,
+)
+from via_backend.contexts.identity_access.infrastructure.database import (
+    Base as IdentityAccessBase,
+)
 
 config = context.config
 
@@ -47,6 +56,7 @@ target_metadata = [
     FarmManagementBase.metadata,
     EnvironmentalInformationBase.metadata,
     AgroclimaticEvaluationBase.metadata,
+    IdentityAccessBase.metadata,
 ]
 
 
@@ -59,6 +69,7 @@ def include_name(
         FARM_MANAGEMENT_SCHEMA,
         ENVIRONMENTAL_INFORMATION_SCHEMA,
         AGROCLIMATIC_EVALUATION_SCHEMA,
+        IDENTITY_ACCESS_SCHEMA,
     }
 
 

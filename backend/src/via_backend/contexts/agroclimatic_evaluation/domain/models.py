@@ -61,6 +61,7 @@ class Evaluation:
     requested_crops: tuple[str, ...]
     status: EvaluationStatus
     created_at: datetime
+    owner_user_id: UUID | None = None
     environmental_input_references: tuple[EnvironmentalInputReference, ...] = ()
     environmental_input_manifest: EnvironmentalInputManifest | None = None
     requested_water_regimes: tuple[WaterRegime, ...] = (WaterRegime.RAINFED,)

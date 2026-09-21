@@ -30,6 +30,7 @@ class PostgreSQLProjectRepository:
                 session.add(
                     ProjectRecord(
                         id=project.id,
+                        owner_user_id=project.owner_user_id,
                         name=project.name,
                         created_at=project.created_at,
                     )
@@ -121,7 +122,12 @@ class PostgreSQLParcelRepository:
 
 
 def _project_from_record(record: ProjectRecord) -> Project:
-    return Project(id=record.id, name=record.name, created_at=record.created_at)
+    return Project(
+        id=record.id,
+        name=record.name,
+        created_at=record.created_at,
+        owner_user_id=record.owner_user_id,
+    )
 
 
 def _parcel_from_record(session: Session, record: ParcelRecord) -> Parcel:

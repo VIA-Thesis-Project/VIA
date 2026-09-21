@@ -187,6 +187,7 @@ def _evaluation(
     *,
     references: tuple[EnvironmentalInputReference, ...] | None = None,
     water_regimes: tuple[WaterRegime, ...] = (WaterRegime.RAINFED,),
+    owner_user_id: UUID | None = None,
 ) -> Evaluation:
     references = _references() if references is None else references
     return Evaluation(
@@ -202,6 +203,7 @@ def _evaluation(
         requested_crops=("rice", "maize", "potato"),
         status=EvaluationStatus.QUEUED,
         created_at=NOW,
+        owner_user_id=owner_user_id,
         environmental_input_references=references,
         requested_water_regimes=water_regimes,
     )
@@ -298,6 +300,18 @@ def test_evaluation_snapshot_round_trips_as_postgis_multipolygon(
         ).one()
     assert geometry_type == "ST_MultiPolygon"
     assert srid == 4326
+
+
+def test_evaluation_owner_user_id_round_trips_without_identity_foreign_key(
+    database: tuple[Engine, SessionFactory],
+) -> None:
+    _, sessions = database
+    evaluation = _evaluation(owner_user_id=uuid4())
+    repository = PostgreSQLEvaluationRepository(sessions)
+
+    repository.add(evaluation)
+
+    assert repository.get(evaluation.id) == evaluation
 
 
 def test_exact_environmental_input_references_round_trip_in_order_without_manifest(

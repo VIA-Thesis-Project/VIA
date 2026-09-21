@@ -69,6 +69,7 @@ class PostgreSQLEvaluationRepository:
             with self._sessions.begin() as session:
                 record = EvaluationRecord(
                     id=evaluation.id,
+                    owner_user_id=evaluation.owner_user_id,
                     project_id=snapshot.project_id,
                     parcel_id=snapshot.parcel_id,
                     parcel_version=snapshot.parcel_version,
@@ -361,6 +362,7 @@ def _evaluation_from_row(
         geometry = stored_geometry
     return Evaluation(
         id=record.id,
+        owner_user_id=record.owner_user_id,
         parcel_snapshot=ParcelSnapshot(
             project_id=record.project_id,
             parcel_id=record.parcel_id,
