@@ -76,7 +76,10 @@ from via_backend.contexts.farm_management.infrastructure import (
 from via_backend.contexts.farm_management.interfaces import (
     create_router as create_farm_management_router,
 )
-from via_backend.contexts.identity_access.application import AuthenticationService
+from via_backend.contexts.identity_access.application import (
+    AuthenticationService,
+    IdentityAdministrationService,
+)
 from via_backend.contexts.identity_access.infrastructure import (
     Argon2PasswordHasher,
     InMemoryAuthSessionRepository,
@@ -94,6 +97,7 @@ from via_backend.contexts.identity_access.interfaces import (
 from via_backend.contexts.identity_access.interfaces import (
     create_router as create_identity_access_router,
 )
+from via_backend.cost_protection import FixedWindowLimiter
 from via_backend.infrastructure import SessionFactory, create_database
 from via_backend.interfaces.http.health import router as health_router
 
@@ -195,6 +199,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         refresh_token_ttl_seconds=settings.auth_refresh_token_ttl_seconds,
     )
     principal_resolver = create_principal_resolver(authentication)
+    limiter = FixedWindowLimiter()
 
     @asynccontextmanager
     async def lifespan(_: FastAPI) -> AsyncIterator[None]:
@@ -227,8 +232,14 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     agroclimatic_evaluation = AgroclimaticEvaluationService(
         evaluations=evaluations,
         parcel_snapshots=_FarmAuthorizedParcelSnapshotProvider(farm_management),
+        max_active_per_user=settings.max_active_evaluations_per_user,
+        daily_quota_per_user=settings.daily_evaluation_quota_per_user,
     )
     application.state.settings = settings
+    application.state.identity_administration = IdentityAdministrationService(
+        users=identity_users, sessions=auth_sessions,
+        password_hasher=Argon2PasswordHasher(), clock=SystemClock(),
+    )
     application.include_router(health_router)
     application.include_router(
         create_identity_access_router(
@@ -240,6 +251,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 trusted_origins=settings.cors_allowed_origins,
             ),
             principal_resolver,
+            limiter,
+            settings.rate_login_per_minute,
+            settings.rate_refresh_per_minute,
         ),
         prefix="/api/v1",
     )
@@ -247,7 +261,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         create_farm_management_router(farm_management, principal_resolver)
     )
     application.include_router(
-        create_environmental_information_router(environmental_information)
+        create_environmental_information_router(
+            environmental_information, principal_resolver, limiter,
+            settings.rate_dataset_coverage_per_minute,
+        )
     )
     application.include_router(
         create_agroclimatic_evaluation_router(
@@ -311,11 +328,17 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 model=settings.openai_recommendation_model,
             ),
             repository=PostgreSQLRecommendationRepository(sessions),
+            daily_quota=settings.daily_recommendation_quota_per_user,
         )
         application.include_router(
             create_decision_support_router(
                 RecommendationContextBuilder(agroclimatic_evaluation),
                 recommendation_service,
+                agroclimatic_evaluation,
+                principal_resolver,
+                limiter,
+                settings.rate_knowledge_per_user_per_minute,
+                settings.rate_recommendations_per_user_per_minute,
             ),
             prefix="/api/v1",
         )

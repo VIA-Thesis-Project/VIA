@@ -11,6 +11,15 @@ from uuid import UUID
 from .factor_labels import factor_display_label
 
 
+class OwnedEvaluationNotFoundError(LookupError):
+    """The evaluation does not exist for this owner."""
+
+
+@runtime_checkable
+class OwnedEvaluationResolver(Protocol):
+    def resolve_owned_evaluation(self, owner_user_id: UUID, evaluation_id: UUID) -> None: ...
+
+
 class FinalizedEvaluationNotFoundError(LookupError):
     """Published failure for a missing evaluation requested by another context."""
 

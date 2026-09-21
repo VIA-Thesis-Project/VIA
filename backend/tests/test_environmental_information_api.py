@@ -2,21 +2,32 @@
 
 import asyncio
 from typing import Any
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 from httpx import ASGITransport, AsyncClient, Response
 
 from via_backend.config import Settings
+from via_backend.contexts.identity_access.application.public import AuthenticatedPrincipal
+from via_backend.contexts.identity_access.domain.models import UserRole
 from via_backend.main import create_app
 
 
 def _test_app():
-    return create_app(
+    app = create_app(
         Settings(
             farm_management_repository="memory",
             environmental_information_repository="memory",
         )
     )
+    # These lifecycle tests exercise dataset behavior under an authenticated admin.
+    for route in app.routes:
+        dependant = getattr(route, "dependant", None)
+        for dependency in dependant.dependencies if dependant is not None else ():
+            if getattr(dependency.call, "__name__", "") == "resolve_principal":
+                app.dependency_overrides[dependency.call] = lambda: AuthenticatedPrincipal(
+                    UUID("11111111-1111-4111-8111-111111111111"), UserRole.ADMIN
+                )
+    return app
 
 
 def _dataset_body() -> dict[str, Any]:

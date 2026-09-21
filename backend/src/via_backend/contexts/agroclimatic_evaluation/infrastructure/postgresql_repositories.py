@@ -3,14 +3,16 @@
 from __future__ import annotations
 
 import json
+from datetime import UTC, timedelta
 from typing import cast
 from uuid import UUID
 
 from geoalchemy2.elements import WKTElement
-from sqlalchemy import func, select, update
+from sqlalchemy import func, select, text, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from via_backend.cost_protection import QuotaExceededError
 from via_backend.infrastructure.database import SessionFactory
 
 from ..domain.comparison import (
@@ -63,10 +65,58 @@ class PostgreSQLEvaluationRepository:
     def __init__(self, sessions: SessionFactory) -> None:
         self._sessions = sessions
 
-    def add(self, evaluation: Evaluation) -> None:
+    def add(
+        self,
+        evaluation: Evaluation,
+        *,
+        max_active: int | None = None,
+        daily_limit: int | None = None,
+    ) -> None:
         snapshot = evaluation.parcel_snapshot
         try:
             with self._sessions.begin() as session:
+                if evaluation.owner_user_id is not None and (
+                    max_active is not None or daily_limit is not None
+                ):
+                    # One transaction-level lock per owner makes check plus insert atomic.
+                    key = int.from_bytes(evaluation.owner_user_id.bytes[:8], "big", signed=True)
+                    session.execute(text("SELECT pg_advisory_xact_lock(:key)"), {"key": key})
+                    if max_active is not None:
+                        active = session.scalar(
+                            select(func.count())
+                            .select_from(EvaluationRecord)
+                            .where(
+                                EvaluationRecord.owner_user_id == evaluation.owner_user_id,
+                                EvaluationRecord.status.in_(
+                                    (
+                                        "queued",
+                                        "preparing",
+                                        "running",
+                                        "summarizing",
+                                    )
+                                ),
+                            )
+                        )
+                        if active is not None and active >= max_active:
+                            raise QuotaExceededError(60)
+                    start = evaluation.created_at.astimezone(UTC).replace(
+                        hour=0, minute=0, second=0, microsecond=0
+                    )
+                    if daily_limit is not None:
+                        created = session.scalar(
+                            select(func.count())
+                            .select_from(EvaluationRecord)
+                            .where(
+                                EvaluationRecord.owner_user_id == evaluation.owner_user_id,
+                                EvaluationRecord.created_at >= start,
+                                EvaluationRecord.created_at < start + timedelta(days=1),
+                            )
+                        )
+                        if created is not None and created >= daily_limit:
+                            retry = int(
+                                (start + timedelta(days=1) - evaluation.created_at).total_seconds()
+                            )
+                            raise QuotaExceededError(max(1, retry))
                 record = EvaluationRecord(
                     id=evaluation.id,
                     owner_user_id=evaluation.owner_user_id,

@@ -217,7 +217,14 @@ def test_coverage_http_contract_and_missing_version_mapping() -> None:
     )
     service, _, _, dataset, version, _ = _service(measurement)
     app = FastAPI()
-    app.include_router(create_router(service))
+    from via_backend.contexts.identity_access.application.public import AuthenticatedPrincipal
+    from via_backend.contexts.identity_access.domain.models import UserRole
+    from via_backend.cost_protection import FixedWindowLimiter
+
+    app.include_router(create_router(
+        service, lambda: AuthenticatedPrincipal(uuid4(), UserRole.USER),
+        FixedWindowLimiter(), 20,
+    ))
 
     async def scenario() -> tuple[dict[str, Any], int]:
         transport = ASGITransport(app=app)

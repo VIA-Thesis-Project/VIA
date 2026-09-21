@@ -395,6 +395,12 @@ class _Generator:
 
 
 class _RecommendationRepository:
+    def reserve_generation(
+        self, owner_user_id: UUID, evaluation_id: UUID,
+        created_at: datetime, daily_limit: int,
+    ) -> None:
+        raise AssertionError("Quota reservation is not used in these tests.")
+
     def __init__(self) -> None:
         self.runs: list[RecommendationRun] = []
 

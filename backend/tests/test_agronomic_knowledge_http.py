@@ -32,6 +32,9 @@ from via_backend.contexts.decision_support.application.knowledge_services import
     RecommendationContextBuilder,
 )
 from via_backend.contexts.decision_support.interfaces import create_router
+from via_backend.contexts.identity_access.application.public import AuthenticatedPrincipal
+from via_backend.contexts.identity_access.domain.models import UserRole
+from via_backend.cost_protection import FixedWindowLimiter
 
 
 def _context(evaluation_id: UUID, crop_id: str, regime: WaterRegime) -> RecommendationContext:
@@ -100,9 +103,13 @@ class _Service:
         return _knowledge(context)
 
     def generate(
-        self, context: RecommendationContext, *, force_regenerate: bool = False
+        self, 
+        context: RecommendationContext, 
+        *, 
+        force_regenerate: bool = False, 
+        owner_user_id: UUID | None = None
     ) -> RecommendationRun:
-        del force_regenerate
+        del force_regenerate, owner_user_id
         self.generate_calls += 1
         run = RecommendationRun(
             run_id=uuid4(),
@@ -132,12 +139,22 @@ class _Service:
         return tuple(run for run in self.runs if run.evaluation_id == evaluation_id)
 
 
+class _Owned:
+    def resolve_owned_evaluation(self, owner_user_id: UUID, evaluation_id: UUID) -> None:
+        pass
+
+
 def _client(service: _Service, builder: object | None = None) -> TestClient:
     app = FastAPI()
     app.include_router(
         create_router(
             cast(RecommendationContextBuilder, builder or _Builder()),
             cast(RecommendationApplicationService, service),
+            _Owned(),
+            lambda: AuthenticatedPrincipal(uuid4(), UserRole.ADMIN),
+            FixedWindowLimiter(),
+            30,
+            5,
         ),
         prefix="/api/v1",
     )

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from uuid import UUID
 
@@ -12,3 +13,6 @@ from ..domain.models import UserRole
 class AuthenticatedPrincipal:
     user_id: UUID
     role: UserRole
+
+
+PrincipalResolver = Callable[..., AuthenticatedPrincipal]

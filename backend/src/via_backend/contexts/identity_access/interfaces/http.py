@@ -2,14 +2,16 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable
 from dataclasses import dataclass
+from hashlib import sha256
 from typing import Literal
 from uuid import UUID
 
 from fastapi import APIRouter, Cookie, Depends, HTTPException, Request, Response, Security, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel, ConfigDict
+
+from via_backend.cost_protection import FixedWindowLimiter, RateLimitExceededError
 
 from ..application import (
     AuthenticatedPrincipal,
@@ -18,6 +20,7 @@ from ..application import (
     AuthenticationResult,
     AuthenticationService,
 )
+from ..application.public import PrincipalResolver
 from ..domain import IdentityValidationError, UserRole, UserStatus
 
 AUTH_COOKIE_PATH = "/api/v1/auth"
@@ -57,9 +60,6 @@ class AuthenticationResponse(BaseModel):
     user: UserResponse
 
 
-PrincipalResolver = Callable[..., AuthenticatedPrincipal]
-
-
 def create_principal_resolver(service: AuthenticationService) -> PrincipalResolver:
     """Build the reusable bearer-token dependency exposed by Identity Access."""
     bearer = HTTPBearer(auto_error=False, scheme_name="BearerAuth")
@@ -82,6 +82,9 @@ def create_router(
     service: AuthenticationService,
     settings: AuthHttpSettings,
     principal_resolver: PrincipalResolver | None = None,
+    limiter: FixedWindowLimiter | None = None,
+    login_limit: int = 5,
+    refresh_limit: int = 10,
 ) -> APIRouter:
     """Create Identity Access authentication routes."""
     router = APIRouter(prefix="/auth", tags=["identity-access"])
@@ -94,7 +97,19 @@ def create_router(
         response_model=AuthenticationResponse,
         operation_id="auth_login",
     )
-    def login(body: LoginBody, response: Response) -> AuthenticationResponse:
+    def login(body: LoginBody, response: Response, request: Request) -> AuthenticationResponse:
+        if limiter is not None:
+            host = request.client.host if request.client else "unknown"
+            email_hash = sha256(body.email.strip().casefold().encode()).hexdigest()
+            try:
+                limiter.check("login_host", host, login_limit)
+                limiter.check("login_email", email_hash, login_limit)
+            except RateLimitExceededError as error:
+                raise HTTPException(
+                    status_code=429,
+                    detail="Too many requests.",
+                    headers={"Retry-After": str(error.retry_after), **NO_STORE_HEADERS},
+                ) from error
         try:
             result = service.login(email=body.email, password=body.password)
         except IdentityValidationError as error:
@@ -127,6 +142,16 @@ def create_router(
         ),
     ) -> AuthenticationResponse:
         _validate_origin(request, settings)
+        if limiter is not None:
+            host = request.client.host if request.client else "unknown"
+            try:
+                limiter.check("refresh_host", host, refresh_limit)
+            except RateLimitExceededError as error:
+                raise HTTPException(
+                    status_code=429,
+                    detail="Too many requests.",
+                    headers={"Retry-After": str(error.retry_after), **NO_STORE_HEADERS},
+                ) from error
         if refresh_token is None:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,

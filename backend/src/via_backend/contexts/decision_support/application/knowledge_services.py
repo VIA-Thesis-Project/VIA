@@ -8,6 +8,7 @@ import re
 import unicodedata
 from dataclasses import dataclass
 from datetime import UTC, datetime
+from threading import RLock
 from uuid import NAMESPACE_URL, UUID, uuid4, uuid5
 
 from via_backend.contexts.agroclimatic_evaluation.application.public import (
@@ -811,11 +812,14 @@ class RecommendationApplicationService:
         generator: IRecommendationGenerator,
         repository: IRecommendationRepository,
         prompt_version: str = DEFAULT_PROMPT_VERSION,
+        daily_quota: int | None = None,
     ) -> None:
         self._retriever = retriever
         self._generator = generator
         self._repository = repository
         self._prompt_version = prompt_version
+        self._daily_quota = daily_quota
+        self._generation_lock = RLock()
 
     def retrieve(
         self,
@@ -828,6 +832,22 @@ class RecommendationApplicationService:
         context: RecommendationContext,
         *,
         force_regenerate: bool = False,
+        owner_user_id: UUID | None = None,
+    ) -> RecommendationRun:
+        # One API instance: serialize cache lookup and provider call so concurrent
+        # requests for the same recommendation do not both pay for generation.
+        with self._generation_lock:
+            return self._generate_unlocked(
+                context, force_regenerate=force_regenerate,
+                owner_user_id=owner_user_id,
+            )
+
+    def _generate_unlocked(
+        self,
+        context: RecommendationContext,
+        *,
+        force_regenerate: bool,
+        owner_user_id: UUID | None,
     ) -> RecommendationRun:
         evidence = self._retriever.retrieve(context)
 
@@ -881,6 +901,11 @@ class RecommendationApplicationService:
             )
 
             return run
+
+        if owner_user_id is not None and self._daily_quota is not None:
+            self._repository.reserve_generation(
+                owner_user_id, context.evaluation_id, created_at, self._daily_quota,
+            )
 
         try:
             generated = self._generator.generate(

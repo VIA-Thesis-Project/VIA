@@ -39,6 +39,14 @@ class Settings:
     rag_vector_top_k: int = 10
     rag_lexical_top_k: int = 10
     rag_final_top_k: int = 5
+    rate_login_per_minute: int = 5
+    rate_refresh_per_minute: int = 10
+    rate_dataset_coverage_per_minute: int = 20
+    rate_knowledge_per_user_per_minute: int = 30
+    rate_recommendations_per_user_per_minute: int = 5
+    max_active_evaluations_per_user: int = 2
+    daily_evaluation_quota_per_user: int = 20
+    daily_recommendation_quota_per_user: int = 10
 
     def __post_init__(self) -> None:
         selections = {
@@ -60,6 +68,16 @@ class Settings:
             "VIA_RAG_VECTOR_TOP_K": self.rag_vector_top_k,
             "VIA_RAG_LEXICAL_TOP_K": self.rag_lexical_top_k,
             "VIA_RAG_FINAL_TOP_K": self.rag_final_top_k,
+            "VIA_RATE_LOGIN_PER_MINUTE": self.rate_login_per_minute,
+            "VIA_RATE_REFRESH_PER_MINUTE": self.rate_refresh_per_minute,
+            "VIA_RATE_DATASET_COVERAGE_PER_MINUTE": self.rate_dataset_coverage_per_minute,
+            "VIA_RATE_KNOWLEDGE_PER_USER_PER_MINUTE": self.rate_knowledge_per_user_per_minute,
+            "VIA_RATE_RECOMMENDATIONS_PER_USER_PER_MINUTE": (
+                self.rate_recommendations_per_user_per_minute
+            ),
+            "VIA_MAX_ACTIVE_EVALUATIONS_PER_USER": self.max_active_evaluations_per_user,
+            "VIA_DAILY_EVALUATION_QUOTA_PER_USER": self.daily_evaluation_quota_per_user,
+            "VIA_DAILY_RECOMMENDATION_QUOTA_PER_USER": self.daily_recommendation_quota_per_user,
         }
         for setting_name, value in positive_integers.items():
             if isinstance(value, bool) or not isinstance(value, int) or value < 1:
@@ -169,17 +187,13 @@ class Settings:
             auth_refresh_cookie_name=os.getenv(
                 "VIA_AUTH_REFRESH_COOKIE_NAME", "__Secure-via_refresh"
             ),
-            auth_refresh_cookie_secure=_environment_boolean(
-                "VIA_AUTH_REFRESH_COOKIE_SECURE", True
-            ),
+            auth_refresh_cookie_secure=_environment_boolean("VIA_AUTH_REFRESH_COOKIE_SECURE", True),
             auth_refresh_cookie_samesite=cast(
                 CookieSameSite,
                 os.getenv("VIA_AUTH_REFRESH_COOKIE_SAMESITE", "lax").casefold(),
             ),
             cropsuite_catalog=_optional_path("VIA_CROPSUITE_CATALOG"),
-            cropsuite_input_bindings=_optional_path(
-                "VIA_CROPSUITE_INPUT_BINDINGS"
-            ),
+            cropsuite_input_bindings=_optional_path("VIA_CROPSUITE_INPUT_BINDINGS"),
             knowledge_source_dir=_optional_path("VIA_KNOWLEDGE_SOURCE_DIR"),
             knowledge_manifest=_optional_path_alias(
                 "VIA_KNOWLEDGE_MANIFEST_PATH", "VIA_KNOWLEDGE_MANIFEST"
@@ -203,6 +217,26 @@ class Settings:
             rag_vector_top_k=_environment_integer("VIA_RAG_VECTOR_TOP_K", 10),
             rag_lexical_top_k=_environment_integer("VIA_RAG_LEXICAL_TOP_K", 10),
             rag_final_top_k=_environment_integer("VIA_RAG_FINAL_TOP_K", 5),
+            rate_login_per_minute=_environment_integer("VIA_RATE_LOGIN_PER_MINUTE", 5),
+            rate_refresh_per_minute=_environment_integer("VIA_RATE_REFRESH_PER_MINUTE", 10),
+            rate_dataset_coverage_per_minute=_environment_integer(
+                "VIA_RATE_DATASET_COVERAGE_PER_MINUTE", 20
+            ),
+            rate_knowledge_per_user_per_minute=_environment_integer(
+                "VIA_RATE_KNOWLEDGE_PER_USER_PER_MINUTE", 30
+            ),
+            rate_recommendations_per_user_per_minute=_environment_integer(
+                "VIA_RATE_RECOMMENDATIONS_PER_USER_PER_MINUTE", 5
+            ),
+            max_active_evaluations_per_user=_environment_integer(
+                "VIA_MAX_ACTIVE_EVALUATIONS_PER_USER", 2
+            ),
+            daily_evaluation_quota_per_user=_environment_integer(
+                "VIA_DAILY_EVALUATION_QUOTA_PER_USER", 20
+            ),
+            daily_recommendation_quota_per_user=_environment_integer(
+                "VIA_DAILY_RECOMMENDATION_QUOTA_PER_USER", 10
+            ),
         )
 
 

@@ -153,6 +153,7 @@ def test_farm_management_does_not_import_other_contexts() -> None:
 
 def test_environmental_information_does_not_import_other_contexts() -> None:
     environmental_information = CONTEXTS_ROOT / "environmental_information"
+    allowed_identity_contract = "via_backend.contexts.identity_access.application.public"
     violations: list[str] = []
 
     for source_file in environmental_information.rglob("*.py"):
@@ -161,7 +162,11 @@ def test_environmental_information_does_not_import_other_contexts() -> None:
             if "contexts" not in parts:
                 continue
             context_index = parts.index("contexts") + 1
-            if context_index < len(parts) and parts[context_index] != "environmental_information":
+            if (
+                context_index < len(parts)
+                and parts[context_index] != "environmental_information"
+                and module != allowed_identity_contract
+            ):
                 violations.append(f"{source_file.relative_to(SOURCE_ROOT)} imports {module}")
 
     assert not violations, "\n".join(violations)

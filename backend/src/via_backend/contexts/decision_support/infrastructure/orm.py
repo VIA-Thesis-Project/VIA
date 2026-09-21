@@ -335,6 +335,17 @@ class RecommendationRunRecord(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
 
+class RecommendationGenerationAttemptRecord(Base):
+    """Durable record of a provider generation attempt, including failed calls."""
+
+    __tablename__ = "recommendation_generation_attempts"
+
+    id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True)
+    owner_user_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), nullable=False)
+    evaluation_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
 class RecommendationCitationRecord(Base):
     __tablename__ = "recommendation_citations"
 

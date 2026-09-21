@@ -47,7 +47,10 @@ class _ReadOnlySpyRepository:
         self.stored = evaluation
         self.get_calls = 0
 
-    def add(self, evaluation: Evaluation) -> None:
+    def add(
+        self, evaluation: Evaluation, *, max_active: int | None = None,
+        daily_limit: int | None = None,
+    ) -> None:
         raise AssertionError("read query called add()")
 
     def save(

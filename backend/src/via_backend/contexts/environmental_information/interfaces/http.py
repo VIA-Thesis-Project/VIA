@@ -6,8 +6,15 @@ from datetime import date, datetime
 from typing import Any, Literal
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, ConfigDict, Field
+
+from via_backend.contexts.identity_access.application.public import (
+    AuthenticatedPrincipal,
+    PrincipalResolver,
+    UserRole,
+)
+from via_backend.cost_protection import FixedWindowLimiter, RateLimitExceededError
 
 from ..application import (
     CheckDatasetVersionCoverage,
@@ -102,7 +109,6 @@ class DatasetVersionResponse(BaseModel):
     valid_to: date | None
     scenario: str | None
     checksum: str
-    storage_reference: str
     registered_at: datetime
 
 
@@ -125,9 +131,19 @@ class DatasetVersionCoverageResponse(BaseModel):
     reasons: list[str]
 
 
-def create_router(service: EnvironmentalInformationService) -> APIRouter:
+def create_router(
+    service: EnvironmentalInformationService,
+    principal_resolver: PrincipalResolver,
+    limiter: FixedWindowLimiter,
+    coverage_limit: int,
+) -> APIRouter:
     """Create a router bound to the supplied application service."""
     router = APIRouter(prefix="/datasets", tags=["environmental-information"])
+    principal_dependency = Depends(principal_resolver)
+
+    def require_admin(principal: AuthenticatedPrincipal) -> None:
+        if principal.role is not UserRole.ADMIN:
+            raise HTTPException(status_code=403, detail="Administrator permission required.")
 
     @router.post(
         "",
@@ -136,7 +152,10 @@ def create_router(service: EnvironmentalInformationService) -> APIRouter:
         operation_id="create_dataset",
         description="Register environmental dataset identity and variable metadata.",
     )
-    def create_dataset(body: CreateDatasetBody) -> DatasetResponse:
+    def create_dataset(
+        body: CreateDatasetBody, principal: AuthenticatedPrincipal = principal_dependency
+    ) -> DatasetResponse:
+        require_admin(principal)
         result = _execute(
             service.create_dataset,
             CreateDataset(
@@ -154,7 +173,9 @@ def create_router(service: EnvironmentalInformationService) -> APIRouter:
         operation_id="list_datasets",
         description="List registered environmental datasets.",
     )
-    def list_datasets() -> list[DatasetResponse]:
+    def list_datasets(
+        principal: AuthenticatedPrincipal = principal_dependency,
+    ) -> list[DatasetResponse]:
         return [
             DatasetResponse.model_validate(dataset)
             for dataset in _execute(service.list_datasets, ListDatasets())
@@ -166,7 +187,9 @@ def create_router(service: EnvironmentalInformationService) -> APIRouter:
         operation_id="get_dataset",
         description="Read one environmental dataset.",
     )
-    def get_dataset(dataset_id: UUID) -> DatasetResponse:
+    def get_dataset(
+        dataset_id: UUID, principal: AuthenticatedPrincipal = principal_dependency
+    ) -> DatasetResponse:
         result = _execute(service.get_dataset, GetDataset(dataset_id))
         return DatasetResponse.model_validate(result)
 
@@ -178,8 +201,11 @@ def create_router(service: EnvironmentalInformationService) -> APIRouter:
         description="Register an immutable environmental dataset version.",
     )
     def create_dataset_version(
-        dataset_id: UUID, body: CreateDatasetVersionBody
+        dataset_id: UUID,
+        body: CreateDatasetVersionBody,
+        principal: AuthenticatedPrincipal = principal_dependency,
     ) -> DatasetVersionResponse:
+        require_admin(principal)
         result = _execute(
             service.create_dataset_version,
             CreateDatasetVersion(
@@ -208,7 +234,9 @@ def create_router(service: EnvironmentalInformationService) -> APIRouter:
         operation_id="list_dataset_versions",
         description="List immutable versions registered for a dataset.",
     )
-    def list_dataset_versions(dataset_id: UUID) -> list[DatasetVersionResponse]:
+    def list_dataset_versions(
+        dataset_id: UUID, principal: AuthenticatedPrincipal = principal_dependency
+    ) -> list[DatasetVersionResponse]:
         return [
             DatasetVersionResponse.model_validate(version)
             for version in _execute(
@@ -224,7 +252,7 @@ def create_router(service: EnvironmentalInformationService) -> APIRouter:
         description="Read one exact environmental dataset version.",
     )
     def get_dataset_version(
-        dataset_id: UUID, version_id: UUID
+        dataset_id: UUID, version_id: UUID, principal: AuthenticatedPrincipal = principal_dependency
     ) -> DatasetVersionResponse:
         result: DatasetVersionResult = _execute(
             service.get_dataset_version,
@@ -244,7 +272,16 @@ def create_router(service: EnvironmentalInformationService) -> APIRouter:
         dataset_id: UUID,
         version_id: UUID,
         body: CheckCoverageBody,
+        principal: AuthenticatedPrincipal = principal_dependency,
     ) -> DatasetVersionCoverageResponse:
+        try:
+            limiter.check("dataset_coverage", str(principal.user_id), coverage_limit)
+        except RateLimitExceededError as error:
+            raise HTTPException(
+                status_code=429,
+                detail="Too many requests.",
+                headers={"Retry-After": str(error.retry_after)},
+            ) from error
         result: DatasetVersionCoverageResult = _execute(
             service.check_dataset_version_coverage,
             CheckDatasetVersionCoverage(

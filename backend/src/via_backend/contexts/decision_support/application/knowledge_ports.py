@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Protocol, runtime_checkable
 from uuid import UUID
 
@@ -124,6 +125,10 @@ class IRecommendationGenerator(Protocol):
 
 @runtime_checkable
 class IRecommendationRepository(Protocol):
+    def reserve_generation(
+        self, owner_user_id: UUID, evaluation_id: UUID,
+        created_at: datetime, daily_limit: int,
+    ) -> None: ...
     def find_succeeded_by_cache_key(self, cache_key: str) -> RecommendationRun | None: ...
 
     def save(self, run: RecommendationRun, evidence: RetrievedKnowledge) -> None: ...
