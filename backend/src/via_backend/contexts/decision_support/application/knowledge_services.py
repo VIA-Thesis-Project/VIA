@@ -12,6 +12,8 @@ from uuid import NAMESPACE_URL, UUID, uuid4, uuid5
 
 from via_backend.contexts.agroclimatic_evaluation.application.public import (
     FinalizedCropOutcomeStatus,
+    FinalizedEvaluationNotFoundError,
+    FinalizedEvaluationNotReadyError,
     FinalizedEvaluationResultReader,
     FinalizedLimitationEvidenceAvailability,
     GetFinalizedEvaluationResult,
@@ -127,6 +129,10 @@ _TRAILING_CONNECTORS = frozenset(
 
 class KnowledgeContextUnavailableError(LookupError):
     """Raised when the finalized scientific result cannot form a scenario context."""
+
+
+class KnowledgeContextConflictError(RuntimeError):
+    """Raised when an existing evaluation does not yet have finalized evidence."""
 
 
 class KnowledgeProviderUnavailableError(RuntimeError):
@@ -583,14 +589,17 @@ class RecommendationContextBuilder:
         crop_id: str,
         water_regime: WaterRegime,
     ) -> RecommendationContext:
-        finalized = (
-            self._finalized_results.get_finalized_evaluation_result(
+        try:
+            finalized = self._finalized_results.get_finalized_evaluation_result(
                 GetFinalizedEvaluationResult(
                     evaluation_id=evaluation_id,
                     water_regime=water_regime,
                 )
             )
-        )
+        except FinalizedEvaluationNotFoundError as error:
+            raise KnowledgeContextUnavailableError(str(error)) from error
+        except FinalizedEvaluationNotReadyError as error:
+            raise KnowledgeContextConflictError(str(error)) from error
 
         outcome = next(
             (

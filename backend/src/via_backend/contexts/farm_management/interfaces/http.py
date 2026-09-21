@@ -78,18 +78,34 @@ def create_router(service: FarmManagementService) -> APIRouter:
     """Create a router bound to the supplied application service."""
     router = APIRouter(prefix="/projects", tags=["farm-management"])
 
-    @router.post("", response_model=ProjectResponse, status_code=status.HTTP_201_CREATED)
+    @router.post(
+        "",
+        response_model=ProjectResponse,
+        status_code=status.HTTP_201_CREATED,
+        operation_id="create_project",
+        description="Create a project that owns parcels and their geometry history.",
+    )
     def create_project(body: CreateProjectBody) -> ProjectResponse:
         return _project_response(_execute(service.create_project, CreateProject(name=body.name)))
 
-    @router.get("", response_model=list[ProjectResponse])
+    @router.get(
+        "",
+        response_model=list[ProjectResponse],
+        operation_id="list_projects",
+        description="List projects visible to the current API process.",
+    )
     def list_projects() -> list[ProjectResponse]:
         return [
             _project_response(project)
             for project in _execute(service.list_projects, ListProjects())
         ]
 
-    @router.get("/{project_id}", response_model=ProjectResponse)
+    @router.get(
+        "/{project_id}",
+        response_model=ProjectResponse,
+        operation_id="get_project",
+        description="Read one project by its public identifier.",
+    )
     def get_project(project_id: UUID) -> ProjectResponse:
         return _project_response(_execute(service.get_project, GetProject(project_id)))
 
@@ -97,6 +113,8 @@ def create_router(service: FarmManagementService) -> APIRouter:
         "/{project_id}/parcels",
         response_model=ParcelResponse,
         status_code=status.HTTP_201_CREATED,
+        operation_id="create_parcel",
+        description="Create a parcel with geometry version 1 inside a project.",
     )
     def create_parcel(project_id: UUID, body: CreateParcelBody) -> ParcelResponse:
         parcel = _execute(
@@ -109,14 +127,24 @@ def create_router(service: FarmManagementService) -> APIRouter:
         )
         return _parcel_response(parcel)
 
-    @router.get("/{project_id}/parcels", response_model=list[ParcelResponse])
+    @router.get(
+        "/{project_id}/parcels",
+        response_model=list[ParcelResponse],
+        operation_id="list_parcels",
+        description="List parcels and their immutable geometry versions for a project.",
+    )
     def list_parcels(project_id: UUID) -> list[ParcelResponse]:
         return [
             _parcel_response(parcel)
             for parcel in _execute(service.list_parcels, ListParcels(project_id))
         ]
 
-    @router.get("/{project_id}/parcels/{parcel_id}", response_model=ParcelResponse)
+    @router.get(
+        "/{project_id}/parcels/{parcel_id}",
+        response_model=ParcelResponse,
+        operation_id="get_parcel",
+        description="Read one parcel and its complete geometry-version history.",
+    )
     def get_parcel(project_id: UUID, parcel_id: UUID) -> ParcelResponse:
         parcel = _execute(service.get_parcel, GetParcel(project_id, parcel_id))
         return _parcel_response(parcel)
@@ -125,6 +153,8 @@ def create_router(service: FarmManagementService) -> APIRouter:
         "/{project_id}/parcels/{parcel_id}/versions",
         response_model=ParcelResponse,
         status_code=status.HTTP_201_CREATED,
+        operation_id="create_parcel_version",
+        description="Append an immutable geometry version to an existing parcel.",
     )
     def revise_parcel_geometry(
         project_id: UUID,

@@ -1,0 +1,3507 @@
+{
+  "components": {
+    "schemas": {
+      "CapabilityStatus": {
+        "enum": [
+          "complete",
+          "partial"
+        ],
+        "title": "CapabilityStatus",
+        "type": "string"
+      },
+      "CheckCoverageBody": {
+        "additionalProperties": false,
+        "properties": {
+          "crs": {
+            "maxLength": 32,
+            "minLength": 1,
+            "title": "Crs",
+            "type": "string"
+          },
+          "geometry": {
+            "$ref": "#/components/schemas/CoverageGeometryBody"
+          }
+        },
+        "required": [
+          "geometry",
+          "crs"
+        ],
+        "title": "CheckCoverageBody",
+        "type": "object"
+      },
+      "CommonSupportResponse": {
+        "properties": {
+          "area_crs": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Area Crs"
+          },
+          "common_coverage_fraction": {
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Common Coverage Fraction",
+            "type": "number"
+          },
+          "common_valid_area_m2": {
+            "title": "Common Valid Area M2",
+            "type": "number"
+          },
+          "eligible_crops": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Eligible Crops",
+            "type": "array"
+          },
+          "excluded_without_coverage": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Excluded Without Coverage",
+            "type": "array"
+          },
+          "method": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Method"
+          },
+          "parcel_area_m2": {
+            "title": "Parcel Area M2",
+            "type": "number"
+          },
+          "status": {
+            "$ref": "#/components/schemas/CommonSupportStatus"
+          }
+        },
+        "required": [
+          "status",
+          "method",
+          "area_crs",
+          "parcel_area_m2",
+          "common_valid_area_m2",
+          "common_coverage_fraction",
+          "eligible_crops",
+          "excluded_without_coverage"
+        ],
+        "title": "CommonSupportResponse",
+        "type": "object"
+      },
+      "CommonSupportStatus": {
+        "enum": [
+          "comparable",
+          "no_common_coverage",
+          "no_successful_crops"
+        ],
+        "title": "CommonSupportStatus",
+        "type": "string"
+      },
+      "ComparableCropResponse": {
+        "properties": {
+          "crop_id": {
+            "title": "Crop Id",
+            "type": "string"
+          },
+          "mean": {
+            "title": "Mean",
+            "type": "number"
+          },
+          "rank": {
+            "description": "Comparable ranking on common valid support; use this list for rankings.",
+            "title": "Rank",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "crop_id",
+          "mean",
+          "rank"
+        ],
+        "title": "ComparableCropResponse",
+        "type": "object"
+      },
+      "CoverageClassification": {
+        "description": "Extent-based relationship between a dataset version and a parcel.",
+        "enum": [
+          "full",
+          "partial",
+          "none",
+          "not_assessed"
+        ],
+        "title": "CoverageClassification",
+        "type": "string"
+      },
+      "CoverageGeometryBody": {
+        "additionalProperties": false,
+        "properties": {
+          "coordinates": {
+            "items": {},
+            "title": "Coordinates",
+            "type": "array"
+          },
+          "type": {
+            "enum": [
+              "Polygon",
+              "MultiPolygon"
+            ],
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "coordinates"
+        ],
+        "title": "CoverageGeometryBody",
+        "type": "object"
+      },
+      "CreateDatasetBody": {
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "source": {
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Source",
+            "type": "string"
+          },
+          "unit": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Unit",
+            "type": "string"
+          },
+          "variable": {
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Variable",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "source",
+          "variable",
+          "unit"
+        ],
+        "title": "CreateDatasetBody",
+        "type": "object"
+      },
+      "CreateDatasetVersionBody": {
+        "additionalProperties": false,
+        "properties": {
+          "checksum": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Checksum",
+            "type": "string"
+          },
+          "crs": {
+            "maxLength": 32,
+            "minLength": 1,
+            "title": "Crs",
+            "type": "string"
+          },
+          "extent": {
+            "$ref": "#/components/schemas/SpatialExtentBody"
+          },
+          "resolution": {
+            "$ref": "#/components/schemas/SpatialResolutionBody"
+          },
+          "scenario": {
+            "anyOf": [
+              {
+                "maxLength": 120,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario"
+          },
+          "storage_reference": {
+            "maxLength": 1024,
+            "minLength": 1,
+            "title": "Storage Reference",
+            "type": "string"
+          },
+          "valid_from": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid From"
+          },
+          "valid_to": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid To"
+          },
+          "version_identifier": {
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Version Identifier",
+            "type": "string"
+          }
+        },
+        "required": [
+          "version_identifier",
+          "crs",
+          "resolution",
+          "extent",
+          "checksum",
+          "storage_reference"
+        ],
+        "title": "CreateDatasetVersionBody",
+        "type": "object"
+      },
+      "CreateParcelBody": {
+        "additionalProperties": false,
+        "properties": {
+          "geometry": {
+            "$ref": "#/components/schemas/GeometryBody"
+          },
+          "name": {
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "geometry"
+        ],
+        "title": "CreateParcelBody",
+        "type": "object"
+      },
+      "CreateProjectBody": {
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "CreateProjectBody",
+        "type": "object"
+      },
+      "CropEvaluationCapabilityResponse": {
+        "properties": {
+          "crop_id": {
+            "description": "Identifier accepted in requested_crops.",
+            "title": "Crop Id",
+            "type": "string"
+          },
+          "display_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Canonical engine name when the selected catalog provides one.",
+            "title": "Display Name"
+          },
+          "water_regimes": {
+            "description": "Scientific scenarios supported for this crop.",
+            "items": {
+              "$ref": "#/components/schemas/WaterRegime-Output"
+            },
+            "title": "Water Regimes",
+            "type": "array"
+          }
+        },
+        "required": [
+          "crop_id",
+          "display_name",
+          "water_regimes"
+        ],
+        "title": "CropEvaluationCapabilityResponse",
+        "type": "object"
+      },
+      "CropEvidenceResponse": {
+        "properties": {
+          "crop_id": {
+            "title": "Crop Id",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/CropOutcomeStatus"
+          },
+          "trace": {
+            "$ref": "#/components/schemas/ScientificTraceResponse"
+          },
+          "water_regime": {
+            "$ref": "#/components/schemas/WaterRegime-Output"
+          }
+        },
+        "required": [
+          "crop_id",
+          "water_regime",
+          "status",
+          "trace"
+        ],
+        "title": "CropEvidenceResponse",
+        "type": "object"
+      },
+      "CropLimitationResponse": {
+        "properties": {
+          "crop_id": {
+            "title": "Crop Id",
+            "type": "string"
+          },
+          "limitation_evidence": {
+            "$ref": "#/components/schemas/LimitationEvidenceResponse"
+          },
+          "status": {
+            "$ref": "#/components/schemas/CropOutcomeStatus"
+          },
+          "suitability": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SuitabilitySummaryResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "water_regime": {
+            "$ref": "#/components/schemas/WaterRegime-Output"
+          }
+        },
+        "required": [
+          "crop_id",
+          "water_regime",
+          "status",
+          "suitability",
+          "limitation_evidence"
+        ],
+        "title": "CropLimitationResponse",
+        "type": "object"
+      },
+      "CropOutcomeResponse": {
+        "properties": {
+          "crop_id": {
+            "title": "Crop Id",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/CropOutcomeStatus"
+          },
+          "suitability": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SuitabilitySummaryResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "water_regime": {
+            "$ref": "#/components/schemas/WaterRegime-Output"
+          }
+        },
+        "required": [
+          "crop_id",
+          "water_regime",
+          "status",
+          "suitability"
+        ],
+        "title": "CropOutcomeResponse",
+        "type": "object"
+      },
+      "CropOutcomeStatus": {
+        "description": "Completed scientific outcome for one requested crop.",
+        "enum": [
+          "succeeded",
+          "no_coverage",
+          "failed"
+        ],
+        "title": "CropOutcomeStatus",
+        "type": "string"
+      },
+      "DatasetResponse": {
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "source": {
+            "title": "Source",
+            "type": "string"
+          },
+          "unit": {
+            "title": "Unit",
+            "type": "string"
+          },
+          "variable": {
+            "title": "Variable",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "source",
+          "variable",
+          "unit",
+          "created_at"
+        ],
+        "title": "DatasetResponse",
+        "type": "object"
+      },
+      "DatasetVersionCoverageResponse": {
+        "properties": {
+          "area_method": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Area Method"
+          },
+          "comparison_crs": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Comparison Crs"
+          },
+          "compatible": {
+            "title": "Compatible",
+            "type": "boolean"
+          },
+          "coverage": {
+            "$ref": "#/components/schemas/CoverageClassification"
+          },
+          "coverage_percentage": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Coverage Percentage"
+          },
+          "covered_area_m2": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Covered Area M2"
+          },
+          "dataset_crs": {
+            "title": "Dataset Crs",
+            "type": "string"
+          },
+          "dataset_id": {
+            "format": "uuid",
+            "title": "Dataset Id",
+            "type": "string"
+          },
+          "dataset_version_id": {
+            "format": "uuid",
+            "title": "Dataset Version Id",
+            "type": "string"
+          },
+          "parcel_area_m2": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parcel Area M2"
+          },
+          "parcel_crs": {
+            "title": "Parcel Crs",
+            "type": "string"
+          },
+          "reasons": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Reasons",
+            "type": "array"
+          },
+          "transformations": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Transformations",
+            "type": "array"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Warnings",
+            "type": "array"
+          }
+        },
+        "required": [
+          "dataset_id",
+          "dataset_version_id",
+          "compatible",
+          "coverage",
+          "parcel_area_m2",
+          "covered_area_m2",
+          "coverage_percentage",
+          "dataset_crs",
+          "parcel_crs",
+          "comparison_crs",
+          "area_method",
+          "transformations",
+          "warnings",
+          "reasons"
+        ],
+        "title": "DatasetVersionCoverageResponse",
+        "type": "object"
+      },
+      "DatasetVersionResponse": {
+        "properties": {
+          "checksum": {
+            "title": "Checksum",
+            "type": "string"
+          },
+          "crs": {
+            "title": "Crs",
+            "type": "string"
+          },
+          "dataset_id": {
+            "format": "uuid",
+            "title": "Dataset Id",
+            "type": "string"
+          },
+          "extent": {
+            "$ref": "#/components/schemas/SpatialExtentBody"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "registered_at": {
+            "format": "date-time",
+            "title": "Registered At",
+            "type": "string"
+          },
+          "resolution": {
+            "$ref": "#/components/schemas/SpatialResolutionBody"
+          },
+          "scenario": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario"
+          },
+          "storage_reference": {
+            "title": "Storage Reference",
+            "type": "string"
+          },
+          "valid_from": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid From"
+          },
+          "valid_to": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid To"
+          },
+          "version_identifier": {
+            "title": "Version Identifier",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "dataset_id",
+          "version_identifier",
+          "crs",
+          "resolution",
+          "extent",
+          "valid_from",
+          "valid_to",
+          "scenario",
+          "checksum",
+          "storage_reference",
+          "registered_at"
+        ],
+        "title": "DatasetVersionResponse",
+        "type": "object"
+      },
+      "EmbeddingIndex": {
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "dimensions": {
+            "title": "Dimensions",
+            "type": "integer"
+          },
+          "index_id": {
+            "format": "uuid",
+            "title": "Index Id",
+            "type": "string"
+          },
+          "index_version": {
+            "title": "Index Version",
+            "type": "string"
+          },
+          "model": {
+            "title": "Model",
+            "type": "string"
+          },
+          "provider": {
+            "title": "Provider",
+            "type": "string"
+          }
+        },
+        "required": [
+          "index_id",
+          "provider",
+          "model",
+          "dimensions",
+          "index_version",
+          "created_at"
+        ],
+        "title": "EmbeddingIndex",
+        "type": "object"
+      },
+      "EnvironmentalInputCapabilityResponse": {
+        "properties": {
+          "input_key_discovery": {
+            "description": "'arbitrary_unique' means callers create their own unique logical input_key values; the key does not select the scientific binding.",
+            "title": "Input Key Discovery",
+            "type": "string"
+          },
+          "input_keys": {
+            "description": "Reserved canonical input keys. Empty because input_key values are caller-defined logical identifiers.",
+            "items": {
+              "type": "string"
+            },
+            "title": "Input Keys",
+            "type": "array"
+          },
+          "maximum_input_key_length": {
+            "title": "Maximum Input Key Length",
+            "type": "integer"
+          },
+          "minimum_count": {
+            "description": "Minimum environmental_inputs entries required.",
+            "title": "Minimum Count",
+            "type": "integer"
+          },
+          "requires_registered_dataset_version": {
+            "title": "Requires Registered Dataset Version",
+            "type": "boolean"
+          },
+          "requires_scientific_binding": {
+            "title": "Requires Scientific Binding",
+            "type": "boolean"
+          },
+          "scientifically_bound_dataset_versions": {
+            "description": "Dataset versions configured with scientific bindings in this deployment. This does not guarantee that later runtime integrity checks will succeed.",
+            "items": {
+              "$ref": "#/components/schemas/ScientificallyBoundDatasetVersionResponse"
+            },
+            "title": "Scientifically Bound Dataset Versions",
+            "type": "array"
+          }
+        },
+        "required": [
+          "minimum_count",
+          "maximum_input_key_length",
+          "input_keys",
+          "input_key_discovery",
+          "requires_registered_dataset_version",
+          "requires_scientific_binding",
+          "scientifically_bound_dataset_versions"
+        ],
+        "title": "EnvironmentalInputCapabilityResponse",
+        "type": "object"
+      },
+      "EnvironmentalInputReferenceBody": {
+        "additionalProperties": false,
+        "properties": {
+          "dataset_id": {
+            "format": "uuid",
+            "title": "Dataset Id",
+            "type": "string"
+          },
+          "dataset_version_id": {
+            "format": "uuid",
+            "title": "Dataset Version Id",
+            "type": "string"
+          },
+          "input_key": {
+            "title": "Input Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "input_key",
+          "dataset_id",
+          "dataset_version_id"
+        ],
+        "title": "EnvironmentalInputReferenceBody",
+        "type": "object"
+      },
+      "EvaluationCapabilitiesResponse": {
+        "properties": {
+          "crops": {
+            "items": {
+              "$ref": "#/components/schemas/CropEvaluationCapabilityResponse"
+            },
+            "title": "Crops",
+            "type": "array"
+          },
+          "environmental_inputs": {
+            "$ref": "#/components/schemas/EnvironmentalInputCapabilityResponse"
+          },
+          "limitations": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Limitations",
+            "type": "array"
+          },
+          "status": {
+            "$ref": "#/components/schemas/CapabilityStatus"
+          }
+        },
+        "required": [
+          "status",
+          "crops",
+          "environmental_inputs",
+          "limitations"
+        ],
+        "title": "EvaluationCapabilitiesResponse",
+        "type": "object"
+      },
+      "EvaluationEvidenceResponse": {
+        "properties": {
+          "availability": {
+            "$ref": "#/components/schemas/EvaluationResultAvailability"
+          },
+          "evaluation_id": {
+            "format": "uuid",
+            "title": "Evaluation Id",
+            "type": "string"
+          },
+          "evaluation_status": {
+            "$ref": "#/components/schemas/EvaluationStatus"
+          },
+          "evidence": {
+            "items": {
+              "$ref": "#/components/schemas/CropEvidenceResponse"
+            },
+            "title": "Evidence",
+            "type": "array"
+          }
+        },
+        "required": [
+          "evaluation_id",
+          "evaluation_status",
+          "availability",
+          "evidence"
+        ],
+        "title": "EvaluationEvidenceResponse",
+        "type": "object"
+      },
+      "EvaluationLimitationsResponse": {
+        "properties": {
+          "availability": {
+            "$ref": "#/components/schemas/EvaluationResultAvailability"
+          },
+          "evaluation_id": {
+            "format": "uuid",
+            "title": "Evaluation Id",
+            "type": "string"
+          },
+          "evaluation_status": {
+            "$ref": "#/components/schemas/EvaluationStatus"
+          },
+          "limitations": {
+            "items": {
+              "$ref": "#/components/schemas/CropLimitationResponse"
+            },
+            "title": "Limitations",
+            "type": "array"
+          }
+        },
+        "required": [
+          "evaluation_id",
+          "evaluation_status",
+          "availability",
+          "limitations"
+        ],
+        "title": "EvaluationLimitationsResponse",
+        "type": "object"
+      },
+      "EvaluationResponse": {
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "parcel_snapshot": {
+            "$ref": "#/components/schemas/ParcelSnapshotResponse"
+          },
+          "requested_crops": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Requested Crops",
+            "type": "array"
+          },
+          "requested_water_regimes": {
+            "items": {
+              "$ref": "#/components/schemas/WaterRegime-Output"
+            },
+            "title": "Requested Water Regimes",
+            "type": "array"
+          },
+          "status": {
+            "$ref": "#/components/schemas/EvaluationStatus"
+          }
+        },
+        "required": [
+          "id",
+          "parcel_snapshot",
+          "requested_crops",
+          "requested_water_regimes",
+          "status",
+          "created_at"
+        ],
+        "title": "EvaluationResponse",
+        "type": "object"
+      },
+      "EvaluationResultAvailability": {
+        "description": "Whether persisted outcomes are pending, partial, or final.",
+        "enum": [
+          "pending",
+          "partial",
+          "final",
+          "failed",
+          "cancelled"
+        ],
+        "title": "EvaluationResultAvailability",
+        "type": "string"
+      },
+      "EvaluationResultResponse": {
+        "properties": {
+          "availability": {
+            "$ref": "#/components/schemas/EvaluationResultAvailability"
+          },
+          "common_support": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CommonSupportResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "comparable_crops": {
+            "items": {
+              "$ref": "#/components/schemas/ComparableCropResponse"
+            },
+            "title": "Comparable Crops",
+            "type": "array"
+          },
+          "completed_crop_count": {
+            "title": "Completed Crop Count",
+            "type": "integer"
+          },
+          "completed_execution_count": {
+            "title": "Completed Execution Count",
+            "type": "integer"
+          },
+          "evaluation_id": {
+            "format": "uuid",
+            "title": "Evaluation Id",
+            "type": "string"
+          },
+          "evaluation_status": {
+            "$ref": "#/components/schemas/EvaluationStatus"
+          },
+          "outcomes": {
+            "items": {
+              "$ref": "#/components/schemas/CropOutcomeResponse"
+            },
+            "title": "Outcomes",
+            "type": "array"
+          },
+          "requested_crop_count": {
+            "title": "Requested Crop Count",
+            "type": "integer"
+          },
+          "requested_crops": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Requested Crops",
+            "type": "array"
+          },
+          "requested_execution_count": {
+            "title": "Requested Execution Count",
+            "type": "integer"
+          },
+          "requested_water_regimes": {
+            "items": {
+              "$ref": "#/components/schemas/WaterRegime-Output"
+            },
+            "title": "Requested Water Regimes",
+            "type": "array"
+          },
+          "scenarios": {
+            "items": {
+              "$ref": "#/components/schemas/ScenarioResultResponse"
+            },
+            "title": "Scenarios",
+            "type": "array"
+          }
+        },
+        "required": [
+          "evaluation_id",
+          "evaluation_status",
+          "availability",
+          "requested_crops",
+          "requested_crop_count",
+          "completed_crop_count",
+          "requested_water_regimes",
+          "requested_execution_count",
+          "completed_execution_count",
+          "outcomes",
+          "common_support",
+          "comparable_crops",
+          "scenarios"
+        ],
+        "title": "EvaluationResultResponse",
+        "type": "object"
+      },
+      "EvaluationStatus": {
+        "description": "Architecture-approved lifecycle vocabulary.",
+        "enum": [
+          "queued",
+          "preparing",
+          "running",
+          "summarizing",
+          "succeeded",
+          "failed",
+          "cancelled"
+        ],
+        "title": "EvaluationStatus",
+        "type": "string"
+      },
+      "EvaluationStatusResponse": {
+        "properties": {
+          "completed_crop_count": {
+            "title": "Completed Crop Count",
+            "type": "integer"
+          },
+          "completed_execution_count": {
+            "title": "Completed Execution Count",
+            "type": "integer"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "evaluation_id": {
+            "format": "uuid",
+            "title": "Evaluation Id",
+            "type": "string"
+          },
+          "failed": {
+            "title": "Failed",
+            "type": "boolean"
+          },
+          "parcel_captured_at": {
+            "format": "date-time",
+            "title": "Parcel Captured At",
+            "type": "string"
+          },
+          "parcel_id": {
+            "format": "uuid",
+            "title": "Parcel Id",
+            "type": "string"
+          },
+          "parcel_version": {
+            "title": "Parcel Version",
+            "type": "integer"
+          },
+          "project_id": {
+            "format": "uuid",
+            "title": "Project Id",
+            "type": "string"
+          },
+          "requested_crop_count": {
+            "title": "Requested Crop Count",
+            "type": "integer"
+          },
+          "requested_crops": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Requested Crops",
+            "type": "array"
+          },
+          "requested_execution_count": {
+            "title": "Requested Execution Count",
+            "type": "integer"
+          },
+          "requested_water_regimes": {
+            "items": {
+              "$ref": "#/components/schemas/WaterRegime-Output"
+            },
+            "title": "Requested Water Regimes",
+            "type": "array"
+          },
+          "status": {
+            "$ref": "#/components/schemas/EvaluationStatus"
+          }
+        },
+        "required": [
+          "evaluation_id",
+          "status",
+          "requested_crops",
+          "requested_crop_count",
+          "completed_crop_count",
+          "requested_water_regimes",
+          "requested_execution_count",
+          "completed_execution_count",
+          "created_at",
+          "project_id",
+          "parcel_id",
+          "parcel_version",
+          "parcel_captured_at",
+          "failed"
+        ],
+        "title": "EvaluationStatusResponse",
+        "type": "object"
+      },
+      "EvidenceItem": {
+        "properties": {
+          "chunk_id": {
+            "title": "Chunk Id",
+            "type": "string"
+          },
+          "content": {
+            "title": "Content",
+            "type": "string"
+          },
+          "evidence_id": {
+            "title": "Evidence Id",
+            "type": "string"
+          },
+          "fused_score": {
+            "title": "Fused Score",
+            "type": "number"
+          },
+          "lexical_rank": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lexical Rank"
+          },
+          "organization": {
+            "title": "Organization",
+            "type": "string"
+          },
+          "page_end": {
+            "title": "Page End",
+            "type": "integer"
+          },
+          "page_start": {
+            "title": "Page Start",
+            "type": "integer"
+          },
+          "section": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Section"
+          },
+          "source_reference": {
+            "title": "Source Reference",
+            "type": "string"
+          },
+          "source_roles": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Source Roles",
+            "type": "array"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "vector_rank": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Vector Rank"
+          }
+        },
+        "required": [
+          "evidence_id",
+          "chunk_id",
+          "organization",
+          "title",
+          "source_roles",
+          "page_start",
+          "page_end",
+          "section",
+          "content",
+          "source_reference",
+          "lexical_rank",
+          "vector_rank",
+          "fused_score"
+        ],
+        "title": "EvidenceItem",
+        "type": "object"
+      },
+      "GeometryBody": {
+        "additionalProperties": false,
+        "properties": {
+          "coordinates": {
+            "items": {},
+            "title": "Coordinates",
+            "type": "array"
+          },
+          "type": {
+            "enum": [
+              "Polygon",
+              "MultiPolygon"
+            ],
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "coordinates"
+        ],
+        "title": "GeometryBody",
+        "type": "object"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "LimitationEvidenceAvailability": {
+        "description": "Availability of deterministic limiting-factor evidence.",
+        "enum": [
+          "available",
+          "partial",
+          "unavailable"
+        ],
+        "title": "LimitationEvidenceAvailability",
+        "type": "string"
+      },
+      "LimitationEvidenceResponse": {
+        "properties": {
+          "availability": {
+            "$ref": "#/components/schemas/LimitationEvidenceAvailability"
+          },
+          "factors": {
+            "items": {
+              "$ref": "#/components/schemas/LimitingFactorResponse"
+            },
+            "title": "Factors",
+            "type": "array"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Warnings",
+            "type": "array"
+          }
+        },
+        "required": [
+          "availability",
+          "reason",
+          "warnings",
+          "factors"
+        ],
+        "title": "LimitationEvidenceResponse",
+        "type": "object"
+      },
+      "LimitingFactorResponse": {
+        "properties": {
+          "affected_area_m2": {
+            "title": "Affected Area M2",
+            "type": "number"
+          },
+          "affected_cells": {
+            "title": "Affected Cells",
+            "type": "integer"
+          },
+          "affected_fraction": {
+            "description": "Fraction of the valid analyzed area affected by this factor.",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Affected Fraction",
+            "type": "number"
+          },
+          "display_label": {
+            "title": "Display Label",
+            "type": "string"
+          },
+          "dominant": {
+            "title": "Dominant",
+            "type": "boolean"
+          },
+          "factor_code": {
+            "title": "Factor Code",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "raw_code": {
+            "title": "Raw Code",
+            "type": "integer"
+          },
+          "source_sha256": {
+            "title": "Source Sha256",
+            "type": "string"
+          },
+          "source_storage_reference": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Storage Reference"
+          }
+        },
+        "required": [
+          "factor_code",
+          "label",
+          "display_label",
+          "raw_code",
+          "affected_cells",
+          "affected_area_m2",
+          "affected_fraction",
+          "dominant",
+          "source_storage_reference",
+          "source_sha256"
+        ],
+        "title": "LimitingFactorResponse",
+        "type": "object"
+      },
+      "ParcelResponse": {
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "current_version": {
+            "title": "Current Version",
+            "type": "integer"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "project_id": {
+            "format": "uuid",
+            "title": "Project Id",
+            "type": "string"
+          },
+          "versions": {
+            "items": {
+              "$ref": "#/components/schemas/ParcelVersionResponse"
+            },
+            "title": "Versions",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "project_id",
+          "name",
+          "current_version",
+          "versions",
+          "created_at"
+        ],
+        "title": "ParcelResponse",
+        "type": "object"
+      },
+      "ParcelSnapshotBody": {
+        "additionalProperties": false,
+        "properties": {
+          "captured_at": {
+            "format": "date-time",
+            "title": "Captured At",
+            "type": "string"
+          },
+          "crs": {
+            "maxLength": 32,
+            "minLength": 1,
+            "title": "Crs",
+            "type": "string"
+          },
+          "geometry": {
+            "$ref": "#/components/schemas/SnapshotGeometryBody"
+          },
+          "parcel_id": {
+            "format": "uuid",
+            "title": "Parcel Id",
+            "type": "string"
+          },
+          "parcel_version": {
+            "exclusiveMinimum": 0.0,
+            "title": "Parcel Version",
+            "type": "integer"
+          },
+          "project_id": {
+            "format": "uuid",
+            "title": "Project Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "project_id",
+          "parcel_id",
+          "parcel_version",
+          "geometry",
+          "crs",
+          "captured_at"
+        ],
+        "title": "ParcelSnapshotBody",
+        "type": "object"
+      },
+      "ParcelSnapshotResponse": {
+        "properties": {
+          "captured_at": {
+            "format": "date-time",
+            "title": "Captured At",
+            "type": "string"
+          },
+          "crs": {
+            "title": "Crs",
+            "type": "string"
+          },
+          "geometry": {
+            "$ref": "#/components/schemas/SnapshotGeometryResponse"
+          },
+          "parcel_id": {
+            "format": "uuid",
+            "title": "Parcel Id",
+            "type": "string"
+          },
+          "parcel_version": {
+            "title": "Parcel Version",
+            "type": "integer"
+          },
+          "project_id": {
+            "format": "uuid",
+            "title": "Project Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "project_id",
+          "parcel_id",
+          "parcel_version",
+          "geometry",
+          "crs",
+          "captured_at"
+        ],
+        "title": "ParcelSnapshotResponse",
+        "type": "object"
+      },
+      "ParcelVersionResponse": {
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "geometry": {
+            "$ref": "#/components/schemas/GeometryBody"
+          },
+          "number": {
+            "title": "Number",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "number",
+          "geometry",
+          "created_at"
+        ],
+        "title": "ParcelVersionResponse",
+        "type": "object"
+      },
+      "ProjectResponse": {
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "created_at"
+        ],
+        "title": "ProjectResponse",
+        "type": "object"
+      },
+      "RecommendationItem": {
+        "properties": {
+          "citation_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Citation Ids",
+            "type": "array"
+          },
+          "rationale": {
+            "title": "Rationale",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text",
+          "rationale",
+          "citation_ids"
+        ],
+        "title": "RecommendationItem",
+        "type": "object"
+      },
+      "RecommendationRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "crop_id": {
+            "minLength": 1,
+            "title": "Crop Id",
+            "type": "string"
+          },
+          "force_regenerate": {
+            "default": false,
+            "title": "Force Regenerate",
+            "type": "boolean"
+          },
+          "water_regime": {
+            "$ref": "#/components/schemas/via_backend__contexts__agroclimatic_evaluation__application__public__WaterRegime"
+          }
+        },
+        "required": [
+          "crop_id",
+          "water_regime"
+        ],
+        "title": "RecommendationRequest",
+        "type": "object"
+      },
+      "RecommendationRun": {
+        "properties": {
+          "cache_key": {
+            "title": "Cache Key",
+            "type": "string"
+          },
+          "corpus_version": {
+            "title": "Corpus Version",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "crop_id": {
+            "title": "Crop Id",
+            "type": "string"
+          },
+          "embedding_index_id": {
+            "format": "uuid",
+            "title": "Embedding Index Id",
+            "type": "string"
+          },
+          "evaluation_id": {
+            "format": "uuid",
+            "title": "Evaluation Id",
+            "type": "string"
+          },
+          "failure_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Failure Reason"
+          },
+          "input_tokens": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Tokens"
+          },
+          "model": {
+            "title": "Model",
+            "type": "string"
+          },
+          "output_tokens": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Output Tokens"
+          },
+          "prompt_version": {
+            "title": "Prompt Version",
+            "type": "string"
+          },
+          "provider": {
+            "title": "Provider",
+            "type": "string"
+          },
+          "recommendation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/StructuredRecommendation"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "response_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Response Id"
+          },
+          "retrieval_version": {
+            "title": "Retrieval Version",
+            "type": "string"
+          },
+          "run_id": {
+            "format": "uuid",
+            "title": "Run Id",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/RecommendationStatus"
+          },
+          "water_regime": {
+            "title": "Water Regime",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run_id",
+          "evaluation_id",
+          "crop_id",
+          "water_regime",
+          "status",
+          "prompt_version",
+          "provider",
+          "model",
+          "response_id",
+          "corpus_version",
+          "retrieval_version",
+          "embedding_index_id",
+          "cache_key",
+          "recommendation",
+          "failure_reason",
+          "input_tokens",
+          "output_tokens",
+          "created_at"
+        ],
+        "title": "RecommendationRun",
+        "type": "object"
+      },
+      "RecommendationStatus": {
+        "enum": [
+          "succeeded",
+          "insufficient_evidence",
+          "failed"
+        ],
+        "title": "RecommendationStatus",
+        "type": "string"
+      },
+      "RequestEvaluationBody": {
+        "additionalProperties": false,
+        "properties": {
+          "environmental_inputs": {
+            "items": {
+              "$ref": "#/components/schemas/EnvironmentalInputReferenceBody"
+            },
+            "minItems": 1,
+            "title": "Environmental Inputs",
+            "type": "array"
+          },
+          "parcel_snapshot": {
+            "$ref": "#/components/schemas/ParcelSnapshotBody"
+          },
+          "requested_crops": {
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "title": "Requested Crops",
+            "type": "array"
+          },
+          "water_regimes": {
+            "items": {
+              "$ref": "#/components/schemas/via_backend__contexts__agroclimatic_evaluation__domain__water_regime__WaterRegime"
+            },
+            "minItems": 1,
+            "title": "Water Regimes",
+            "type": "array"
+          }
+        },
+        "required": [
+          "parcel_snapshot",
+          "requested_crops",
+          "environmental_inputs"
+        ],
+        "title": "RequestEvaluationBody",
+        "type": "object"
+      },
+      "RetrievalStatus": {
+        "enum": [
+          "available",
+          "insufficient_evidence",
+          "unavailable"
+        ],
+        "title": "RetrievalStatus",
+        "type": "string"
+      },
+      "RetrievedKnowledge": {
+        "properties": {
+          "corpus_version": {
+            "title": "Corpus Version",
+            "type": "string"
+          },
+          "crop_id": {
+            "title": "Crop Id",
+            "type": "string"
+          },
+          "embedding_index": {
+            "$ref": "#/components/schemas/EmbeddingIndex"
+          },
+          "evaluation_id": {
+            "format": "uuid",
+            "title": "Evaluation Id",
+            "type": "string"
+          },
+          "evidence": {
+            "items": {
+              "$ref": "#/components/schemas/EvidenceItem"
+            },
+            "title": "Evidence",
+            "type": "array"
+          },
+          "limiting_factors": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Limiting Factors",
+            "type": "array"
+          },
+          "query": {
+            "title": "Query",
+            "type": "string"
+          },
+          "retrieval_run_id": {
+            "format": "uuid",
+            "title": "Retrieval Run Id",
+            "type": "string"
+          },
+          "retrieval_status": {
+            "$ref": "#/components/schemas/RetrievalStatus"
+          },
+          "retrieval_version": {
+            "title": "Retrieval Version",
+            "type": "string"
+          },
+          "water_regime": {
+            "title": "Water Regime",
+            "type": "string"
+          }
+        },
+        "required": [
+          "retrieval_run_id",
+          "evaluation_id",
+          "crop_id",
+          "water_regime",
+          "limiting_factors",
+          "retrieval_status",
+          "query",
+          "corpus_version",
+          "retrieval_version",
+          "embedding_index",
+          "evidence"
+        ],
+        "title": "RetrievedKnowledge",
+        "type": "object"
+      },
+      "ReviseParcelGeometryBody": {
+        "additionalProperties": false,
+        "properties": {
+          "geometry": {
+            "$ref": "#/components/schemas/GeometryBody"
+          }
+        },
+        "required": [
+          "geometry"
+        ],
+        "title": "ReviseParcelGeometryBody",
+        "type": "object"
+      },
+      "ScenarioResultResponse": {
+        "properties": {
+          "common_support": {
+            "$ref": "#/components/schemas/CommonSupportResponse"
+          },
+          "comparable_crops": {
+            "items": {
+              "$ref": "#/components/schemas/ComparableCropResponse"
+            },
+            "title": "Comparable Crops",
+            "type": "array"
+          },
+          "outcomes": {
+            "items": {
+              "$ref": "#/components/schemas/CropOutcomeResponse"
+            },
+            "title": "Outcomes",
+            "type": "array"
+          },
+          "water_regime": {
+            "$ref": "#/components/schemas/WaterRegime-Output"
+          }
+        },
+        "required": [
+          "water_regime",
+          "outcomes",
+          "common_support",
+          "comparable_crops"
+        ],
+        "title": "ScenarioResultResponse",
+        "type": "object"
+      },
+      "ScientificTraceResponse": {
+        "properties": {
+          "configuration_sha256": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Configuration Sha256"
+          },
+          "elapsed_seconds": {
+            "title": "Elapsed Seconds",
+            "type": "number"
+          },
+          "engine_identifier": {
+            "title": "Engine Identifier",
+            "type": "string"
+          },
+          "execution_mode": {
+            "title": "Execution Mode",
+            "type": "string"
+          },
+          "finished_at": {
+            "format": "date-time",
+            "title": "Finished At",
+            "type": "string"
+          },
+          "parameter_sha256": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Sha256"
+          },
+          "parcel_sha256": {
+            "title": "Parcel Sha256",
+            "type": "string"
+          },
+          "source_files_unchanged": {
+            "title": "Source Files Unchanged",
+            "type": "boolean"
+          },
+          "source_sha256": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Source Sha256",
+            "type": "array"
+          },
+          "started_at": {
+            "format": "date-time",
+            "title": "Started At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "engine_identifier",
+          "started_at",
+          "finished_at",
+          "elapsed_seconds",
+          "execution_mode",
+          "parcel_sha256",
+          "parameter_sha256",
+          "configuration_sha256",
+          "source_files_unchanged",
+          "source_sha256"
+        ],
+        "title": "ScientificTraceResponse",
+        "type": "object"
+      },
+      "ScientificallyBoundDatasetVersionResponse": {
+        "properties": {
+          "dataset_id": {
+            "description": "Registered dataset identity associated with the scientific binding.",
+            "format": "uuid",
+            "title": "Dataset Id",
+            "type": "string"
+          },
+          "dataset_version_id": {
+            "description": "Exact dataset version configured with a scientific binding for this deployment.",
+            "format": "uuid",
+            "title": "Dataset Version Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "dataset_id",
+          "dataset_version_id"
+        ],
+        "title": "ScientificallyBoundDatasetVersionResponse",
+        "type": "object"
+      },
+      "SnapshotGeometryBody": {
+        "additionalProperties": false,
+        "properties": {
+          "coordinates": {
+            "items": {},
+            "title": "Coordinates",
+            "type": "array"
+          },
+          "type": {
+            "enum": [
+              "Polygon",
+              "MultiPolygon"
+            ],
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "coordinates"
+        ],
+        "title": "SnapshotGeometryBody",
+        "type": "object"
+      },
+      "SnapshotGeometryResponse": {
+        "properties": {
+          "coordinates": {
+            "items": {},
+            "title": "Coordinates",
+            "type": "array"
+          },
+          "type": {
+            "enum": [
+              "Polygon",
+              "MultiPolygon"
+            ],
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "coordinates"
+        ],
+        "title": "SnapshotGeometryResponse",
+        "type": "object"
+      },
+      "SpatialExtentBody": {
+        "additionalProperties": false,
+        "properties": {
+          "east": {
+            "title": "East",
+            "type": "number"
+          },
+          "north": {
+            "title": "North",
+            "type": "number"
+          },
+          "south": {
+            "title": "South",
+            "type": "number"
+          },
+          "west": {
+            "title": "West",
+            "type": "number"
+          }
+        },
+        "required": [
+          "west",
+          "south",
+          "east",
+          "north"
+        ],
+        "title": "SpatialExtentBody",
+        "type": "object"
+      },
+      "SpatialResolutionBody": {
+        "additionalProperties": false,
+        "properties": {
+          "unit": {
+            "maxLength": 32,
+            "minLength": 1,
+            "title": "Unit",
+            "type": "string"
+          },
+          "x": {
+            "exclusiveMinimum": 0.0,
+            "title": "X",
+            "type": "number"
+          },
+          "y": {
+            "exclusiveMinimum": 0.0,
+            "title": "Y",
+            "type": "number"
+          }
+        },
+        "required": [
+          "x",
+          "y",
+          "unit"
+        ],
+        "title": "SpatialResolutionBody",
+        "type": "object"
+      },
+      "StructuredRecommendation": {
+        "properties": {
+          "citation_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Citation Ids",
+            "type": "array"
+          },
+          "observations": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Observations",
+            "type": "array"
+          },
+          "recommendations": {
+            "items": {
+              "$ref": "#/components/schemas/RecommendationItem"
+            },
+            "title": "Recommendations",
+            "type": "array"
+          },
+          "scenario_interpretation": {
+            "title": "Scenario Interpretation",
+            "type": "string"
+          },
+          "summary": {
+            "title": "Summary",
+            "type": "string"
+          },
+          "uncertainties": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Uncertainties",
+            "type": "array"
+          }
+        },
+        "required": [
+          "summary",
+          "observations",
+          "scenario_interpretation",
+          "recommendations",
+          "uncertainties",
+          "citation_ids"
+        ],
+        "title": "StructuredRecommendation",
+        "type": "object"
+      },
+      "SuitabilitySummaryResponse": {
+        "properties": {
+          "coverage_fraction": {
+            "description": "Fraction of parcel area with valid scientific cells. No-data is excluded; a valid suitability score of 0 is not no-data.",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Coverage Fraction",
+            "type": "number"
+          },
+          "maximum": {
+            "anyOf": [
+              {
+                "maximum": 100.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Maximum"
+          },
+          "mean": {
+            "anyOf": [
+              {
+                "maximum": 100.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mean"
+          },
+          "minimum": {
+            "anyOf": [
+              {
+                "maximum": 100.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Minimum"
+          },
+          "valid_area_m2": {
+            "title": "Valid Area M2",
+            "type": "number"
+          },
+          "valid_cells": {
+            "title": "Valid Cells",
+            "type": "integer"
+          },
+          "zero_suitability_area_m2": {
+            "title": "Zero Suitability Area M2",
+            "type": "number"
+          }
+        },
+        "required": [
+          "mean",
+          "minimum",
+          "maximum",
+          "valid_cells",
+          "valid_area_m2",
+          "coverage_fraction",
+          "zero_suitability_area_m2"
+        ],
+        "title": "SuitabilitySummaryResponse",
+        "type": "object"
+      },
+      "ValidationError": {
+        "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
+      },
+      "WaterRegime-Output": {
+        "description": "Scientific water-regime assumption used for one CropSuite execution.",
+        "enum": [
+          "rainfed",
+          "irrigated"
+        ],
+        "title": "WaterRegime",
+        "type": "string"
+      },
+      "via_backend__contexts__agroclimatic_evaluation__application__public__WaterRegime": {
+        "description": "Published water-regime values shared with consumer bounded contexts.",
+        "enum": [
+          "rainfed",
+          "irrigated"
+        ],
+        "title": "WaterRegime",
+        "type": "string"
+      },
+      "via_backend__contexts__agroclimatic_evaluation__domain__water_regime__WaterRegime": {
+        "description": "Scientific water-regime assumption used for one CropSuite execution.",
+        "enum": [
+          "rainfed",
+          "irrigated"
+        ],
+        "title": "WaterRegime",
+        "type": "string"
+      }
+    }
+  },
+  "info": {
+    "title": "VIA Backend",
+    "version": "0.1.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/api/v1/decision-support/evaluations/{evaluation_id}/knowledge": {
+      "get": {
+        "description": "Retrieve evidence for one successful crop scenario without generating a recommendation. affected_fraction values in the source context are 0..1.",
+        "operationId": "get_evaluation_knowledge",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "evaluation_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Evaluation Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "crop_id",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "title": "Crop Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "water_regime",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/via_backend__contexts__agroclimatic_evaluation__application__public__WaterRegime"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RetrievedKnowledge"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Knowledge",
+        "tags": [
+          "decision-support"
+        ]
+      }
+    },
+    "/api/v1/decision-support/evaluations/{evaluation_id}/recommendations": {
+      "get": {
+        "description": "List persisted recommendation runs without invoking a provider.",
+        "operationId": "list_evaluation_recommendations",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "evaluation_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Evaluation Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "crop_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Crop Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "water_regime",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/via_backend__contexts__agroclimatic_evaluation__application__public__WaterRegime"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Water Regime"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/RecommendationRun"
+                  },
+                  "title": "Response List Evaluation Recommendations",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Recommendations",
+        "tags": [
+          "decision-support"
+        ]
+      },
+      "post": {
+        "description": "Generate or reuse an evidence-grounded recommendation for one finalized crop and water-regime scenario.",
+        "operationId": "create_evaluation_recommendation",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "evaluation_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Evaluation Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecommendationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecommendationRun"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Generate Recommendation",
+        "tags": [
+          "decision-support"
+        ]
+      }
+    },
+    "/api/v1/evaluation-capabilities": {
+      "get": {
+        "description": "Discover the deployment-selected crop catalog, valid rainfed/irrigated scenarios, and dataset versions configured with scientific input bindings. Environmental input_key values are caller-defined unique logical identifiers. Irrigated is a scientific scenario and does not confirm water or infrastructure availability.",
+        "operationId": "get_evaluation_capabilities",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EvaluationCapabilitiesResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Evaluation Capabilities",
+        "tags": [
+          "agroclimatic-evaluation"
+        ]
+      }
+    },
+    "/api/v1/evaluations": {
+      "get": {
+        "description": "List submitted evaluations without waiting for scientific execution.",
+        "operationId": "list_evaluations",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/EvaluationResponse"
+                  },
+                  "title": "Response List Evaluations",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Evaluations",
+        "tags": [
+          "agroclimatic-evaluation"
+        ]
+      },
+      "post": {
+        "description": "Queue an asynchronous evaluation for exact parcel and dataset versions. Rainfed and irrigated are distinct scientific scenarios; irrigated does not confirm real water or irrigation-infrastructure availability.",
+        "operationId": "request_evaluation",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RequestEvaluationBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EvaluationResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Request Evaluation",
+        "tags": [
+          "agroclimatic-evaluation"
+        ]
+      }
+    },
+    "/api/v1/evaluations/{evaluation_id}": {
+      "get": {
+        "description": "Poll evaluation lifecycle and per-scenario completion counts.",
+        "operationId": "get_evaluation",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "evaluation_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Evaluation Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EvaluationStatusResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Evaluation",
+        "tags": [
+          "agroclimatic-evaluation"
+        ]
+      }
+    },
+    "/api/v1/evaluations/{evaluation_id}/evidence": {
+      "get": {
+        "description": "Read safe scientific trace evidence without internal storage paths.",
+        "operationId": "get_evaluation_evidence",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "evaluation_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Evaluation Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EvaluationEvidenceResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Evaluation Evidence",
+        "tags": [
+          "agroclimatic-evaluation"
+        ]
+      }
+    },
+    "/api/v1/evaluations/{evaluation_id}/limitations": {
+      "get": {
+        "description": "Read limiting factors. affected_fraction is in 0..1 and remains distinct from no-data or no coverage.",
+        "operationId": "get_evaluation_limitations",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "evaluation_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Evaluation Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EvaluationLimitationsResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Evaluation Limitations",
+        "tags": [
+          "agroclimatic-evaluation"
+        ]
+      }
+    },
+    "/api/v1/evaluations/{evaluation_id}/result": {
+      "get": {
+        "description": "Read per-crop suitability in the 0..100 scale. coverage_fraction is 0..1; null/no_coverage is not suitability 0. Use comparable_crops, not raw means, for rankings across crops.",
+        "operationId": "get_evaluation_result",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "evaluation_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Evaluation Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EvaluationResultResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Evaluation Result",
+        "tags": [
+          "agroclimatic-evaluation"
+        ]
+      }
+    },
+    "/datasets": {
+      "get": {
+        "description": "List registered environmental datasets.",
+        "operationId": "list_datasets",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/DatasetResponse"
+                  },
+                  "title": "Response List Datasets",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Datasets",
+        "tags": [
+          "environmental-information"
+        ]
+      },
+      "post": {
+        "description": "Register environmental dataset identity and variable metadata.",
+        "operationId": "create_dataset",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateDatasetBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DatasetResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Dataset",
+        "tags": [
+          "environmental-information"
+        ]
+      }
+    },
+    "/datasets/{dataset_id}": {
+      "get": {
+        "description": "Read one environmental dataset.",
+        "operationId": "get_dataset",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "dataset_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Dataset Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DatasetResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Dataset",
+        "tags": [
+          "environmental-information"
+        ]
+      }
+    },
+    "/datasets/{dataset_id}/versions": {
+      "get": {
+        "description": "List immutable versions registered for a dataset.",
+        "operationId": "list_dataset_versions",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "dataset_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Dataset Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/DatasetVersionResponse"
+                  },
+                  "title": "Response List Dataset Versions",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Dataset Versions",
+        "tags": [
+          "environmental-information"
+        ]
+      },
+      "post": {
+        "description": "Register an immutable environmental dataset version.",
+        "operationId": "create_dataset_version",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "dataset_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Dataset Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateDatasetVersionBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DatasetVersionResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Dataset Version",
+        "tags": [
+          "environmental-information"
+        ]
+      }
+    },
+    "/datasets/{dataset_id}/versions/{version_id}": {
+      "get": {
+        "description": "Read one exact environmental dataset version.",
+        "operationId": "get_dataset_version",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "dataset_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Dataset Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "version_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Version Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DatasetVersionResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Dataset Version",
+        "tags": [
+          "environmental-information"
+        ]
+      }
+    },
+    "/datasets/{dataset_id}/versions/{version_id}/coverage": {
+      "post": {
+        "description": "Check spatial compatibility and parcel coverage for one exact dataset version.",
+        "operationId": "check_dataset_coverage",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "dataset_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Dataset Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "version_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Version Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CheckCoverageBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DatasetVersionCoverageResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Check Dataset Version Coverage",
+        "tags": [
+          "environmental-information"
+        ]
+      }
+    },
+    "/health": {
+      "get": {
+        "description": "Report API-process readiness; this does not report worker liveness.",
+        "operationId": "get_health",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "title": "Response Get Health",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Health",
+        "tags": [
+          "health"
+        ]
+      }
+    },
+    "/projects": {
+      "get": {
+        "description": "List projects visible to the current API process.",
+        "operationId": "list_projects",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ProjectResponse"
+                  },
+                  "title": "Response List Projects",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Projects",
+        "tags": [
+          "farm-management"
+        ]
+      },
+      "post": {
+        "description": "Create a project that owns parcels and their geometry history.",
+        "operationId": "create_project",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateProjectBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Project",
+        "tags": [
+          "farm-management"
+        ]
+      }
+    },
+    "/projects/{project_id}": {
+      "get": {
+        "description": "Read one project by its public identifier.",
+        "operationId": "get_project",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Project",
+        "tags": [
+          "farm-management"
+        ]
+      }
+    },
+    "/projects/{project_id}/parcels": {
+      "get": {
+        "description": "List parcels and their immutable geometry versions for a project.",
+        "operationId": "list_parcels",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ParcelResponse"
+                  },
+                  "title": "Response List Parcels",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Parcels",
+        "tags": [
+          "farm-management"
+        ]
+      },
+      "post": {
+        "description": "Create a parcel with geometry version 1 inside a project.",
+        "operationId": "create_parcel",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateParcelBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ParcelResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Parcel",
+        "tags": [
+          "farm-management"
+        ]
+      }
+    },
+    "/projects/{project_id}/parcels/{parcel_id}": {
+      "get": {
+        "description": "Read one parcel and its complete geometry-version history.",
+        "operationId": "get_parcel",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "parcel_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Parcel Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ParcelResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Parcel",
+        "tags": [
+          "farm-management"
+        ]
+      }
+    },
+    "/projects/{project_id}/parcels/{parcel_id}/versions": {
+      "post": {
+        "description": "Append an immutable geometry version to an existing parcel.",
+        "operationId": "create_parcel_version",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "parcel_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Parcel Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviseParcelGeometryBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ParcelResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Revise Parcel Geometry",
+        "tags": [
+          "farm-management"
+        ]
+      }
+    }
+  }
+}

@@ -36,6 +36,41 @@ def test_development_settings_can_fall_back_to_memory(monkeypatch: pytest.Monkey
     assert settings.agroclimatic_evaluation_repository == "memory"
 
 
+def test_cors_origins_are_parsed_from_comma_separated_environment(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv(
+        "VIA_CORS_ALLOWED_ORIGINS",
+        "http://localhost:5173, http://127.0.0.1:5173",
+    )
+
+    settings = Settings.from_env()
+
+    assert settings.cors_allowed_origins == (
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    )
+
+
+def test_cors_wildcard_is_rejected() -> None:
+    with pytest.raises(ValueError, match="must not contain"):
+        Settings(cors_allowed_origins=("*",))
+
+
+def test_api_settings_reuse_scientific_input_bindings_environment(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv(
+        "VIA_CROPSUITE_INPUT_BINDINGS",
+        "C:/via/cropsuite-input-bindings.json",
+    )
+
+    settings = Settings.from_env()
+
+    assert settings.cropsuite_input_bindings == Path(
+        "C:/via/cropsuite-input-bindings.json"
+    )
+
 def test_knowledge_path_overrides_take_precedence_over_legacy_names(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

@@ -1,0 +1,82 @@
+{
+  "evaluation_id": "55555555-5555-4555-8555-555555555555",
+  "evaluation_status": "succeeded",
+  "availability": "final",
+  "requested_crops": ["maize"],
+  "requested_crop_count": 1,
+  "completed_crop_count": 1,
+  "requested_water_regimes": ["rainfed"],
+  "requested_execution_count": 1,
+  "completed_execution_count": 1,
+  "outcomes": [
+    {
+      "crop_id": "maize",
+      "water_regime": "rainfed",
+      "status": "succeeded",
+      "suitability": {
+        "mean": 68.5,
+        "minimum": 0.0,
+        "maximum": 91.0,
+        "valid_cells": 100,
+        "valid_area_m2": 10000.0,
+        "coverage_fraction": 1.0,
+        "zero_suitability_area_m2": 500.0
+      }
+    }
+  ],
+  "common_support": {
+    "status": "comparable",
+    "method": "common_valid_mask",
+    "area_crs": "EPSG:32718",
+    "parcel_area_m2": 10000.0,
+    "common_valid_area_m2": 10000.0,
+    "common_coverage_fraction": 1.0,
+    "eligible_crops": ["maize"],
+    "excluded_without_coverage": []
+  },
+  "comparable_crops": [
+    {
+      "crop_id": "maize",
+      "mean": 68.5,
+      "rank": 1
+    }
+  ],
+  "scenarios": [
+    {
+      "water_regime": "rainfed",
+      "outcomes": [
+        {
+          "crop_id": "maize",
+          "water_regime": "rainfed",
+          "status": "succeeded",
+          "suitability": {
+            "mean": 68.5,
+            "minimum": 0.0,
+            "maximum": 91.0,
+            "valid_cells": 100,
+            "valid_area_m2": 10000.0,
+            "coverage_fraction": 1.0,
+            "zero_suitability_area_m2": 500.0
+          }
+        }
+      ],
+      "common_support": {
+        "status": "comparable",
+        "method": "common_valid_mask",
+        "area_crs": "EPSG:32718",
+        "parcel_area_m2": 10000.0,
+        "common_valid_area_m2": 10000.0,
+        "common_coverage_fraction": 1.0,
+        "eligible_crops": ["maize"],
+        "excluded_without_coverage": []
+      },
+      "comparable_crops": [
+        {
+          "crop_id": "maize",
+          "mean": 68.5,
+          "rank": 1
+        }
+      ]
+    }
+  ]
+}

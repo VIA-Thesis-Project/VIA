@@ -1,5 +1,6 @@
 """Agroclimatic Evaluation application layer."""
 
+from .capabilities import EvaluationCapabilitiesService
 from .commands import (
     EnvironmentalInputReferenceInput,
     ExecuteEvaluation,
@@ -97,6 +98,7 @@ from .worker import AgroclimaticEvaluationWorker, WorkerRunSummary
 
 __all__ = [
     "AgroclimaticEvaluationExecutionService",
+    "EvaluationCapabilitiesService",
     "AgroclimaticEvaluationRecoveryService",
     "AgroclimaticEvaluationService",
     "AgroclimaticEvaluationWorker",

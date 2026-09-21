@@ -21,6 +21,8 @@ from .public import (
     FinalizedCropLimitationEvidence,
     FinalizedCropOutcome,
     FinalizedCropOutcomeStatus,
+    FinalizedEvaluationNotFoundError,
+    FinalizedEvaluationNotReadyError,
     FinalizedEvaluationResult,
     FinalizedLimitationEvidenceAvailability,
     FinalizedLimitingFactorEvidence,
@@ -47,7 +49,7 @@ from .read_models import (
 from .results import EvaluationResult
 
 
-class ResourceNotFoundError(LookupError):
+class ResourceNotFoundError(FinalizedEvaluationNotFoundError):
     """Raised when a requested evaluation does not exist."""
 
 
@@ -55,7 +57,7 @@ class InvalidCommandError(ValueError):
     """Raised when request data violates an evaluation invariant."""
 
 
-class ResourceConflictError(RuntimeError):
+class ResourceConflictError(FinalizedEvaluationNotReadyError):
     """Raised when an evaluation identity already exists."""
 
 

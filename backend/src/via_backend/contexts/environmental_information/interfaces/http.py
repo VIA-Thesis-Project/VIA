@@ -129,7 +129,13 @@ def create_router(service: EnvironmentalInformationService) -> APIRouter:
     """Create a router bound to the supplied application service."""
     router = APIRouter(prefix="/datasets", tags=["environmental-information"])
 
-    @router.post("", response_model=DatasetResponse, status_code=status.HTTP_201_CREATED)
+    @router.post(
+        "",
+        response_model=DatasetResponse,
+        status_code=status.HTTP_201_CREATED,
+        operation_id="create_dataset",
+        description="Register environmental dataset identity and variable metadata.",
+    )
     def create_dataset(body: CreateDatasetBody) -> DatasetResponse:
         result = _execute(
             service.create_dataset,
@@ -142,14 +148,24 @@ def create_router(service: EnvironmentalInformationService) -> APIRouter:
         )
         return DatasetResponse.model_validate(result)
 
-    @router.get("", response_model=list[DatasetResponse])
+    @router.get(
+        "",
+        response_model=list[DatasetResponse],
+        operation_id="list_datasets",
+        description="List registered environmental datasets.",
+    )
     def list_datasets() -> list[DatasetResponse]:
         return [
             DatasetResponse.model_validate(dataset)
             for dataset in _execute(service.list_datasets, ListDatasets())
         ]
 
-    @router.get("/{dataset_id}", response_model=DatasetResponse)
+    @router.get(
+        "/{dataset_id}",
+        response_model=DatasetResponse,
+        operation_id="get_dataset",
+        description="Read one environmental dataset.",
+    )
     def get_dataset(dataset_id: UUID) -> DatasetResponse:
         result = _execute(service.get_dataset, GetDataset(dataset_id))
         return DatasetResponse.model_validate(result)
@@ -158,6 +174,8 @@ def create_router(service: EnvironmentalInformationService) -> APIRouter:
         "/{dataset_id}/versions",
         response_model=DatasetVersionResponse,
         status_code=status.HTTP_201_CREATED,
+        operation_id="create_dataset_version",
+        description="Register an immutable environmental dataset version.",
     )
     def create_dataset_version(
         dataset_id: UUID, body: CreateDatasetVersionBody
@@ -187,6 +205,8 @@ def create_router(service: EnvironmentalInformationService) -> APIRouter:
     @router.get(
         "/{dataset_id}/versions",
         response_model=list[DatasetVersionResponse],
+        operation_id="list_dataset_versions",
+        description="List immutable versions registered for a dataset.",
     )
     def list_dataset_versions(dataset_id: UUID) -> list[DatasetVersionResponse]:
         return [
@@ -200,6 +220,8 @@ def create_router(service: EnvironmentalInformationService) -> APIRouter:
     @router.get(
         "/{dataset_id}/versions/{version_id}",
         response_model=DatasetVersionResponse,
+        operation_id="get_dataset_version",
+        description="Read one exact environmental dataset version.",
     )
     def get_dataset_version(
         dataset_id: UUID, version_id: UUID
@@ -213,6 +235,10 @@ def create_router(service: EnvironmentalInformationService) -> APIRouter:
     @router.post(
         "/{dataset_id}/versions/{version_id}/coverage",
         response_model=DatasetVersionCoverageResponse,
+        operation_id="check_dataset_coverage",
+        description=(
+            "Check spatial compatibility and parcel coverage for one exact dataset version."
+        ),
     )
     def check_dataset_version_coverage(
         dataset_id: UUID,

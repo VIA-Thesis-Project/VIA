@@ -4,15 +4,22 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import Engine
 
 from via_backend.config import Settings
 from via_backend.contexts.agroclimatic_evaluation.application import (
     AgroclimaticEvaluationService,
+    EvaluationCapabilitiesService,
 )
 from via_backend.contexts.agroclimatic_evaluation.infrastructure import (
+    FilesystemCropCapabilityCatalog,
+    FilesystemScientificInputBindingCatalog,
     InMemoryEvaluationRepository,
     PostgreSQLEvaluationRepository,
+)
+from via_backend.contexts.agroclimatic_evaluation.interfaces import (
+    create_capabilities_router,
 )
 from via_backend.contexts.agroclimatic_evaluation.interfaces import (
     create_router as create_agroclimatic_evaluation_router,
@@ -113,6 +120,14 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     application = FastAPI(
         title="VIA Backend", version="0.1.0", lifespan=lifespan
     )
+    if settings.cors_allowed_origins:
+        application.add_middleware(
+            CORSMiddleware,
+            allow_origins=list(settings.cors_allowed_origins),
+            allow_credentials=False,
+            allow_methods=["GET", "POST", "OPTIONS"],
+            allow_headers=["Content-Type", "Authorization"],
+        )
     farm_management = FarmManagementService(
         projects=projects,
         parcels=parcels,
@@ -133,6 +148,27 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     )
     application.include_router(
         create_agroclimatic_evaluation_router(agroclimatic_evaluation),
+        prefix="/api/v1",
+    )
+    capability_catalog = (
+        FilesystemCropCapabilityCatalog(settings.cropsuite_catalog)
+        if settings.cropsuite_catalog is not None
+        else None
+    )
+    scientific_input_binding_catalog = (
+        FilesystemScientificInputBindingCatalog(
+            settings.cropsuite_input_bindings
+        )
+        if settings.cropsuite_input_bindings is not None
+        else None
+    )
+    application.include_router(
+        create_capabilities_router(
+            EvaluationCapabilitiesService(
+                capability_catalog,
+                scientific_input_binding_catalog,
+            )
+        ),
         prefix="/api/v1",
     )
     if sessions is not None:

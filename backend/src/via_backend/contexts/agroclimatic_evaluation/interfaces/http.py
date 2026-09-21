@@ -120,12 +120,19 @@ class EvaluationStatusResponse(BaseModel):
 class SuitabilitySummaryResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
-    mean: float | None
-    minimum: float | None
-    maximum: float | None
+    mean: float | None = Field(ge=0, le=100)
+    minimum: float | None = Field(ge=0, le=100)
+    maximum: float | None = Field(ge=0, le=100)
     valid_cells: int
     valid_area_m2: float
-    coverage_fraction: float
+    coverage_fraction: float = Field(
+        ge=0,
+        le=1,
+        description=(
+            "Fraction of parcel area with valid scientific cells. No-data is excluded; "
+            "a valid suitability score of 0 is not no-data."
+        ),
+    )
     zero_suitability_area_m2: float
 
 
@@ -145,7 +152,7 @@ class CommonSupportResponse(BaseModel):
     area_crs: str | None
     parcel_area_m2: float
     common_valid_area_m2: float
-    common_coverage_fraction: float
+    common_coverage_fraction: float = Field(ge=0, le=1)
     eligible_crops: list[str]
     excluded_without_coverage: list[str]
 
@@ -155,7 +162,9 @@ class ComparableCropResponse(BaseModel):
 
     crop_id: str
     mean: float
-    rank: int
+    rank: int = Field(
+        description="Comparable ranking on common valid support; use this list for rankings."
+    )
 
 
 class ScenarioResultResponse(BaseModel):
@@ -226,7 +235,11 @@ class LimitingFactorResponse(BaseModel):
     raw_code: int
     affected_cells: int
     affected_area_m2: float
-    affected_fraction: float
+    affected_fraction: float = Field(
+        ge=0,
+        le=1,
+        description="Fraction of the valid analyzed area affected by this factor.",
+    )
     dominant: bool
     source_storage_reference: str | None
     source_sha256: str
@@ -268,6 +281,12 @@ def create_router(service: AgroclimaticEvaluationService) -> APIRouter:
         "",
         response_model=EvaluationResponse,
         status_code=status.HTTP_201_CREATED,
+        operation_id="request_evaluation",
+        description=(
+            "Queue an asynchronous evaluation for exact parcel and dataset versions. "
+            "Rainfed and irrigated are distinct scientific scenarios; irrigated does not "
+            "confirm real water or irrigation-infrastructure availability."
+        ),
     )
     def request_evaluation(body: RequestEvaluationBody) -> EvaluationResponse:
         snapshot = body.parcel_snapshot
@@ -296,7 +315,12 @@ def create_router(service: AgroclimaticEvaluationService) -> APIRouter:
         )
         return EvaluationResponse.model_validate(result)
 
-    @router.get("", response_model=list[EvaluationResponse])
+    @router.get(
+        "",
+        response_model=list[EvaluationResponse],
+        operation_id="list_evaluations",
+        description="List submitted evaluations without waiting for scientific execution.",
+    )
     def list_evaluations() -> list[EvaluationResponse]:
         return [
             EvaluationResponse.model_validate(evaluation)
@@ -306,7 +330,16 @@ def create_router(service: AgroclimaticEvaluationService) -> APIRouter:
             )
         ]
 
-    @router.get("/{evaluation_id}/result", response_model=EvaluationResultResponse)
+    @router.get(
+        "/{evaluation_id}/result",
+        response_model=EvaluationResultResponse,
+        operation_id="get_evaluation_result",
+        description=(
+            "Read per-crop suitability in the 0..100 scale. coverage_fraction is 0..1; "
+            "null/no_coverage is not suitability 0. Use comparable_crops, not raw means, "
+            "for rankings across crops."
+        ),
+    )
     def get_evaluation_result(evaluation_id: UUID) -> EvaluationResultResponse:
         result = _execute(
             service.get_evaluation_result,
@@ -314,7 +347,12 @@ def create_router(service: AgroclimaticEvaluationService) -> APIRouter:
         )
         return EvaluationResultResponse.model_validate(result)
 
-    @router.get("/{evaluation_id}/evidence", response_model=EvaluationEvidenceResponse)
+    @router.get(
+        "/{evaluation_id}/evidence",
+        response_model=EvaluationEvidenceResponse,
+        operation_id="get_evaluation_evidence",
+        description="Read safe scientific trace evidence without internal storage paths.",
+    )
     def get_evaluation_evidence(evaluation_id: UUID) -> EvaluationEvidenceResponse:
         result = _execute(
             service.get_evaluation_evidence,
@@ -325,6 +363,11 @@ def create_router(service: AgroclimaticEvaluationService) -> APIRouter:
     @router.get(
         "/{evaluation_id}/limitations",
         response_model=EvaluationLimitationsResponse,
+        operation_id="get_evaluation_limitations",
+        description=(
+            "Read limiting factors. affected_fraction is in 0..1 and remains distinct "
+            "from no-data or no coverage."
+        ),
     )
     def get_evaluation_limitations(
         evaluation_id: UUID,
@@ -335,7 +378,12 @@ def create_router(service: AgroclimaticEvaluationService) -> APIRouter:
         )
         return EvaluationLimitationsResponse.model_validate(result)
 
-    @router.get("/{evaluation_id}", response_model=EvaluationStatusResponse)
+    @router.get(
+        "/{evaluation_id}",
+        response_model=EvaluationStatusResponse,
+        operation_id="get_evaluation",
+        description="Poll evaluation lifecycle and per-scenario completion counts.",
+    )
     def get_evaluation(evaluation_id: UUID) -> EvaluationStatusResponse:
         result = _execute(
             service.get_evaluation,

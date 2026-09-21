@@ -19,6 +19,9 @@ class Settings:
     environmental_information_repository: RepositoryBackend = "memory"
     agroclimatic_evaluation_repository: RepositoryBackend = "memory"
     database_url: str | None = None
+    cors_allowed_origins: tuple[str, ...] = ()
+    cropsuite_catalog: Path | None = None
+    cropsuite_input_bindings: Path | None = None
     knowledge_source_dir: Path | None = None
     knowledge_manifest: Path | None = None
     knowledge_taxonomy: Path | None = None
@@ -61,6 +64,13 @@ class Settings:
         for setting_name, value in required_strings.items():
             if not value.strip():
                 raise ValueError(f"{setting_name} must be non-empty.")
+        for origin in self.cors_allowed_origins:
+            if origin == "*":
+                raise ValueError("VIA_CORS_ALLOWED_ORIGINS must not contain '*'.")
+            if not origin.startswith(("http://", "https://")):
+                raise ValueError(
+                    "VIA_CORS_ALLOWED_ORIGINS entries must use http:// or https://."
+                )
 
     def require_production(self) -> Settings:
         """Require the durable persistence contract used by the production API."""
@@ -106,6 +116,11 @@ class Settings:
                 RepositoryBackend, evaluation_backend.casefold()
             ),
             database_url=database_url,
+            cors_allowed_origins=_environment_csv("VIA_CORS_ALLOWED_ORIGINS"),
+            cropsuite_catalog=_optional_path("VIA_CROPSUITE_CATALOG"),
+            cropsuite_input_bindings=_optional_path(
+                "VIA_CROPSUITE_INPUT_BINDINGS"
+            ),
             knowledge_source_dir=_optional_path("VIA_KNOWLEDGE_SOURCE_DIR"),
             knowledge_manifest=_optional_path_alias(
                 "VIA_KNOWLEDGE_MANIFEST_PATH", "VIA_KNOWLEDGE_MANIFEST"
@@ -273,3 +288,11 @@ def _environment_integer(name: str, default: int) -> int:
         return int(os.getenv(name, str(default)))
     except ValueError as error:
         raise ValueError(f"{name} must be an integer.") from error
+
+
+def _environment_csv(name: str) -> tuple[str, ...]:
+    raw = os.getenv(name, "")
+    values = tuple(item.strip() for item in raw.split(",") if item.strip())
+    if len(values) != len(set(values)):
+        raise ValueError(f"{name} must not contain duplicate values.")
+    return values

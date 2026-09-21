@@ -1,6 +1,10 @@
 """Agroclimatic Evaluation infrastructure layer."""
 
 from .cropsuite_adapter import CropSuiteAdapter
+from .cropsuite_capabilities import (
+    FilesystemCropCapabilityCatalog,
+    FilesystemScientificInputBindingCatalog,
+)
 from .cropsuite_comparison_adapter import CropSuiteComparisonAdapter
 from .database import AGROCLIMATIC_EVALUATION_SCHEMA, Base
 from .postgresql_repositories import PostgreSQLEvaluationRepository
@@ -17,6 +21,8 @@ __all__ = [
     "AGROCLIMATIC_EVALUATION_SCHEMA",
     "Base",
     "CropSuiteAdapter",
+    "FilesystemCropCapabilityCatalog",
+    "FilesystemScientificInputBindingCatalog",
     "FilesystemScientificArtifactStore",
     "InMemoryEvaluationRepository",
     "PostgreSQLEvaluationRepository",

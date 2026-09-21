@@ -11,6 +11,14 @@ from uuid import UUID
 from .factor_labels import factor_display_label
 
 
+class FinalizedEvaluationNotFoundError(LookupError):
+    """Published failure for a missing evaluation requested by another context."""
+
+
+class FinalizedEvaluationNotReadyError(RuntimeError):
+    """Published failure for an evaluation without finalized scenario evidence."""
+
+
 class WaterRegime(StrEnum):
     """Published water-regime values shared with consumer bounded contexts."""
 

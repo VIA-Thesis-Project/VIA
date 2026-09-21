@@ -9,7 +9,12 @@ from uuid import UUID, uuid4
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from via_backend.contexts.agroclimatic_evaluation.application.public import WaterRegime
+from via_backend.contexts.agroclimatic_evaluation.application.public import (
+    FinalizedEvaluationNotFoundError,
+    FinalizedEvaluationNotReadyError,
+    FinalizedEvaluationResultReader,
+    WaterRegime,
+)
 from via_backend.contexts.decision_support.application.knowledge_models import (
     EmbeddingIndex,
     EvidenceItem,
@@ -21,6 +26,8 @@ from via_backend.contexts.decision_support.application.knowledge_models import (
     RetrievedKnowledge,
 )
 from via_backend.contexts.decision_support.application.knowledge_services import (
+    KnowledgeContextUnavailableError,
+    KnowledgeProviderUnavailableError,
     RecommendationApplicationService,
     RecommendationContextBuilder,
 )
@@ -84,9 +91,12 @@ class _Service:
         self.generate_calls = 0
         self.list_calls = 0
         self.runs: tuple[RecommendationRun, ...] = ()
+        self.retrieve_error: Exception | None = None
 
     def retrieve(self, context: RecommendationContext) -> RetrievedKnowledge:
         self.retrieve_calls += 1
+        if self.retrieve_error is not None:
+            raise self.retrieve_error
         return _knowledge(context)
 
     def generate(
@@ -122,16 +132,33 @@ class _Service:
         return tuple(run for run in self.runs if run.evaluation_id == evaluation_id)
 
 
-def _client(service: _Service) -> TestClient:
+def _client(service: _Service, builder: object | None = None) -> TestClient:
     app = FastAPI()
     app.include_router(
         create_router(
-            cast(RecommendationContextBuilder, _Builder()),
+            cast(RecommendationContextBuilder, builder or _Builder()),
             cast(RecommendationApplicationService, service),
         ),
         prefix="/api/v1",
     )
     return TestClient(app)
+
+
+class _FailingFinalizedReader:
+    def __init__(self, error: Exception) -> None:
+        self._error = error
+
+    def get_finalized_evaluation_result(self, query: object) -> object:
+        del query
+        raise self._error
+
+
+class _InvalidCropBuilder:
+    def build(
+        self, evaluation_id: UUID, crop_id: str, water_regime: WaterRegime
+    ) -> RecommendationContext:
+        del evaluation_id, crop_id, water_regime
+        raise KnowledgeContextUnavailableError("Crop 'unknown' is not part of evaluation.")
 
 
 def test_get_knowledge_retrieves_evidence_without_generation() -> None:
@@ -168,3 +195,80 @@ def test_post_generates_once_and_get_reads_persisted_only() -> None:
     assert service.generate_calls == 1
     assert service.retrieve_calls == 0
     assert service.list_calls == 1
+
+
+def test_missing_evaluation_returns_not_found_detail() -> None:
+    evaluation_id = uuid4()
+    builder = RecommendationContextBuilder(
+        cast(
+            FinalizedEvaluationResultReader,
+            _FailingFinalizedReader(
+                FinalizedEvaluationNotFoundError(
+                    f"Evaluation {evaluation_id} was not found."
+                )
+            ),
+        )
+    )
+
+    response = _client(_Service(), builder).get(
+        f"/api/v1/decision-support/evaluations/{evaluation_id}/knowledge",
+        params={"crop_id": "maize", "water_regime": "rainfed"},
+    )
+
+    assert response.status_code == 404
+    assert response.json() == {
+        "detail": f"Evaluation {evaluation_id} was not found."
+    }
+
+
+def test_non_final_evaluation_returns_conflict_detail() -> None:
+    evaluation_id = uuid4()
+    builder = RecommendationContextBuilder(
+        cast(
+            FinalizedEvaluationResultReader,
+            _FailingFinalizedReader(
+                FinalizedEvaluationNotReadyError(
+                    f"Evaluation {evaluation_id} does not have a finalized result."
+                )
+            ),
+        )
+    )
+
+    response = _client(_Service(), builder).get(
+        f"/api/v1/decision-support/evaluations/{evaluation_id}/knowledge",
+        params={"crop_id": "maize", "water_regime": "rainfed"},
+    )
+
+    assert response.status_code == 409
+    assert response.json() == {
+        "detail": f"Evaluation {evaluation_id} does not have a finalized result."
+    }
+
+
+def test_unavailable_crop_returns_not_found_detail() -> None:
+    evaluation_id = uuid4()
+    response = _client(_Service(), _InvalidCropBuilder()).get(
+        f"/api/v1/decision-support/evaluations/{evaluation_id}/knowledge",
+        params={"crop_id": "unknown", "water_regime": "rainfed"},
+    )
+
+    assert response.status_code == 404
+    assert response.json() == {
+        "detail": "Crop 'unknown' is not part of evaluation."
+    }
+
+
+def test_unavailable_knowledge_provider_returns_service_unavailable_detail() -> None:
+    service = _Service()
+    service.retrieve_error = KnowledgeProviderUnavailableError(
+        "Embedding provider request failed."
+    )
+    evaluation_id = uuid4()
+
+    response = _client(service).get(
+        f"/api/v1/decision-support/evaluations/{evaluation_id}/knowledge",
+        params={"crop_id": "maize", "water_regime": "rainfed"},
+    )
+
+    assert response.status_code == 503
+    assert response.json() == {"detail": "Embedding provider request failed."}

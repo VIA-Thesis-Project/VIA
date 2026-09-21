@@ -1,0 +1,55 @@
+# Frontend integration flows
+
+## 1. Bootstrap the UI
+
+1. Call `GET /health` to verify the API process is reachable.
+2. Call `GET /api/v1/evaluation-capabilities` before rendering crop/scenario selection.
+3. Load projects with `GET /projects` and datasets with `GET /datasets` as needed.
+
+If capabilities returns `503`, show scientific evaluation as temporarily unavailable. Do not replace the response with a hardcoded crop list.
+
+## 2. Create or select a parcel snapshot
+
+Projects own parcels. Parcels keep immutable geometry versions. When the user starts an evaluation, copy the selected parcel version into the evaluation `parcel_snapshot`, including its geometry, CRS, version number, and capture timestamp.
+
+The evaluation preserves that snapshot. Updating the parcel later by posting another version must not retroactively change the historical evaluation shown by the UI.
+
+## 3. Select environmental dataset versions
+
+1. Read `scientifically_bound_dataset_versions` from `GET /api/v1/evaluation-capabilities`.
+2. Resolve each returned `dataset_id` + `dataset_version_id` through the dataset endpoints to obtain user-facing metadata.
+3. Optionally call the coverage endpoint for a candidate version against the parcel geometry before submission.
+4. Generate a unique logical `input_key`, for example `environmental-input-1`.
+5. Build `environmental_inputs` using the selected bound `dataset_id` + `dataset_version_id` pair and the generated `input_key`.
+
+The capability contract reports `input_key_discovery = "arbitrary_unique"`. The key has no scientific-selection semantics and must not be treated as a hidden deployment convention. Scientific binding selection is determined by the exact dataset version. A listed bound version can still fail later runtime integrity checks.
+
+## 4. Queue an evaluation
+
+Submit `POST /api/v1/evaluations`. Treat the returned evaluation as accepted work, not as a completed scientific result.
+
+Store the returned evaluation ID and begin polling `GET /api/v1/evaluations/{evaluation_id}`. See `async-evaluations.md`.
+
+## 5. Render results while work progresses
+
+`GET /api/v1/evaluations/{evaluation_id}/result` can represent `pending`, `partial`, `final`, or `failed` availability. A frontend may render completed scenario/crop outcomes while an evaluation is partial, but it must label them as partial and must not imply missing executions are zero.
+
+When final results are available:
+
+- render each water regime as a separate scenario;
+- use suitability summaries for per-crop detail;
+- use `comparable_crops` for rankings;
+- use common-support metadata to explain whether the ranking has shared valid spatial coverage;
+- render `no_coverage` and failed outcomes as states, not numeric zeros.
+
+## 6. Render scientific evidence and limitations
+
+Use `/evidence` for safe trace metadata and `/limitations` for limiting-factor evidence. `affected_fraction` is a `0..1` fraction of valid analyzed area for that factor.
+
+Do not expose or synthesize internal filesystem paths. The HTTP trace contract already publishes hashes and safe identifiers intended for the UI.
+
+## 7. Retrieve knowledge and recommendations
+
+Decision Support is scenario-specific: always send both `crop_id` and `water_regime` for knowledge, and the same pair when generating a recommendation.
+
+Knowledge/recommendation context is only valid for a finalized scenario. Handle `409` as "not final yet" and `404` as "requested evaluation/scenario context does not exist". A provider outage is `503` and should be retryable without altering scientific results.

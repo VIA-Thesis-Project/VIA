@@ -10,8 +10,13 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from via_backend.contexts.agroclimatic_evaluation.application.public import WaterRegime
 
-from ..application.knowledge_models import RecommendationContext
+from ..application.knowledge_models import (
+    RecommendationContext,
+    RecommendationRun,
+    RetrievedKnowledge,
+)
 from ..application.knowledge_services import (
+    KnowledgeContextConflictError,
     KnowledgeContextUnavailableError,
     KnowledgeProviderUnavailableError,
     RecommendationApplicationService,
@@ -33,12 +38,20 @@ def create_router(
 ) -> APIRouter:
     router = APIRouter(prefix="/decision-support", tags=["decision-support"])
 
-    @router.get("/evaluations/{evaluation_id}/knowledge", response_model=None)
+    @router.get(
+        "/evaluations/{evaluation_id}/knowledge",
+        response_model=RetrievedKnowledge,
+        operation_id="get_evaluation_knowledge",
+        description=(
+            "Retrieve evidence for one successful crop scenario without generating a "
+            "recommendation. affected_fraction values in the source context are 0..1."
+        ),
+    )
     def get_knowledge(
         evaluation_id: UUID,
         crop_id: Annotated[str, Query(min_length=1)],
         water_regime: Annotated[WaterRegime, Query()],
-    ) -> object:
+    ) -> RetrievedKnowledge:
         context = _build_context(context_builder, evaluation_id, crop_id, water_regime)
         try:
             return recommendations.retrieve(context)
@@ -48,11 +61,19 @@ def create_router(
                 detail=str(exc),
             ) from exc
 
-    @router.post("/evaluations/{evaluation_id}/recommendations", response_model=None)
+    @router.post(
+        "/evaluations/{evaluation_id}/recommendations",
+        response_model=RecommendationRun,
+        operation_id="create_evaluation_recommendation",
+        description=(
+            "Generate or reuse an evidence-grounded recommendation for one finalized "
+            "crop and water-regime scenario."
+        ),
+    )
     def generate_recommendation(
         evaluation_id: UUID,
         request: RecommendationRequest,
-    ) -> object:
+    ) -> RecommendationRun:
         context = _build_context(
             context_builder,
             evaluation_id,
@@ -70,12 +91,17 @@ def create_router(
                 detail=str(exc),
             ) from exc
 
-    @router.get("/evaluations/{evaluation_id}/recommendations", response_model=None)
+    @router.get(
+        "/evaluations/{evaluation_id}/recommendations",
+        response_model=list[RecommendationRun],
+        operation_id="list_evaluation_recommendations",
+        description="List persisted recommendation runs without invoking a provider.",
+    )
     def list_recommendations(
         evaluation_id: UUID,
         crop_id: Annotated[str | None, Query(min_length=1)] = None,
         water_regime: Annotated[WaterRegime | None, Query()] = None,
-    ) -> object:
+    ) -> tuple[RecommendationRun, ...]:
         runs = recommendations.list_for_evaluation(evaluation_id)
         if crop_id is not None:
             runs = tuple(item for item in runs if item.crop_id == crop_id)
@@ -94,5 +120,10 @@ def _build_context(
 ) -> RecommendationContext:
     try:
         return builder.build(evaluation_id, crop_id, water_regime)
+    except KnowledgeContextConflictError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(exc),
+        ) from exc
     except KnowledgeContextUnavailableError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
