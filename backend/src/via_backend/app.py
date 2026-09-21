@@ -64,6 +64,23 @@ from via_backend.contexts.farm_management.infrastructure import (
 from via_backend.contexts.farm_management.interfaces import (
     create_router as create_farm_management_router,
 )
+from via_backend.contexts.identity_access.application import AuthenticationService
+from via_backend.contexts.identity_access.infrastructure import (
+    Argon2PasswordHasher,
+    InMemoryAuthSessionRepository,
+    InMemoryUserRepository,
+    PostgreSQLAuthSessionRepository,
+    PostgreSQLUserRepository,
+    SecretsOpaqueTokenGenerator,
+    Sha256TokenHasher,
+    SystemClock,
+)
+from via_backend.contexts.identity_access.interfaces import (
+    AuthHttpSettings,
+)
+from via_backend.contexts.identity_access.interfaces import (
+    create_router as create_identity_access_router,
+)
 from via_backend.infrastructure import SessionFactory, create_database
 from via_backend.interfaces.http.health import router as health_router
 
@@ -109,6 +126,24 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     else:
         evaluations = InMemoryEvaluationRepository()
 
+    if sessions is not None:
+        identity_users = PostgreSQLUserRepository(sessions)
+        auth_sessions = PostgreSQLAuthSessionRepository(sessions)
+    else:
+        identity_users = InMemoryUserRepository()
+        auth_sessions = InMemoryAuthSessionRepository()
+
+    authentication = AuthenticationService(
+        users=identity_users,
+        sessions=auth_sessions,
+        password_hasher=Argon2PasswordHasher(),
+        token_generator=SecretsOpaqueTokenGenerator(),
+        token_hasher=Sha256TokenHasher(),
+        clock=SystemClock(),
+        access_token_ttl_seconds=settings.auth_access_token_ttl_seconds,
+        refresh_token_ttl_seconds=settings.auth_refresh_token_ttl_seconds,
+    )
+
     @asynccontextmanager
     async def lifespan(_: FastAPI) -> AsyncIterator[None]:
         try:
@@ -124,7 +159,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         application.add_middleware(
             CORSMiddleware,
             allow_origins=list(settings.cors_allowed_origins),
-            allow_credentials=False,
+            allow_credentials=True,
             allow_methods=["GET", "POST", "OPTIONS"],
             allow_headers=["Content-Type", "Authorization"],
         )
@@ -142,6 +177,18 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     )
     application.state.settings = settings
     application.include_router(health_router)
+    application.include_router(
+        create_identity_access_router(
+            authentication,
+            AuthHttpSettings(
+                refresh_cookie_name=settings.auth_refresh_cookie_name,
+                refresh_cookie_secure=settings.auth_refresh_cookie_secure,
+                refresh_cookie_samesite=settings.auth_refresh_cookie_samesite,
+                trusted_origins=settings.cors_allowed_origins,
+            ),
+        ),
+        prefix="/api/v1",
+    )
     application.include_router(create_farm_management_router(farm_management))
     application.include_router(
         create_environmental_information_router(environmental_information)

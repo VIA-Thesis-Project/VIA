@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Literal, cast
 
 RepositoryBackend = Literal["memory", "postgresql"]
+CookieSameSite = Literal["lax", "strict", "none"]
 
 
 @dataclass(frozen=True, slots=True)
@@ -20,6 +21,11 @@ class Settings:
     agroclimatic_evaluation_repository: RepositoryBackend = "memory"
     database_url: str | None = None
     cors_allowed_origins: tuple[str, ...] = ()
+    auth_access_token_ttl_seconds: int = 900
+    auth_refresh_token_ttl_seconds: int = 1_209_600
+    auth_refresh_cookie_name: str = "__Secure-via_refresh"
+    auth_refresh_cookie_secure: bool = True
+    auth_refresh_cookie_samesite: CookieSameSite = "lax"
     cropsuite_catalog: Path | None = None
     cropsuite_input_bindings: Path | None = None
     knowledge_source_dir: Path | None = None
@@ -48,6 +54,8 @@ class Settings:
                 "VIA_DATABASE_URL is required when PostgreSQL persistence is selected."
             )
         positive_integers = {
+            "VIA_AUTH_ACCESS_TOKEN_TTL_SECONDS": self.auth_access_token_ttl_seconds,
+            "VIA_AUTH_REFRESH_TOKEN_TTL_SECONDS": self.auth_refresh_token_ttl_seconds,
             "VIA_OPENAI_EMBEDDING_DIMENSIONS": self.openai_embedding_dimensions,
             "VIA_RAG_VECTOR_TOP_K": self.rag_vector_top_k,
             "VIA_RAG_LEXICAL_TOP_K": self.rag_lexical_top_k,
@@ -71,6 +79,41 @@ class Settings:
                 raise ValueError(
                     "VIA_CORS_ALLOWED_ORIGINS entries must use http:// or https://."
                 )
+        if not self.auth_refresh_cookie_name or self.auth_refresh_cookie_name != (
+            self.auth_refresh_cookie_name.strip()
+        ):
+            raise ValueError("VIA_AUTH_REFRESH_COOKIE_NAME must be non-empty and trimmed.")
+        if (
+            self.auth_refresh_cookie_name.startswith("__Secure-")
+            and not self.auth_refresh_cookie_secure
+        ):
+            raise ValueError(
+                "VIA_AUTH_REFRESH_COOKIE_SECURE must be true when "
+                "VIA_AUTH_REFRESH_COOKIE_NAME uses the __Secure- prefix."
+            )
+        if self.auth_refresh_cookie_name.startswith("__Host-"):
+            if not self.auth_refresh_cookie_secure:
+                raise ValueError(
+                    "VIA_AUTH_REFRESH_COOKIE_SECURE must be true when "
+                    "VIA_AUTH_REFRESH_COOKIE_NAME uses the __Host- prefix."
+                )
+            raise ValueError(
+                "VIA_AUTH_REFRESH_COOKIE_NAME must not use the __Host- prefix while "
+                "the refresh cookie Path is /api/v1/auth; __Host- requires Path=/ and "
+                "no Domain attribute."
+            )
+        if self.auth_refresh_cookie_samesite not in {"lax", "strict", "none"}:
+            raise ValueError(
+                "VIA_AUTH_REFRESH_COOKIE_SAMESITE must be 'lax', 'strict', or 'none'."
+            )
+        if self.auth_refresh_cookie_samesite == "none" and not self.auth_refresh_cookie_secure:
+            raise ValueError(
+                "VIA_AUTH_REFRESH_COOKIE_SECURE must be true when SameSite=None."
+            )
+        if self.auth_refresh_cookie_samesite == "none" and not self.cors_allowed_origins:
+            raise ValueError(
+                "VIA_CORS_ALLOWED_ORIGINS must contain trusted origins when SameSite=None."
+            )
 
     def require_production(self) -> Settings:
         """Require the durable persistence contract used by the production API."""
@@ -117,6 +160,22 @@ class Settings:
             ),
             database_url=database_url,
             cors_allowed_origins=_environment_csv("VIA_CORS_ALLOWED_ORIGINS"),
+            auth_access_token_ttl_seconds=_environment_integer(
+                "VIA_AUTH_ACCESS_TOKEN_TTL_SECONDS", 900
+            ),
+            auth_refresh_token_ttl_seconds=_environment_integer(
+                "VIA_AUTH_REFRESH_TOKEN_TTL_SECONDS", 1_209_600
+            ),
+            auth_refresh_cookie_name=os.getenv(
+                "VIA_AUTH_REFRESH_COOKIE_NAME", "__Secure-via_refresh"
+            ),
+            auth_refresh_cookie_secure=_environment_boolean(
+                "VIA_AUTH_REFRESH_COOKIE_SECURE", True
+            ),
+            auth_refresh_cookie_samesite=cast(
+                CookieSameSite,
+                os.getenv("VIA_AUTH_REFRESH_COOKIE_SAMESITE", "lax").casefold(),
+            ),
             cropsuite_catalog=_optional_path("VIA_CROPSUITE_CATALOG"),
             cropsuite_input_bindings=_optional_path(
                 "VIA_CROPSUITE_INPUT_BINDINGS"
@@ -288,6 +347,18 @@ def _environment_integer(name: str, default: int) -> int:
         return int(os.getenv(name, str(default)))
     except ValueError as error:
         raise ValueError(f"{name} must be an integer.") from error
+
+
+def _environment_boolean(name: str, default: bool) -> bool:
+    raw = os.getenv(name)
+    if raw is None:
+        return default
+    normalized = raw.strip().casefold()
+    if normalized in {"true", "1", "yes", "on"}:
+        return True
+    if normalized in {"false", "0", "no", "off"}:
+        return False
+    raise ValueError(f"{name} must be a boolean.")
 
 
 def _environment_csv(name: str) -> tuple[str, ...]:

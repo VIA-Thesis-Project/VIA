@@ -17,7 +17,7 @@ def test_allowed_origin_is_echoed() -> None:
 
     assert response.status_code == 200
     assert response.headers["access-control-allow-origin"] == ALLOWED
-    assert "access-control-allow-credentials" not in response.headers
+    assert response.headers["access-control-allow-credentials"] == "true"
 
 
 def test_allowed_preflight_supports_frontend_method_and_headers() -> None:

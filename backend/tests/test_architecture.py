@@ -273,6 +273,32 @@ def test_evaluation_domain_does_not_import_worker_process_controls() -> None:
     assert "WorkerSettings" not in source
 
 
+def test_other_contexts_only_use_identity_access_public_contract() -> None:
+    allowed_module = "via_backend.contexts.identity_access.application.public"
+    violations: list[str] = []
+
+    for context_path in CONTEXTS_ROOT.iterdir():
+        if not context_path.is_dir() or context_path.name == "identity_access":
+            continue
+        for source_file in context_path.rglob("*.py"):
+            for module in _imported_modules(source_file):
+                parts = module.casefold().split(".")
+                if "identity_access" not in parts:
+                    continue
+                if module != allowed_module:
+                    violations.append(f"{source_file.relative_to(SOURCE_ROOT)} imports {module}")
+
+    assert not violations, "\n".join(violations)
+
+
+def test_identity_access_public_contract_does_not_expose_infrastructure() -> None:
+    public_contract = CONTEXTS_ROOT / "identity_access" / "application" / "public.py"
+    modules = _imported_modules(public_contract)
+
+    assert all("infrastructure" not in module.casefold().split(".") for module in modules)
+    assert all("interfaces" not in module.casefold().split(".") for module in modules)
+
+
 def test_evaluation_query_path_does_not_reference_engine_or_worker_control() -> None:
     application = CONTEXTS_ROOT / "agroclimatic_evaluation" / "application"
     query_files = [

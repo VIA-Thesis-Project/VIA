@@ -35,6 +35,7 @@ via-knowledge = "via_backend.knowledge:main"
 via-worker = "via_backend.worker:main"
 via-migrate = "via_backend.migrate:main"
 via-backend = "via_backend.__main__:main"
+via-identity-admin = "via_backend.identity_admin:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

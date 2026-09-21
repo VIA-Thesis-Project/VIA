@@ -65,6 +65,10 @@ def test_frontend_operation_ids_are_explicit_and_unique(monkeypatch: Any) -> Non
 
     assert len(operation_ids) == len(set(operation_ids))
     assert {
+        "auth_login",
+        "auth_refresh",
+        "auth_logout",
+        "auth_me",
         "list_projects",
         "create_project",
         "get_project",
