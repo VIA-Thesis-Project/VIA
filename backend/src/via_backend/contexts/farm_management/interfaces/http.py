@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from datetime import datetime
 from typing import Any, Literal
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, ConfigDict, Field
+
+from via_backend.contexts.identity_access.application.public import AuthenticatedPrincipal
 
 from ..application import (
     CreateParcel,
@@ -74,9 +77,13 @@ class ParcelResponse(BaseModel):
     created_at: datetime
 
 
-def create_router(service: FarmManagementService) -> APIRouter:
+def create_router(
+    service: FarmManagementService,
+    principal_resolver: Callable[..., AuthenticatedPrincipal],
+) -> APIRouter:
     """Create a router bound to the supplied application service."""
     router = APIRouter(prefix="/projects", tags=["farm-management"])
+    principal_dependency = Depends(principal_resolver)
 
     @router.post(
         "",
@@ -85,8 +92,16 @@ def create_router(service: FarmManagementService) -> APIRouter:
         operation_id="create_project",
         description="Create a project that owns parcels and their geometry history.",
     )
-    def create_project(body: CreateProjectBody) -> ProjectResponse:
-        return _project_response(_execute(service.create_project, CreateProject(name=body.name)))
+    def create_project(
+        body: CreateProjectBody,
+        principal: AuthenticatedPrincipal = principal_dependency,
+    ) -> ProjectResponse:
+        return _project_response(
+            _execute(
+                service.create_project,
+                CreateProject(name=body.name, owner_user_id=principal.user_id),
+            )
+        )
 
     @router.get(
         "",
@@ -94,10 +109,15 @@ def create_router(service: FarmManagementService) -> APIRouter:
         operation_id="list_projects",
         description="List projects visible to the current API process.",
     )
-    def list_projects() -> list[ProjectResponse]:
+    def list_projects(
+        principal: AuthenticatedPrincipal = principal_dependency,
+    ) -> list[ProjectResponse]:
         return [
             _project_response(project)
-            for project in _execute(service.list_projects, ListProjects())
+            for project in _execute(
+                service.list_projects,
+                ListProjects(owner_user_id=principal.user_id),
+            )
         ]
 
     @router.get(
@@ -106,8 +126,16 @@ def create_router(service: FarmManagementService) -> APIRouter:
         operation_id="get_project",
         description="Read one project by its public identifier.",
     )
-    def get_project(project_id: UUID) -> ProjectResponse:
-        return _project_response(_execute(service.get_project, GetProject(project_id)))
+    def get_project(
+        project_id: UUID,
+        principal: AuthenticatedPrincipal = principal_dependency,
+    ) -> ProjectResponse:
+        return _project_response(
+            _execute(
+                service.get_project,
+                GetProject(project_id, owner_user_id=principal.user_id),
+            )
+        )
 
     @router.post(
         "/{project_id}/parcels",
@@ -116,11 +144,16 @@ def create_router(service: FarmManagementService) -> APIRouter:
         operation_id="create_parcel",
         description="Create a parcel with geometry version 1 inside a project.",
     )
-    def create_parcel(project_id: UUID, body: CreateParcelBody) -> ParcelResponse:
+    def create_parcel(
+        project_id: UUID,
+        body: CreateParcelBody,
+        principal: AuthenticatedPrincipal = principal_dependency,
+    ) -> ParcelResponse:
         parcel = _execute(
             service.create_parcel,
             CreateParcel(
                 project_id=project_id,
+                owner_user_id=principal.user_id,
                 name=body.name,
                 geometry=body.geometry.model_dump(),
             ),
@@ -133,10 +166,16 @@ def create_router(service: FarmManagementService) -> APIRouter:
         operation_id="list_parcels",
         description="List parcels and their immutable geometry versions for a project.",
     )
-    def list_parcels(project_id: UUID) -> list[ParcelResponse]:
+    def list_parcels(
+        project_id: UUID,
+        principal: AuthenticatedPrincipal = principal_dependency,
+    ) -> list[ParcelResponse]:
         return [
             _parcel_response(parcel)
-            for parcel in _execute(service.list_parcels, ListParcels(project_id))
+            for parcel in _execute(
+                service.list_parcels,
+                ListParcels(project_id, owner_user_id=principal.user_id),
+            )
         ]
 
     @router.get(
@@ -145,8 +184,15 @@ def create_router(service: FarmManagementService) -> APIRouter:
         operation_id="get_parcel",
         description="Read one parcel and its complete geometry-version history.",
     )
-    def get_parcel(project_id: UUID, parcel_id: UUID) -> ParcelResponse:
-        parcel = _execute(service.get_parcel, GetParcel(project_id, parcel_id))
+    def get_parcel(
+        project_id: UUID,
+        parcel_id: UUID,
+        principal: AuthenticatedPrincipal = principal_dependency,
+    ) -> ParcelResponse:
+        parcel = _execute(
+            service.get_parcel,
+            GetParcel(project_id, principal.user_id, parcel_id),
+        )
         return _parcel_response(parcel)
 
     @router.post(
@@ -160,11 +206,13 @@ def create_router(service: FarmManagementService) -> APIRouter:
         project_id: UUID,
         parcel_id: UUID,
         body: ReviseParcelGeometryBody,
+        principal: AuthenticatedPrincipal = principal_dependency,
     ) -> ParcelResponse:
         parcel = _execute(
             service.revise_parcel_geometry,
             ReviseParcelGeometry(
                 project_id=project_id,
+                owner_user_id=principal.user_id,
                 parcel_id=parcel_id,
                 geometry=body.geometry.model_dump(),
             ),

@@ -5,15 +5,15 @@ import json
 from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 from typing import Any
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import pytest
-from fastapi import FastAPI
+from fastapi import FastAPI, Header, HTTPException, status
 from httpx import ASGITransport, AsyncClient, Response
 
-from via_backend.config import Settings
 from via_backend.contexts.agroclimatic_evaluation.application import (
     AgroclimaticEvaluationService,
+    AuthorizedParcelSnapshotNotFoundError,
 )
 from via_backend.contexts.agroclimatic_evaluation.domain import (
     CommonSupport,
@@ -37,19 +37,74 @@ from via_backend.contexts.agroclimatic_evaluation.infrastructure import (
     InMemoryEvaluationRepository,
 )
 from via_backend.contexts.agroclimatic_evaluation.interfaces import create_router
-from via_backend.main import create_app
+from via_backend.contexts.identity_access.application.public import AuthenticatedPrincipal
+from via_backend.contexts.identity_access.domain import UserRole
 
 NOW = datetime(2026, 9, 12, 15, tzinfo=UTC)
+USER_A_ID = UUID("11111111-1111-4111-8111-111111111111")
+USER_B_ID = UUID("22222222-2222-4222-8222-222222222222")
+USER_A_HEADERS = {"Authorization": "Bearer user-a"}
+USER_B_HEADERS = {"Authorization": "Bearer user-b"}
+
+
+def _resolve_principal(
+    authorization: str | None = Header(default=None),
+) -> AuthenticatedPrincipal:
+    if authorization == USER_A_HEADERS["Authorization"]:
+        return AuthenticatedPrincipal(USER_A_ID, UserRole.USER)
+    if authorization == USER_B_HEADERS["Authorization"]:
+        return AuthenticatedPrincipal(USER_B_ID, UserRole.USER)
+    raise HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Invalid or missing bearer token.",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+
+
+class _SnapshotProvider:
+    def resolve(
+        self,
+        *,
+        owner_user_id: UUID,
+        project_id: UUID,
+        parcel_id: UUID,
+        parcel_version: int,
+    ) -> ParcelSnapshot:
+        if owner_user_id != USER_A_ID:
+            raise AuthorizedParcelSnapshotNotFoundError
+        return ParcelSnapshot(
+            project_id=project_id,
+            parcel_id=parcel_id,
+            parcel_version=parcel_version,
+            geometry=SnapshotGeometry.from_geojson(
+                {
+                    "type": "Polygon",
+                    "coordinates": [[
+                        [-77.6, -11.1],
+                        [-77.5, -11.1],
+                        [-77.5, -11.0],
+                        [-77.6, -11.1],
+                    ]],
+                }
+            ),
+            crs="EPSG:4326",
+            captured_at=NOW,
+        )
 
 
 def _test_app() -> FastAPI:
-    return create_app(
-        Settings(
-            farm_management_repository="memory",
-            environmental_information_repository="memory",
-            agroclimatic_evaluation_repository="memory",
-        )
+    app = FastAPI()
+    app.include_router(
+        create_router(
+            AgroclimaticEvaluationService(
+                InMemoryEvaluationRepository(),
+                _SnapshotProvider(),
+            ),
+            _resolve_principal,
+        ),
+        prefix="/api/v1",
     )
+    return app
 
 
 def _app_with(evaluation: Evaluation) -> FastAPI:
@@ -57,7 +112,10 @@ def _app_with(evaluation: Evaluation) -> FastAPI:
     repository.add(evaluation)
     app = FastAPI()
     app.include_router(
-        create_router(AgroclimaticEvaluationService(repository)),
+        create_router(
+            AgroclimaticEvaluationService(repository, _SnapshotProvider()),
+            _resolve_principal,
+        ),
         prefix="/api/v1",
     )
     return app
@@ -65,21 +123,10 @@ def _app_with(evaluation: Evaluation) -> FastAPI:
 
 def _body() -> dict[str, Any]:
     return {
-        "parcel_snapshot": {
+        "parcel_reference": {
             "project_id": str(uuid4()),
             "parcel_id": str(uuid4()),
             "parcel_version": 2,
-            "geometry": {
-                "type": "Polygon",
-                "coordinates": [[
-                    [-77.6, -11.1],
-                    [-77.5, -11.1],
-                    [-77.5, -11.0],
-                    [-77.6, -11.1],
-                ]],
-            },
-            "crs": "EPSG:4326",
-            "captured_at": "2026-09-12T15:00:00Z",
         },
         "requested_crops": ["maize", "potato", "rice"],
         "environmental_inputs": [
@@ -98,6 +145,7 @@ def _evaluation(
     outcomes: tuple[CropOutcome, ...] = (),
     failure_reason: str | None = None,
     requested_water_regimes: tuple[WaterRegime, ...] = (WaterRegime.RAINFED,),
+    owner_user_id: UUID | None = USER_A_ID,
 ) -> Evaluation:
     return Evaluation(
         id=uuid4(),
@@ -105,13 +153,24 @@ def _evaluation(
             project_id=uuid4(),
             parcel_id=uuid4(),
             parcel_version=2,
-            geometry=SnapshotGeometry.from_geojson(_body()["parcel_snapshot"]["geometry"]),
+            geometry=SnapshotGeometry.from_geojson(
+                {
+                    "type": "Polygon",
+                    "coordinates": [[
+                        [-77.6, -11.1],
+                        [-77.5, -11.1],
+                        [-77.5, -11.0],
+                        [-77.6, -11.1],
+                    ]],
+                }
+            ),
             crs="EPSG:4326",
             captured_at=NOW,
         ),
         requested_crops=("maize", "potato", "rice"),
         status=status,
         created_at=NOW,
+        owner_user_id=owner_user_id,
         requested_water_regimes=requested_water_regimes,
         outcomes=outcomes,
         failure_reason=failure_reason,
@@ -251,6 +310,7 @@ def test_final_result_exposes_common_support_and_comparable_crops() -> None:
     assert "ranking" not in body
 
 async def _request(app: FastAPI, method: str, path: str, **kwargs: Any) -> Response:
+    kwargs.setdefault("headers", USER_A_HEADERS)
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
         return await client.request(method, path, **kwargs)
@@ -259,7 +319,11 @@ async def _request(app: FastAPI, method: str, path: str, **kwargs: Any) -> Respo
 def test_create_get_and_list_evaluation() -> None:
     async def scenario() -> None:
         transport = ASGITransport(app=_test_app())
-        async with AsyncClient(transport=transport, base_url="http://test") as client:
+        async with AsyncClient(
+            transport=transport,
+            base_url="http://test",
+            headers=USER_A_HEADERS,
+        ) as client:
             body = _body()
             created_response = await client.post("/api/v1/evaluations", json=body)
             assert created_response.status_code == 201
@@ -267,7 +331,13 @@ def test_create_get_and_list_evaluation() -> None:
             assert created["status"] == "queued"
             assert created["requested_crops"] == ["maize", "potato", "rice"]
             assert created["requested_water_regimes"] == ["rainfed"]
-            assert created["parcel_snapshot"] == body["parcel_snapshot"]
+            assert created["parcel_snapshot"]["project_id"] == (
+                body["parcel_reference"]["project_id"]
+            )
+            assert created["parcel_snapshot"]["parcel_id"] == body["parcel_reference"]["parcel_id"]
+            assert created["parcel_snapshot"]["parcel_version"] == 2
+            assert created["parcel_snapshot"]["crs"] == "EPSG:4326"
+            assert created["parcel_snapshot"]["captured_at"] == "2026-09-12T15:00:00Z"
 
             status_response = await client.get(f"/api/v1/evaluations/{created['id']}")
             assert status_response.status_code == 200
@@ -290,7 +360,11 @@ def test_create_get_and_list_evaluation() -> None:
 def test_create_evaluation_accepts_explicit_two_regime_matrix() -> None:
     async def scenario() -> None:
         transport = ASGITransport(app=_test_app())
-        async with AsyncClient(transport=transport, base_url="http://test") as client:
+        async with AsyncClient(
+            transport=transport,
+            base_url="http://test",
+            headers=USER_A_HEADERS,
+        ) as client:
             body = _body()
             body["water_regimes"] = ["rainfed", "irrigated"]
 
@@ -306,6 +380,86 @@ def test_create_evaluation_accepts_explicit_two_regime_matrix() -> None:
             assert status_view["completed_execution_count"] == 0
 
     asyncio.run(scenario())
+
+
+def test_evaluation_routes_require_bearer_authentication() -> None:
+    create_response = asyncio.run(
+        _request(
+            _test_app(),
+            "POST",
+            "/api/v1/evaluations",
+            json=_body(),
+            headers={},
+        )
+    )
+    list_response = asyncio.run(
+        _request(_test_app(), "GET", "/api/v1/evaluations", headers={})
+    )
+
+    assert create_response.status_code == list_response.status_code == 401
+    assert create_response.headers["www-authenticate"] == "Bearer"
+    assert list_response.headers["www-authenticate"] == "Bearer"
+
+
+def test_old_client_trusted_parcel_snapshot_body_is_rejected() -> None:
+    body = _body()
+    reference = body.pop("parcel_reference")
+    body["parcel_snapshot"] = {
+        **reference,
+        "geometry": {
+            "type": "Polygon",
+            "coordinates": [[
+                [-70.0, -10.0],
+                [-69.0, -10.0],
+                [-69.0, -9.0],
+                [-70.0, -10.0],
+            ]],
+        },
+        "crs": "EPSG:3857",
+        "captured_at": "2000-01-01T00:00:00Z",
+    }
+
+    response = asyncio.run(
+        _request(_test_app(), "POST", "/api/v1/evaluations", json=body)
+    )
+
+    assert response.status_code == 422
+
+
+def test_foreign_owner_cannot_create_or_read_evaluation() -> None:
+    evaluation = _evaluation()
+    app = _app_with(evaluation)
+
+    create_response = asyncio.run(
+        _request(
+            _test_app(),
+            "POST",
+            "/api/v1/evaluations",
+            json=_body(),
+            headers=USER_B_HEADERS,
+        )
+    )
+    list_response = asyncio.run(
+        _request(
+            app,
+            "GET",
+            "/api/v1/evaluations",
+            headers=USER_B_HEADERS,
+        )
+    )
+
+    assert create_response.status_code == 404
+    assert list_response.json() == []
+    for suffix in ("", "/result", "/evidence", "/limitations"):
+        response = asyncio.run(
+            _request(
+                app,
+                "GET",
+                f"/api/v1/evaluations/{evaluation.id}{suffix}",
+                headers=USER_B_HEADERS,
+            )
+        )
+        assert response.status_code == 404
 
 
 def test_duplicate_crops_return_validation_error() -> None:

@@ -13,6 +13,24 @@ from ..domain.snapshot import ParcelSnapshot
 from ..domain.water_regime import WaterRegime
 
 
+class AuthorizedParcelSnapshotNotFoundError(LookupError):
+    """Raised when an owned, exact parcel version cannot be resolved."""
+
+
+@runtime_checkable
+class AuthorizedParcelSnapshotProvider(Protocol):
+    """Application-owned port for authoritative Farm parcel snapshots."""
+
+    def resolve(
+        self,
+        *,
+        owner_user_id: UUID,
+        project_id: UUID,
+        parcel_id: UUID,
+        parcel_version: int,
+    ) -> ParcelSnapshot: ...
+
+
 class CropExecutionStatus(StrEnum):
     """Scientific outcomes reported independently of Evaluation lifecycle state."""
 

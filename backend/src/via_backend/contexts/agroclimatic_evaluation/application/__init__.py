@@ -4,7 +4,7 @@ from .capabilities import EvaluationCapabilitiesService
 from .commands import (
     EnvironmentalInputReferenceInput,
     ExecuteEvaluation,
-    ParcelSnapshotInput,
+    ParcelReferenceInput,
     RecoverEvaluation,
     RequestEvaluation,
 )
@@ -13,6 +13,8 @@ from .execution import (
     EnvironmentalInputResolutionError,
 )
 from .ports import (
+    AuthorizedParcelSnapshotNotFoundError,
+    AuthorizedParcelSnapshotProvider,
     CommonSupportResult,
     CommonSupportStatus,
     ComparableCropResult,
@@ -145,7 +147,9 @@ __all__ = [
     "LimitingFactorEvidence",
     "LimitingFactorResult",
     "ListEvaluations",
-    "ParcelSnapshotInput",
+    "ParcelReferenceInput",
+    "AuthorizedParcelSnapshotNotFoundError",
+    "AuthorizedParcelSnapshotProvider",
     "ParcelSnapshotResult",
     "PersistedCropOutcomeResult",
     "RecoverEvaluation",

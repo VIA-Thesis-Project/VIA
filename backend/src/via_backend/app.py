@@ -2,6 +2,7 @@
 
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from uuid import UUID
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -10,7 +11,12 @@ from sqlalchemy import Engine
 from via_backend.config import Settings
 from via_backend.contexts.agroclimatic_evaluation.application import (
     AgroclimaticEvaluationService,
+    AuthorizedParcelSnapshotNotFoundError,
     EvaluationCapabilitiesService,
+)
+from via_backend.contexts.agroclimatic_evaluation.domain import (
+    ParcelSnapshot,
+    SnapshotGeometry,
 )
 from via_backend.contexts.agroclimatic_evaluation.infrastructure import (
     FilesystemCropCapabilityCatalog,
@@ -54,7 +60,13 @@ from via_backend.contexts.environmental_information.infrastructure import (
 from via_backend.contexts.environmental_information.interfaces import (
     create_router as create_environmental_information_router,
 )
-from via_backend.contexts.farm_management.application import FarmManagementService
+from via_backend.contexts.farm_management.application import (
+    AuthorizedParcelSnapshotNotFoundError as FarmParcelSnapshotNotFoundError,
+)
+from via_backend.contexts.farm_management.application import (
+    AuthorizedParcelSnapshotResolver,
+    FarmManagementService,
+)
 from via_backend.contexts.farm_management.infrastructure import (
     InMemoryParcelRepository,
     InMemoryProjectRepository,
@@ -77,12 +89,51 @@ from via_backend.contexts.identity_access.infrastructure import (
 )
 from via_backend.contexts.identity_access.interfaces import (
     AuthHttpSettings,
+    create_principal_resolver,
 )
 from via_backend.contexts.identity_access.interfaces import (
     create_router as create_identity_access_router,
 )
 from via_backend.infrastructure import SessionFactory, create_database
 from via_backend.interfaces.http.health import router as health_router
+
+
+class _FarmAuthorizedParcelSnapshotProvider:
+    """Composition adapter from Farm's public DTO to Evaluation's owned snapshot."""
+
+    def __init__(self, resolver: AuthorizedParcelSnapshotResolver) -> None:
+        self._resolver = resolver
+
+    def resolve(
+        self,
+        *,
+        owner_user_id: UUID,
+        project_id: UUID,
+        parcel_id: UUID,
+        parcel_version: int,
+    ) -> ParcelSnapshot:
+        try:
+            source = self._resolver.resolve_authorized_parcel_snapshot(
+                owner_user_id=owner_user_id,
+                project_id=project_id,
+                parcel_id=parcel_id,
+                parcel_version=parcel_version,
+            )
+        except FarmParcelSnapshotNotFoundError as error:
+            raise AuthorizedParcelSnapshotNotFoundError from error
+        return ParcelSnapshot(
+            project_id=source.project_id,
+            parcel_id=source.parcel_id,
+            parcel_version=source.parcel_version,
+            geometry=SnapshotGeometry.from_geojson(
+                {
+                    "type": source.geometry.type,
+                    "coordinates": source.geometry.coordinates,
+                }
+            ),
+            crs=source.crs,
+            captured_at=source.captured_at,
+        )
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -143,6 +194,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         access_token_ttl_seconds=settings.auth_access_token_ttl_seconds,
         refresh_token_ttl_seconds=settings.auth_refresh_token_ttl_seconds,
     )
+    principal_resolver = create_principal_resolver(authentication)
 
     @asynccontextmanager
     async def lifespan(_: FastAPI) -> AsyncIterator[None]:
@@ -173,7 +225,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         coverage=coverage,
     )
     agroclimatic_evaluation = AgroclimaticEvaluationService(
-        evaluations=evaluations
+        evaluations=evaluations,
+        parcel_snapshots=_FarmAuthorizedParcelSnapshotProvider(farm_management),
     )
     application.state.settings = settings
     application.include_router(health_router)
@@ -186,15 +239,21 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 refresh_cookie_samesite=settings.auth_refresh_cookie_samesite,
                 trusted_origins=settings.cors_allowed_origins,
             ),
+            principal_resolver,
         ),
         prefix="/api/v1",
     )
-    application.include_router(create_farm_management_router(farm_management))
+    application.include_router(
+        create_farm_management_router(farm_management, principal_resolver)
+    )
     application.include_router(
         create_environmental_information_router(environmental_information)
     )
     application.include_router(
-        create_agroclimatic_evaluation_router(agroclimatic_evaluation),
+        create_agroclimatic_evaluation_router(
+            agroclimatic_evaluation,
+            principal_resolver,
+        ),
         prefix="/api/v1",
     )
     capability_catalog = (
@@ -214,7 +273,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             EvaluationCapabilitiesService(
                 capability_catalog,
                 scientific_input_binding_catalog,
-            )
+            ),
+            principal_resolver,
         ),
         prefix="/api/v1",
     )

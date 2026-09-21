@@ -2,16 +2,19 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from datetime import datetime
 from typing import Any, Literal
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, ConfigDict, Field
+
+from via_backend.contexts.identity_access.application.public import AuthenticatedPrincipal
 
 from ..application.commands import (
     EnvironmentalInputReferenceInput,
-    ParcelSnapshotInput,
+    ParcelReferenceInput,
     RequestEvaluation,
 )
 from ..application.queries import (
@@ -41,18 +44,10 @@ class _RequestModel(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
-class SnapshotGeometryBody(_RequestModel):
-    type: Literal["Polygon", "MultiPolygon"]
-    coordinates: list[Any]
-
-
-class ParcelSnapshotBody(_RequestModel):
+class ParcelReferenceBody(_RequestModel):
     project_id: UUID
     parcel_id: UUID
     parcel_version: int = Field(gt=0)
-    geometry: SnapshotGeometryBody
-    crs: str = Field(min_length=1, max_length=32)
-    captured_at: datetime
 
 
 class EnvironmentalInputReferenceBody(_RequestModel):
@@ -62,7 +57,7 @@ class EnvironmentalInputReferenceBody(_RequestModel):
 
 
 class RequestEvaluationBody(_RequestModel):
-    parcel_snapshot: ParcelSnapshotBody
+    parcel_reference: ParcelReferenceBody
     requested_crops: list[str] = Field(min_length=1)
     water_regimes: list[WaterRegime] = Field(
         default_factory=lambda: [WaterRegime.RAINFED],
@@ -273,9 +268,13 @@ class EvaluationLimitationsResponse(BaseModel):
     limitations: list[CropLimitationResponse]
 
 
-def create_router(service: AgroclimaticEvaluationService) -> APIRouter:
+def create_router(
+    service: AgroclimaticEvaluationService,
+    principal_resolver: Callable[..., AuthenticatedPrincipal],
+) -> APIRouter:
     """Create a router bound to the supplied evaluation application service."""
     router = APIRouter(prefix="/evaluations", tags=["agroclimatic-evaluation"])
+    principal_dependency = Depends(principal_resolver)
 
     @router.post(
         "",
@@ -288,18 +287,19 @@ def create_router(service: AgroclimaticEvaluationService) -> APIRouter:
             "confirm real water or irrigation-infrastructure availability."
         ),
     )
-    def request_evaluation(body: RequestEvaluationBody) -> EvaluationResponse:
-        snapshot = body.parcel_snapshot
+    def request_evaluation(
+        body: RequestEvaluationBody,
+        principal: AuthenticatedPrincipal = principal_dependency,
+    ) -> EvaluationResponse:
+        reference = body.parcel_reference
         result = _execute(
             service.request_evaluation,
             RequestEvaluation(
-                parcel_snapshot=ParcelSnapshotInput(
-                    project_id=snapshot.project_id,
-                    parcel_id=snapshot.parcel_id,
-                    parcel_version=snapshot.parcel_version,
-                    geometry=snapshot.geometry.model_dump(),
-                    crs=snapshot.crs,
-                    captured_at=snapshot.captured_at,
+                owner_user_id=principal.user_id,
+                parcel_reference=ParcelReferenceInput(
+                    project_id=reference.project_id,
+                    parcel_id=reference.parcel_id,
+                    parcel_version=reference.parcel_version,
                 ),
                 requested_crops=tuple(body.requested_crops),
                 requested_water_regimes=tuple(body.water_regimes),
@@ -321,12 +321,14 @@ def create_router(service: AgroclimaticEvaluationService) -> APIRouter:
         operation_id="list_evaluations",
         description="List submitted evaluations without waiting for scientific execution.",
     )
-    def list_evaluations() -> list[EvaluationResponse]:
+    def list_evaluations(
+        principal: AuthenticatedPrincipal = principal_dependency,
+    ) -> list[EvaluationResponse]:
         return [
             EvaluationResponse.model_validate(evaluation)
             for evaluation in _execute(
                 service.list_evaluations,
-                ListEvaluations(),
+                ListEvaluations(principal.user_id),
             )
         ]
 
@@ -340,10 +342,13 @@ def create_router(service: AgroclimaticEvaluationService) -> APIRouter:
             "for rankings across crops."
         ),
     )
-    def get_evaluation_result(evaluation_id: UUID) -> EvaluationResultResponse:
+    def get_evaluation_result(
+        evaluation_id: UUID,
+        principal: AuthenticatedPrincipal = principal_dependency,
+    ) -> EvaluationResultResponse:
         result = _execute(
             service.get_evaluation_result,
-            GetEvaluationResult(evaluation_id),
+            GetEvaluationResult(evaluation_id, principal.user_id),
         )
         return EvaluationResultResponse.model_validate(result)
 
@@ -353,10 +358,13 @@ def create_router(service: AgroclimaticEvaluationService) -> APIRouter:
         operation_id="get_evaluation_evidence",
         description="Read safe scientific trace evidence without internal storage paths.",
     )
-    def get_evaluation_evidence(evaluation_id: UUID) -> EvaluationEvidenceResponse:
+    def get_evaluation_evidence(
+        evaluation_id: UUID,
+        principal: AuthenticatedPrincipal = principal_dependency,
+    ) -> EvaluationEvidenceResponse:
         result = _execute(
             service.get_evaluation_evidence,
-            GetEvaluationEvidence(evaluation_id),
+            GetEvaluationEvidence(evaluation_id, principal.user_id),
         )
         return EvaluationEvidenceResponse.model_validate(result)
 
@@ -371,10 +379,11 @@ def create_router(service: AgroclimaticEvaluationService) -> APIRouter:
     )
     def get_evaluation_limitations(
         evaluation_id: UUID,
+        principal: AuthenticatedPrincipal = principal_dependency,
     ) -> EvaluationLimitationsResponse:
         result = _execute(
             service.get_evaluation_limitations,
-            GetEvaluationLimitations(evaluation_id),
+            GetEvaluationLimitations(evaluation_id, principal.user_id),
         )
         return EvaluationLimitationsResponse.model_validate(result)
 
@@ -384,10 +393,13 @@ def create_router(service: AgroclimaticEvaluationService) -> APIRouter:
         operation_id="get_evaluation",
         description="Poll evaluation lifecycle and per-scenario completion counts.",
     )
-    def get_evaluation(evaluation_id: UUID) -> EvaluationStatusResponse:
+    def get_evaluation(
+        evaluation_id: UUID,
+        principal: AuthenticatedPrincipal = principal_dependency,
+    ) -> EvaluationStatusResponse:
         result = _execute(
             service.get_evaluation,
-            GetEvaluation(evaluation_id),
+            GetEvaluation(evaluation_id, principal.user_id),
         )
         return EvaluationStatusResponse.model_validate(result)
 

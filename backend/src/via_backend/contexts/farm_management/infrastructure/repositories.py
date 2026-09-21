@@ -26,10 +26,30 @@ class InMemoryProjectRepository:
         with self._lock:
             return self._projects.get(project_id)
 
+    def get_for_owner(self, owner_user_id: UUID, project_id: UUID) -> Project | None:
+        with self._lock:
+            project = self._projects.get(project_id)
+            if project is None or project.owner_user_id != owner_user_id:
+                return None
+            return project
+
     def list_all(self) -> tuple[Project, ...]:
         with self._lock:
             return tuple(
                 sorted(self._projects.values(), key=lambda item: (item.created_at, item.id))
+            )
+
+    def list_for_owner(self, owner_user_id: UUID) -> tuple[Project, ...]:
+        with self._lock:
+            return tuple(
+                sorted(
+                    (
+                        project
+                        for project in self._projects.values()
+                        if project.owner_user_id == owner_user_id
+                    ),
+                    key=lambda item: (item.created_at, item.id),
+                )
             )
 
 
@@ -67,6 +87,13 @@ class InMemoryParcelRepository:
     def get(self, parcel_id: UUID) -> Parcel | None:
         with self._lock:
             return self._parcels.get(parcel_id)
+
+    def get_for_project(self, project_id: UUID, parcel_id: UUID) -> Parcel | None:
+        with self._lock:
+            parcel = self._parcels.get(parcel_id)
+            if parcel is None or parcel.project_id != project_id:
+                return None
+            return parcel
 
     def list_for_project(self, project_id: UUID) -> tuple[Parcel, ...]:
         with self._lock:

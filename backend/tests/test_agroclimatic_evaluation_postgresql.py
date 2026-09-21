@@ -314,6 +314,26 @@ def test_evaluation_owner_user_id_round_trips_without_identity_foreign_key(
     assert repository.get(evaluation.id) == evaluation
 
 
+def test_owner_scoped_evaluation_queries_exclude_foreign_and_legacy_rows(
+    database: tuple[Engine, SessionFactory],
+) -> None:
+    _, sessions = database
+    owner_a = uuid4()
+    owner_b = uuid4()
+    owned_a = _evaluation(owner_user_id=owner_a)
+    owned_b = _evaluation(owner_user_id=owner_b)
+    legacy = _evaluation(owner_user_id=None)
+    repository = PostgreSQLEvaluationRepository(sessions)
+    for evaluation in (owned_a, owned_b, legacy):
+        repository.add(evaluation)
+
+    assert repository.get_for_owner(owner_a, owned_a.id) == owned_a
+    assert repository.get_for_owner(owner_b, owned_a.id) is None
+    assert repository.get_for_owner(owner_a, legacy.id) is None
+    assert repository.list_for_owner(owner_a) == (owned_a,)
+    assert repository.list_for_owner(owner_b) == (owned_b,)
+
+
 def test_exact_environmental_input_references_round_trip_in_order_without_manifest(
     database: tuple[Engine, SessionFactory],
 ) -> None:

@@ -18,6 +18,7 @@ from sqlalchemy import Engine, func, select, text
 from sqlalchemy.exc import IntegrityError
 
 from database_test_support import require_test_database_url
+from via_backend.contexts.farm_management.application import FarmManagementService
 from via_backend.contexts.farm_management.domain import (
     Parcel,
     ParcelGeometry,
@@ -136,6 +137,45 @@ def test_project_owner_user_id_round_trips_without_identity_foreign_key(
     PostgreSQLProjectRepository(sessions).add(project)
 
     assert PostgreSQLProjectRepository(sessions).get(project.id) == project
+
+
+def test_owner_scoped_project_and_project_scoped_parcel_queries(
+    database: tuple[Engine, SessionFactory],
+) -> None:
+    _, sessions = database
+    now = datetime(2026, 9, 12, tzinfo=UTC)
+    owner_a = uuid4()
+    owner_b = uuid4()
+    project_a = Project(uuid4(), "A", now, owner_user_id=owner_a)
+    project_b = Project(uuid4(), "B", now, owner_user_id=owner_b)
+    legacy = Project(uuid4(), "Legacy", now, owner_user_id=None)
+    parcel_a = _parcel(project_a.id, _polygon(), now)
+    projects = PostgreSQLProjectRepository(sessions)
+    parcels = PostgreSQLParcelRepository(sessions)
+    for project in (project_a, project_b, legacy):
+        projects.add(project)
+    parcels.add(parcel_a)
+
+    assert projects.get_for_owner(owner_a, project_a.id) == project_a
+    assert projects.get_for_owner(owner_b, project_a.id) is None
+    assert projects.get_for_owner(owner_a, legacy.id) is None
+    assert projects.list_for_owner(owner_a) == (project_a,)
+    assert projects.list_for_owner(owner_b) == (project_b,)
+    assert parcels.get_for_project(project_a.id, parcel_a.id) == parcel_a
+    assert parcels.get_for_project(project_b.id, parcel_a.id) is None
+
+    snapshot = FarmManagementService(projects, parcels).resolve_authorized_parcel_snapshot(
+        owner_user_id=owner_a,
+        project_id=project_a.id,
+        parcel_id=parcel_a.id,
+        parcel_version=1,
+    )
+    assert snapshot.project_id == project_a.id
+    assert snapshot.parcel_id == parcel_a.id
+    assert snapshot.parcel_version == 1
+    assert snapshot.geometry.type == "Polygon"
+    assert snapshot.crs == "EPSG:4326"
+    assert snapshot.captured_at == now
 
 
 @pytest.mark.parametrize("geometry", [_polygon(), _multi_polygon()])

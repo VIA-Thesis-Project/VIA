@@ -11,11 +11,13 @@ from uuid import UUID
 @dataclass(frozen=True, slots=True)
 class CreateProject:
     name: str
+    owner_user_id: UUID
 
 
 @dataclass(frozen=True, slots=True)
 class CreateParcel:
     project_id: UUID
+    owner_user_id: UUID
     name: str
     geometry: Mapping[str, Any]
 
@@ -23,6 +25,6 @@ class CreateParcel:
 @dataclass(frozen=True, slots=True)
 class ReviseParcelGeometry:
     project_id: UUID
+    owner_user_id: UUID
     parcel_id: UUID
     geometry: Mapping[str, Any]
-

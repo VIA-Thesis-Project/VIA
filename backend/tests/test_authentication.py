@@ -420,11 +420,15 @@ def test_auth_openapi_exposes_bearer_only_for_me() -> None:
     } == {"auth_login", "auth_refresh", "auth_logout", "auth_me"}
 
 
-def test_ia2_keeps_health_and_existing_functional_routes_public() -> None:
+def test_ia3_keeps_health_public_but_protects_owned_functional_routes() -> None:
     client = TestClient(create_app(Settings()))
 
     assert client.get("/health").status_code == 200
-    assert client.get("/projects").status_code == 200
+    projects = client.get("/projects")
+    evaluations = client.get("/api/v1/evaluations")
+    assert projects.status_code == evaluations.status_code == 401
+    assert projects.headers["www-authenticate"] == "Bearer"
+    assert evaluations.headers["www-authenticate"] == "Bearer"
     schema = cast(FastAPI, client.app).openapi()
     assert "/api/v1/auth/register" not in schema["paths"]
     assert "/register" not in schema["paths"]

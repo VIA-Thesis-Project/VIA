@@ -71,6 +71,7 @@ NOW = datetime(2026, 9, 13, 12, 0, tzinfo=UTC)
 RESOLVED_AT = NOW + timedelta(minutes=1)
 DATASET_ID = UUID("10000000-0000-0000-0000-000000000001")
 DATASET_VERSION_ID = UUID("20000000-0000-0000-0000-000000000001")
+OWNER_USER_ID = UUID("30000000-0000-4000-8000-000000000001")
 
 
 def test_create_worker_fails_fast_on_invalid_scientific_input_bindings(
@@ -205,6 +206,7 @@ def _evaluation(
         requested_water_regimes=water_regimes,
         status=EvaluationStatus.QUEUED,
         created_at=created_at,
+        owner_user_id=OWNER_USER_ID,
         environmental_input_references=(_reference(),),
     )
 
@@ -392,6 +394,7 @@ def test_run_once_executes_through_existing_execution_service() -> None:
     assert summary.deferred == 0
     assert restored is not None
     assert restored.status is EvaluationStatus.SUCCEEDED
+    assert restored.owner_user_id == OWNER_USER_ID
     assert [
         request.crop_id
         for request in engine.requests

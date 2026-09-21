@@ -253,6 +253,38 @@ class PostgreSQLEvaluationRepository:
                 _load_scenarios(session, evaluation_id, water_regimes),
             )
 
+    def get_for_owner(
+        self, owner_user_id: UUID, evaluation_id: UUID
+    ) -> Evaluation | None:
+        with self._sessions() as session:
+            row = session.execute(
+                _evaluation_query().where(
+                    EvaluationRecord.id == evaluation_id,
+                    EvaluationRecord.owner_user_id == owner_user_id,
+                )
+            ).one_or_none()
+            if row is None:
+                return None
+            crops = tuple(
+                session.scalars(
+                    select(EvaluationCropRecord.crop_id)
+                    .where(EvaluationCropRecord.evaluation_id == evaluation_id)
+                    .order_by(EvaluationCropRecord.position)
+                )
+            )
+            water_regimes = _load_requested_water_regimes(session, evaluation_id)
+            record, geometry_json = row
+            return _evaluation_from_row(
+                record,
+                geometry_json,
+                crops,
+                _load_environmental_input_references(session, evaluation_id),
+                _load_environmental_input_manifest(session, evaluation_id),
+                water_regimes,
+                _load_outcomes(session, evaluation_id),
+                _load_scenarios(session, evaluation_id, water_regimes),
+            )
+
     def list_queued_ids(self, *, limit: int) -> tuple[UUID, ...]:
         if isinstance(limit, bool) or not isinstance(limit, int) or limit < 1:
             raise ValueError("limit must be a positive integer.")
@@ -309,6 +341,37 @@ class PostgreSQLEvaluationRepository:
         with self._sessions() as session:
             rows = session.execute(
                 _evaluation_query().order_by(EvaluationRecord.created_at, EvaluationRecord.id)
+            )
+            evaluations = []
+            for record, geometry_json in rows:
+                crops = tuple(
+                    session.scalars(
+                        select(EvaluationCropRecord.crop_id)
+                        .where(EvaluationCropRecord.evaluation_id == record.id)
+                        .order_by(EvaluationCropRecord.position)
+                    )
+                )
+                water_regimes = _load_requested_water_regimes(session, record.id)
+                evaluations.append(
+                    _evaluation_from_row(
+                        record,
+                        geometry_json,
+                        crops,
+                        _load_environmental_input_references(session, record.id),
+                        _load_environmental_input_manifest(session, record.id),
+                        water_regimes,
+                        _load_outcomes(session, record.id),
+                        _load_scenarios(session, record.id, water_regimes),
+                    )
+                )
+            return tuple(evaluations)
+
+    def list_for_owner(self, owner_user_id: UUID) -> tuple[Evaluation, ...]:
+        with self._sessions() as session:
+            rows = session.execute(
+                _evaluation_query()
+                .where(EvaluationRecord.owner_user_id == owner_user_id)
+                .order_by(EvaluationRecord.created_at, EvaluationRecord.id)
             )
             evaluations = []
             for record, geometry_json in rows:

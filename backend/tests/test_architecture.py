@@ -130,6 +130,9 @@ def test_only_cropsuite_infrastructure_adapters_reference_scientific_engine() ->
 
 def test_farm_management_does_not_import_other_contexts() -> None:
     farm_management = CONTEXTS_ROOT / "farm_management"
+    allowed_identity_contract = (
+        "via_backend.contexts.identity_access.application.public"
+    )
     violations: list[str] = []
 
     for source_file in farm_management.rglob("*.py"):
@@ -138,7 +141,11 @@ def test_farm_management_does_not_import_other_contexts() -> None:
             if "contexts" not in parts:
                 continue
             context_index = parts.index("contexts") + 1
-            if context_index < len(parts) and parts[context_index] != "farm_management":
+            if (
+                context_index < len(parts)
+                and parts[context_index] != "farm_management"
+                and module != allowed_identity_contract
+            ):
                 violations.append(f"{source_file.relative_to(SOURCE_ROOT)} imports {module}")
 
     assert not violations, "\n".join(violations)
@@ -162,10 +169,20 @@ def test_environmental_information_does_not_import_other_contexts() -> None:
 
 def test_agroclimatic_evaluation_does_not_import_other_contexts() -> None:
     evaluation_context = CONTEXTS_ROOT / "agroclimatic_evaluation"
-    allowed_public_reader = (
-        evaluation_context / "application" / "execution.py",
-        "via_backend.contexts.environmental_information.application.public",
-    )
+    allowed_public_imports = {
+        (
+            evaluation_context / "application" / "execution.py",
+            "via_backend.contexts.environmental_information.application.public",
+        ),
+        (
+            evaluation_context / "interfaces" / "http.py",
+            "via_backend.contexts.identity_access.application.public",
+        ),
+        (
+            evaluation_context / "interfaces" / "capabilities_http.py",
+            "via_backend.contexts.identity_access.application.public",
+        ),
+    }
     violations: list[str] = []
 
     for source_file in evaluation_context.rglob("*.py"):
@@ -175,10 +192,7 @@ def test_agroclimatic_evaluation_does_not_import_other_contexts() -> None:
                 continue
             context_index = parts.index("contexts") + 1
             if context_index < len(parts) and parts[context_index] != "agroclimatic_evaluation":
-                if (
-                    source_file == allowed_public_reader[0]
-                    and module.casefold() == allowed_public_reader[1]
-                ):
+                if (source_file, module.casefold()) in allowed_public_imports:
                     continue
                 violations.append(f"{source_file.relative_to(SOURCE_ROOT)} imports {module}")
 

@@ -32,6 +32,12 @@ from via_backend.contexts.agroclimatic_evaluation.infrastructure import (
 )
 
 NOW = datetime(2026, 9, 12, 15, tzinfo=UTC)
+OWNER_ID = uuid4()
+
+
+class _UnusedSnapshotProvider:
+    def resolve(self, **_: object) -> ParcelSnapshot:
+        raise AssertionError("query attempted to resolve a parcel snapshot")
 
 
 class _ReadOnlySpyRepository:
@@ -57,6 +63,14 @@ class _ReadOnlySpyRepository:
         assert evaluation_id == self.stored.id
         return self.stored
 
+    def get_for_owner(
+        self, owner_user_id: UUID, evaluation_id: UUID
+    ) -> Evaluation | None:
+        self.get_calls += 1
+        assert owner_user_id == OWNER_ID
+        assert evaluation_id == self.stored.id
+        return self.stored
+
     def list_queued_ids(self, *, limit: int) -> tuple[UUID, ...]:
         raise AssertionError("read query called list_queued_ids()")
 
@@ -65,6 +79,9 @@ class _ReadOnlySpyRepository:
 
     def list_all(self) -> tuple[Evaluation, ...]:
         raise AssertionError("read query called list_all()")
+
+    def list_for_owner(self, owner_user_id: UUID) -> tuple[Evaluation, ...]:
+        raise AssertionError("read query called list_for_owner()")
 
 
 def _outcome(crop_id: str, status: CropOutcomeStatus) -> CropOutcome:
@@ -138,6 +155,7 @@ def _evaluation(
         requested_crops=("maize", "potato", "rice"),
         status=status,
         created_at=NOW,
+        owner_user_id=OWNER_ID,
         outcomes=outcomes,
         failure_reason=failure_reason,
     )
@@ -146,7 +164,7 @@ def _evaluation(
 def _service(evaluation: Evaluation) -> AgroclimaticEvaluationService:
     repository = InMemoryEvaluationRepository()
     repository.add(evaluation)
-    return AgroclimaticEvaluationService(repository)
+    return AgroclimaticEvaluationService(repository, _UnusedSnapshotProvider())
 
 
 def test_query_messages_return_read_only_views_without_mutation() -> None:
@@ -155,13 +173,17 @@ def test_query_messages_return_read_only_views_without_mutation() -> None:
         outcomes=(_outcome("maize", CropOutcomeStatus.SUCCEEDED),),
     )
     repository = _ReadOnlySpyRepository(evaluation)
-    service = AgroclimaticEvaluationService(repository)
+    service = AgroclimaticEvaluationService(repository, _UnusedSnapshotProvider())
 
-    status_view = service.get_evaluation(GetEvaluation(evaluation.id))
-    result_view = service.get_evaluation_result(GetEvaluationResult(evaluation.id))
-    evidence_view = service.get_evaluation_evidence(GetEvaluationEvidence(evaluation.id))
+    status_view = service.get_evaluation(GetEvaluation(evaluation.id, OWNER_ID))
+    result_view = service.get_evaluation_result(
+        GetEvaluationResult(evaluation.id, OWNER_ID)
+    )
+    evidence_view = service.get_evaluation_evidence(
+        GetEvaluationEvidence(evaluation.id, OWNER_ID)
+    )
     limitations_view = service.get_evaluation_limitations(
-        GetEvaluationLimitations(evaluation.id)
+        GetEvaluationLimitations(evaluation.id, OWNER_ID)
     )
 
     assert repository.get_calls == 4

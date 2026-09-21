@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Literal
 from uuid import UUID
@@ -56,9 +57,11 @@ class AuthenticationResponse(BaseModel):
     user: UserResponse
 
 
-def create_router(service: AuthenticationService, settings: AuthHttpSettings) -> APIRouter:
-    """Create auth routes without applying authentication to other contexts."""
-    router = APIRouter(prefix="/auth", tags=["identity-access"])
+PrincipalResolver = Callable[..., AuthenticatedPrincipal]
+
+
+def create_principal_resolver(service: AuthenticationService) -> PrincipalResolver:
+    """Build the reusable bearer-token dependency exposed by Identity Access."""
     bearer = HTTPBearer(auto_error=False, scheme_name="BearerAuth")
     bearer_security = Security(bearer)
 
@@ -71,6 +74,18 @@ def create_router(service: AuthenticationService, settings: AuthHttpSettings) ->
             return service.authenticate_access_token(credentials.credentials)
         except AuthenticationError as error:
             raise _bearer_unauthorized() from error
+
+    return resolve_principal
+
+
+def create_router(
+    service: AuthenticationService,
+    settings: AuthHttpSettings,
+    principal_resolver: PrincipalResolver | None = None,
+) -> APIRouter:
+    """Create Identity Access authentication routes."""
+    router = APIRouter(prefix="/auth", tags=["identity-access"])
+    resolve_principal = principal_resolver or create_principal_resolver(service)
 
     principal_dependency = Depends(resolve_principal)
 

@@ -10,7 +10,7 @@ from via_backend.contexts.agroclimatic_evaluation.application import (
     AgroclimaticEvaluationService,
     EnvironmentalInputReferenceInput,
     InvalidCommandError,
-    ParcelSnapshotInput,
+    ParcelReferenceInput,
     RequestEvaluation,
 )
 from via_backend.contexts.agroclimatic_evaluation.domain import (
@@ -33,6 +33,15 @@ from via_backend.contexts.agroclimatic_evaluation.infrastructure import (
 NOW = datetime(2026, 9, 12, 15, 0, tzinfo=UTC)
 DATASET_ID = uuid4()
 DATASET_VERSION_ID = uuid4()
+OWNER_ID = uuid4()
+
+
+class _SnapshotProvider:
+    def __init__(self, snapshot: ParcelSnapshot) -> None:
+        self.snapshot = snapshot
+
+    def resolve(self, **_: object) -> ParcelSnapshot:
+        return self.snapshot
 
 
 def _scientific_trace(
@@ -199,19 +208,18 @@ def test_request_evaluation_starts_queued() -> None:
     snapshot = _snapshot()
     service = AgroclimaticEvaluationService(
         InMemoryEvaluationRepository(),
+        _SnapshotProvider(snapshot),
         new_id=lambda: evaluation_id,
         clock=lambda: NOW,
     )
 
     result = service.request_evaluation(
         RequestEvaluation(
-            parcel_snapshot=ParcelSnapshotInput(
+            owner_user_id=OWNER_ID,
+            parcel_reference=ParcelReferenceInput(
                 project_id=snapshot.project_id,
                 parcel_id=snapshot.parcel_id,
                 parcel_version=snapshot.parcel_version,
-                geometry=snapshot.geometry.to_geojson(),
-                crs=snapshot.crs,
-                captured_at=snapshot.captured_at,
             ),
             requested_crops=("maize", "potato"),
             environmental_inputs=(
@@ -226,22 +234,23 @@ def test_request_evaluation_starts_queued() -> None:
 
     assert result.id == evaluation_id
     assert result.status is EvaluationStatus.QUEUED
+    assert result.parcel_snapshot.geometry == snapshot.geometry.to_geojson()
 
 
 def test_request_evaluation_rejects_empty_environmental_inputs() -> None:
     snapshot = _snapshot()
-    service = AgroclimaticEvaluationService(InMemoryEvaluationRepository())
+    service = AgroclimaticEvaluationService(
+        InMemoryEvaluationRepository(), _SnapshotProvider(snapshot)
+    )
 
     with pytest.raises(InvalidCommandError, match="At least one environmental input"):
         service.request_evaluation(
             RequestEvaluation(
-                parcel_snapshot=ParcelSnapshotInput(
+                owner_user_id=OWNER_ID,
+                parcel_reference=ParcelReferenceInput(
                     project_id=snapshot.project_id,
                     parcel_id=snapshot.parcel_id,
                     parcel_version=snapshot.parcel_version,
-                    geometry=snapshot.geometry.to_geojson(),
-                    crs=snapshot.crs,
-                    captured_at=snapshot.captured_at,
                 ),
                 requested_crops=("maize",),
                 environmental_inputs=(),

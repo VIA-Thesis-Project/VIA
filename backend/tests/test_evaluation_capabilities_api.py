@@ -2,11 +2,62 @@
 
 import json
 from pathlib import Path
+from uuid import UUID
 
+from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from via_backend.app import create_app
 from via_backend.config import Settings
+from via_backend.contexts.agroclimatic_evaluation.application import (
+    EvaluationCapabilitiesService,
+)
+from via_backend.contexts.agroclimatic_evaluation.infrastructure import (
+    FilesystemCropCapabilityCatalog,
+    FilesystemScientificInputBindingCatalog,
+)
+from via_backend.contexts.agroclimatic_evaluation.interfaces import (
+    create_capabilities_router,
+)
+from via_backend.contexts.identity_access.application.public import AuthenticatedPrincipal
+from via_backend.contexts.identity_access.domain import UserRole
+
+AUTH_HEADERS = {"Authorization": "Bearer test-user"}
+
+
+def _app(settings: Settings) -> FastAPI:
+    app = FastAPI()
+
+    def principal() -> AuthenticatedPrincipal:
+        return AuthenticatedPrincipal(
+            UUID("11111111-1111-4111-8111-111111111111"), UserRole.USER
+        )
+
+    app.include_router(
+        create_capabilities_router(
+            EvaluationCapabilitiesService(
+                (
+                    FilesystemCropCapabilityCatalog(settings.cropsuite_catalog)
+                    if settings.cropsuite_catalog is not None
+                    else None
+                ),
+                (
+                    FilesystemScientificInputBindingCatalog(
+                        settings.cropsuite_input_bindings
+                    )
+                    if settings.cropsuite_input_bindings is not None
+                    else None
+                ),
+            ),
+            principal,
+        ),
+        prefix="/api/v1",
+    )
+    return app
+
+
+def _client(settings: Settings) -> TestClient:
+    return TestClient(_app(settings), headers=AUTH_HEADERS)
 
 
 def _catalog(tmp_path: Path) -> Path:
@@ -58,12 +109,10 @@ def _bindings(tmp_path: Path) -> Path:
 def test_capabilities_publish_configured_crops_scenarios_and_bindings(
     tmp_path: Path,
 ) -> None:
-    client = TestClient(
-        create_app(
-            Settings(
-                cropsuite_catalog=_catalog(tmp_path),
-                cropsuite_input_bindings=_bindings(tmp_path),
-            )
+    client = _client(
+        Settings(
+            cropsuite_catalog=_catalog(tmp_path),
+            cropsuite_input_bindings=_bindings(tmp_path),
         )
     )
 
@@ -111,15 +160,22 @@ def test_capabilities_publish_configured_crops_scenarios_and_bindings(
     }
 
 
+def test_capabilities_require_bearer_authentication() -> None:
+    response = TestClient(create_app(Settings())).get(
+        "/api/v1/evaluation-capabilities"
+    )
+
+    assert response.status_code == 401
+    assert response.headers["www-authenticate"] == "Bearer"
+
+
 def test_capabilities_do_not_expose_private_binding_details(
     tmp_path: Path,
 ) -> None:
-    response = TestClient(
-        create_app(
-            Settings(
-                cropsuite_catalog=_catalog(tmp_path),
-                cropsuite_input_bindings=_bindings(tmp_path),
-            )
+    response = _client(
+        Settings(
+            cropsuite_catalog=_catalog(tmp_path),
+            cropsuite_input_bindings=_bindings(tmp_path),
         )
     ).get("/api/v1/evaluation-capabilities")
 
@@ -135,7 +191,7 @@ def test_capabilities_do_not_expose_private_binding_details(
 
 
 def test_capabilities_return_detail_error_when_catalog_is_not_configured() -> None:
-    response = TestClient(create_app(Settings())).get(
+    response = _client(Settings()).get(
         "/api/v1/evaluation-capabilities"
     )
 
@@ -148,11 +204,9 @@ def test_capabilities_return_detail_error_when_catalog_is_not_configured() -> No
 def test_capabilities_return_detail_error_when_bindings_are_not_configured(
     tmp_path: Path,
 ) -> None:
-    response = TestClient(
-        create_app(
-            Settings(
-                cropsuite_catalog=_catalog(tmp_path),
-            )
+    response = _client(
+        Settings(
+            cropsuite_catalog=_catalog(tmp_path),
         )
     ).get("/api/v1/evaluation-capabilities")
 
@@ -170,12 +224,10 @@ def test_capabilities_return_detail_error_when_bindings_are_invalid(
     bindings = tmp_path / "invalid-bindings.json"
     bindings.write_text('{"bindings": []}', encoding="utf-8")
 
-    response = TestClient(
-        create_app(
-            Settings(
-                cropsuite_catalog=_catalog(tmp_path),
-                cropsuite_input_bindings=bindings,
-            )
+    response = _client(
+        Settings(
+            cropsuite_catalog=_catalog(tmp_path),
+            cropsuite_input_bindings=bindings,
         )
     ).get("/api/v1/evaluation-capabilities")
 

@@ -2,10 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping
 from dataclasses import dataclass
-from datetime import datetime
-from typing import Any
 from uuid import UUID
 
 from ..domain.models import EvaluationStatus
@@ -13,15 +10,12 @@ from ..domain.water_regime import WaterRegime
 
 
 @dataclass(frozen=True, slots=True)
-class ParcelSnapshotInput:
-    """Transport-neutral parcel state supplied by an authorized caller."""
+class ParcelReferenceInput:
+    """Minimum Farm Management reference supplied by an authenticated caller."""
 
     project_id: UUID
     parcel_id: UUID
     parcel_version: int
-    geometry: Mapping[str, Any]
-    crs: str
-    captured_at: datetime
 
 
 @dataclass(frozen=True, slots=True)
@@ -33,7 +27,8 @@ class EnvironmentalInputReferenceInput:
 
 @dataclass(frozen=True, slots=True)
 class RequestEvaluation:
-    parcel_snapshot: ParcelSnapshotInput
+    owner_user_id: UUID
+    parcel_reference: ParcelReferenceInput
     requested_crops: tuple[str, ...]
     environmental_inputs: tuple[EnvironmentalInputReferenceInput, ...]
     requested_water_regimes: tuple[WaterRegime, ...] = (WaterRegime.RAINFED,)

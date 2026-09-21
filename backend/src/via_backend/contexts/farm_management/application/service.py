@@ -11,6 +11,11 @@ from ..domain.geometry import ParcelGeometry
 from ..domain.models import Parcel, ParcelVersion, Project
 from ..domain.repositories import ParcelRepository, ProjectRepository
 from .commands import CreateParcel, CreateProject, ReviseParcelGeometry
+from .public import (
+    AuthorizedParcelGeometry,
+    AuthorizedParcelSnapshot,
+    AuthorizedParcelSnapshotNotFoundError,
+)
 from .queries import GetParcel, GetProject, ListParcels, ListProjects
 from .results import ParcelResult, ProjectResult
 
@@ -49,6 +54,7 @@ class FarmManagementService:
                 id=self._new_id(),
                 name=command.name,
                 created_at=self._clock(),
+                owner_user_id=command.owner_user_id,
             )
         except DomainValidationError as error:
             raise InvalidCommandError(str(error)) from error
@@ -56,14 +62,18 @@ class FarmManagementService:
         return ProjectResult.from_domain(project)
 
     def list_projects(self, query: ListProjects) -> tuple[ProjectResult, ...]:
-        del query
-        return tuple(ProjectResult.from_domain(project) for project in self._projects.list_all())
+        return tuple(
+            ProjectResult.from_domain(project)
+            for project in self._projects.list_for_owner(query.owner_user_id)
+        )
 
     def get_project(self, query: GetProject) -> ProjectResult:
-        return ProjectResult.from_domain(self._require_project(query.project_id))
+        return ProjectResult.from_domain(
+            self._require_project(query.project_id, query.owner_user_id)
+        )
 
     def create_parcel(self, command: CreateParcel) -> ParcelResult:
-        self._require_project(command.project_id)
+        self._require_project(command.project_id, command.owner_user_id)
         created_at = self._clock()
         try:
             parcel = Parcel(
@@ -85,20 +95,20 @@ class FarmManagementService:
         return ParcelResult.from_domain(parcel)
 
     def list_parcels(self, query: ListParcels) -> tuple[ParcelResult, ...]:
-        self._require_project(query.project_id)
+        self._require_project(query.project_id, query.owner_user_id)
         return tuple(
             ParcelResult.from_domain(parcel)
             for parcel in self._parcels.list_for_project(query.project_id)
         )
 
     def get_parcel(self, query: GetParcel) -> ParcelResult:
-        self._require_project(query.project_id)
+        self._require_project(query.project_id, query.owner_user_id)
         return ParcelResult.from_domain(
             self._require_parcel(query.project_id, query.parcel_id)
         )
 
     def revise_parcel_geometry(self, command: ReviseParcelGeometry) -> ParcelResult:
-        self._require_project(command.project_id)
+        self._require_project(command.project_id, command.owner_user_id)
         parcel = self._require_parcel(command.project_id, command.parcel_id)
         try:
             revised = parcel.revise_geometry(
@@ -114,15 +124,57 @@ class FarmManagementService:
             raise ResourceConflictError(str(error)) from error
         return ParcelResult.from_domain(revised)
 
-    def _require_project(self, project_id: UUID) -> Project:
-        project = self._projects.get(project_id)
+    def resolve_authorized_parcel_snapshot(
+        self,
+        *,
+        owner_user_id: UUID,
+        project_id: UUID,
+        parcel_id: UUID,
+        parcel_version: int,
+    ) -> AuthorizedParcelSnapshot:
+        """Resolve one exact immutable parcel version inside an owned project."""
+        if isinstance(parcel_version, bool) or parcel_version < 1:
+            raise AuthorizedParcelSnapshotNotFoundError(
+                "The requested parcel version was not found."
+            )
+        if self._projects.get_for_owner(owner_user_id, project_id) is None:
+            raise AuthorizedParcelSnapshotNotFoundError(
+                "The requested parcel version was not found."
+            )
+        parcel = self._parcels.get_for_project(project_id, parcel_id)
+        if parcel is None:
+            raise AuthorizedParcelSnapshotNotFoundError(
+                "The requested parcel version was not found."
+            )
+        version = next(
+            (item for item in parcel.versions if item.number == parcel_version),
+            None,
+        )
+        if version is None:
+            raise AuthorizedParcelSnapshotNotFoundError(
+                "The requested parcel version was not found."
+            )
+        return AuthorizedParcelSnapshot(
+            project_id=project_id,
+            parcel_id=parcel_id,
+            parcel_version=version.number,
+            geometry=AuthorizedParcelGeometry(
+                type=version.geometry.type,
+                coordinates=version.geometry.coordinates,
+            ),
+            crs="EPSG:4326",
+            captured_at=version.created_at,
+        )
+
+    def _require_project(self, project_id: UUID, owner_user_id: UUID) -> Project:
+        project = self._projects.get_for_owner(owner_user_id, project_id)
         if project is None:
             raise ResourceNotFoundError(f"Project {project_id} was not found.")
         return project
 
     def _require_parcel(self, project_id: UUID, parcel_id: UUID) -> Parcel:
-        parcel = self._parcels.get(parcel_id)
-        if parcel is None or parcel.project_id != project_id:
+        parcel = self._parcels.get_for_project(project_id, parcel_id)
+        if parcel is None:
             raise ResourceNotFoundError(
                 f"Parcel {parcel_id} was not found in project {project_id}."
             )

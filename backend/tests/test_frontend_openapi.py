@@ -94,3 +94,44 @@ def test_frontend_operation_ids_are_explicit_and_unique(monkeypatch: Any) -> Non
         "list_evaluation_recommendations",
         "get_evaluation_capabilities",
     } <= set(operation_ids)
+
+
+def test_ia3_routes_publish_bearer_security_and_authoritative_parcel_reference(
+    monkeypatch: Any,
+) -> None:
+    schema = _schema(monkeypatch)
+    bearer = [{"BearerAuth": []}]
+
+    protected_operations = (
+        ("/projects", "get"),
+        ("/projects", "post"),
+        ("/projects/{project_id}", "get"),
+        ("/projects/{project_id}/parcels", "get"),
+        ("/projects/{project_id}/parcels", "post"),
+        ("/projects/{project_id}/parcels/{parcel_id}", "get"),
+        ("/projects/{project_id}/parcels/{parcel_id}/versions", "post"),
+        ("/api/v1/evaluations", "get"),
+        ("/api/v1/evaluations", "post"),
+        ("/api/v1/evaluations/{evaluation_id}", "get"),
+        ("/api/v1/evaluations/{evaluation_id}/result", "get"),
+        ("/api/v1/evaluations/{evaluation_id}/evidence", "get"),
+        ("/api/v1/evaluations/{evaluation_id}/limitations", "get"),
+        ("/api/v1/evaluation-capabilities", "get"),
+    )
+    for path, method in protected_operations:
+        assert schema["paths"][path][method]["security"] == bearer
+
+    request_schema = schema["paths"]["/api/v1/evaluations"]["post"][
+        "requestBody"
+    ]["content"]["application/json"]["schema"]
+    component_name = request_schema["$ref"].rsplit("/", maxsplit=1)[-1]
+    properties = schema["components"]["schemas"][component_name]["properties"]
+
+    assert "parcel_reference" in properties
+    assert "parcel_snapshot" not in properties
+    parcel_reference_name = properties["parcel_reference"]["$ref"].rsplit(
+        "/", maxsplit=1
+    )[-1]
+    assert set(
+        schema["components"]["schemas"][parcel_reference_name]["properties"]
+    ) == {"project_id", "parcel_id", "parcel_version"}

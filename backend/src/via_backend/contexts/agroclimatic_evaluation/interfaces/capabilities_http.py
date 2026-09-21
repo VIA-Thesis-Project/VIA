@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, ConfigDict, Field
+
+from via_backend.contexts.identity_access.application.public import AuthenticatedPrincipal
 
 from ..application.capabilities import (
     CapabilityStatus,
@@ -83,8 +86,10 @@ class EvaluationCapabilitiesResponse(BaseModel):
 
 def create_capabilities_router(
     service: EvaluationCapabilitiesService,
+    principal_resolver: Callable[..., AuthenticatedPrincipal],
 ) -> APIRouter:
     router = APIRouter(tags=["agroclimatic-evaluation"])
+    principal_dependency = Depends(principal_resolver)
 
     @router.get(
         "/evaluation-capabilities",
@@ -98,7 +103,9 @@ def create_capabilities_router(
             "infrastructure availability."
         ),
     )
-    def get_evaluation_capabilities() -> EvaluationCapabilitiesResponse:
+    def get_evaluation_capabilities(
+        _principal: AuthenticatedPrincipal = principal_dependency,
+    ) -> EvaluationCapabilitiesResponse:
         try:
             result = service.get_capabilities()
         except EvaluationCapabilitiesUnavailableError as error:

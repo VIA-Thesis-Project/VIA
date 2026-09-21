@@ -11,9 +11,12 @@ from ..domain.errors import DomainValidationError, EvaluationConflictError
 from ..domain.models import Evaluation, EvaluationStatus
 from ..domain.outcomes import CropOutcome
 from ..domain.repositories import EvaluationRepository
-from ..domain.snapshot import ParcelSnapshot, SnapshotGeometry
 from ..domain.water_regime import WaterRegime as DomainWaterRegime
 from .commands import RequestEvaluation
+from .ports import (
+    AuthorizedParcelSnapshotNotFoundError,
+    AuthorizedParcelSnapshotProvider,
+)
 from .public import (
     FinalizedCommonSupport,
     FinalizedCommonSupportStatus,
@@ -67,28 +70,28 @@ class AgroclimaticEvaluationService:
     def __init__(
         self,
         evaluations: EvaluationRepository,
+        parcel_snapshots: AuthorizedParcelSnapshotProvider,
         *,
         new_id: Callable[[], UUID] = uuid4,
         clock: Callable[[], datetime] | None = None,
     ) -> None:
         self._evaluations = evaluations
+        self._parcel_snapshots = parcel_snapshots
         self._new_id = new_id
         self._clock = clock or (lambda: datetime.now(UTC))
 
     def request_evaluation(self, command: RequestEvaluation) -> EvaluationResult:
-        supplied = command.parcel_snapshot
+        reference = command.parcel_reference
         try:
             if not command.environmental_inputs:
                 raise DomainValidationError(
                     "At least one environmental input must be requested."
                 )
-            snapshot = ParcelSnapshot(
-                project_id=supplied.project_id,
-                parcel_id=supplied.parcel_id,
-                parcel_version=supplied.parcel_version,
-                geometry=SnapshotGeometry.from_geojson(supplied.geometry),
-                crs=supplied.crs,
-                captured_at=supplied.captured_at,
+            snapshot = self._parcel_snapshots.resolve(
+                owner_user_id=command.owner_user_id,
+                project_id=reference.project_id,
+                parcel_id=reference.parcel_id,
+                parcel_version=reference.parcel_version,
             )
             evaluation = Evaluation(
                 id=self._new_id(),
@@ -97,6 +100,7 @@ class AgroclimaticEvaluationService:
                 requested_water_regimes=command.requested_water_regimes,
                 status=EvaluationStatus.QUEUED,
                 created_at=self._clock(),
+                owner_user_id=command.owner_user_id,
                 environmental_input_references=tuple(
                     EnvironmentalInputReference(
                         input_key=item.input_key,
@@ -106,6 +110,8 @@ class AgroclimaticEvaluationService:
                     for item in command.environmental_inputs
                 ),
             )
+        except AuthorizedParcelSnapshotNotFoundError as error:
+            raise ResourceNotFoundError("The requested parcel version was not found.") from error
         except DomainValidationError as error:
             raise InvalidCommandError(str(error)) from error
 
@@ -116,19 +122,25 @@ class AgroclimaticEvaluationService:
         return EvaluationResult.from_domain(evaluation)
 
     def get_evaluation(self, query: GetEvaluation) -> EvaluationStatusResult:
-        return EvaluationStatusResult.from_domain(self._get_evaluation(query.evaluation_id))
+        return EvaluationStatusResult.from_domain(
+            self._get_owned_evaluation(query.owner_user_id, query.evaluation_id)
+        )
 
     def get_evaluation_result(self, query: GetEvaluationResult) -> EvaluationReadResult:
-        return EvaluationReadResult.from_domain(self._get_evaluation(query.evaluation_id))
+        return EvaluationReadResult.from_domain(
+            self._get_owned_evaluation(query.owner_user_id, query.evaluation_id)
+        )
 
     def get_evaluation_evidence(self, query: GetEvaluationEvidence) -> EvaluationEvidenceResult:
-        return EvaluationEvidenceResult.from_domain(self._get_evaluation(query.evaluation_id))
+        return EvaluationEvidenceResult.from_domain(
+            self._get_owned_evaluation(query.owner_user_id, query.evaluation_id)
+        )
 
     def get_evaluation_limitations(
         self, query: GetEvaluationLimitations
     ) -> EvaluationLimitationsResult:
         return EvaluationLimitationsResult.from_domain(
-            self._get_evaluation(query.evaluation_id)
+            self._get_owned_evaluation(query.owner_user_id, query.evaluation_id)
         )
 
     def get_finalized_evaluation_result(
@@ -200,11 +212,18 @@ class AgroclimaticEvaluationService:
     def list_evaluations(
         self, query: ListEvaluations
     ) -> tuple[EvaluationResult, ...]:
-        del query
         return tuple(
             EvaluationResult.from_domain(evaluation)
-            for evaluation in self._evaluations.list_all()
+            for evaluation in self._evaluations.list_for_owner(query.owner_user_id)
         )
+
+    def _get_owned_evaluation(
+        self, owner_user_id: UUID, evaluation_id: UUID
+    ) -> Evaluation:
+        evaluation = self._evaluations.get_for_owner(owner_user_id, evaluation_id)
+        if evaluation is None:
+            raise ResourceNotFoundError(f"Evaluation {evaluation_id} was not found.")
+        return evaluation
 
     def _get_evaluation(self, evaluation_id: UUID) -> Evaluation:
         evaluation = self._evaluations.get(evaluation_id)

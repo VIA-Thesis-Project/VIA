@@ -43,10 +43,29 @@ class PostgreSQLProjectRepository:
             record = session.get(ProjectRecord, project_id)
             return _project_from_record(record) if record is not None else None
 
+    def get_for_owner(self, owner_user_id: UUID, project_id: UUID) -> Project | None:
+        with self._sessions() as session:
+            record = session.scalar(
+                select(ProjectRecord).where(
+                    ProjectRecord.id == project_id,
+                    ProjectRecord.owner_user_id == owner_user_id,
+                )
+            )
+            return _project_from_record(record) if record is not None else None
+
     def list_all(self) -> tuple[Project, ...]:
         with self._sessions() as session:
             records = session.scalars(
                 select(ProjectRecord).order_by(ProjectRecord.created_at, ProjectRecord.id)
+            )
+            return tuple(_project_from_record(record) for record in records)
+
+    def list_for_owner(self, owner_user_id: UUID) -> tuple[Project, ...]:
+        with self._sessions() as session:
+            records = session.scalars(
+                select(ProjectRecord)
+                .where(ProjectRecord.owner_user_id == owner_user_id)
+                .order_by(ProjectRecord.created_at, ProjectRecord.id)
             )
             return tuple(_project_from_record(record) for record in records)
 
@@ -109,6 +128,16 @@ class PostgreSQLParcelRepository:
     def get(self, parcel_id: UUID) -> Parcel | None:
         with self._sessions() as session:
             record = session.get(ParcelRecord, parcel_id)
+            return _parcel_from_record(session, record) if record is not None else None
+
+    def get_for_project(self, project_id: UUID, parcel_id: UUID) -> Parcel | None:
+        with self._sessions() as session:
+            record = session.scalar(
+                select(ParcelRecord).where(
+                    ParcelRecord.id == parcel_id,
+                    ParcelRecord.project_id == project_id,
+                )
+            )
             return _parcel_from_record(session, record) if record is not None else None
 
     def list_for_project(self, project_id: UUID) -> tuple[Parcel, ...]:

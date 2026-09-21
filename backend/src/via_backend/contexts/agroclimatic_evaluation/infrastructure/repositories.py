@@ -61,6 +61,15 @@ class InMemoryEvaluationRepository:
         with self._lock:
             return self._evaluations.get(evaluation_id)
 
+    def get_for_owner(
+        self, owner_user_id: UUID, evaluation_id: UUID
+    ) -> Evaluation | None:
+        with self._lock:
+            evaluation = self._evaluations.get(evaluation_id)
+            if evaluation is None or evaluation.owner_user_id != owner_user_id:
+                return None
+            return evaluation
+
     def list_queued_ids(self, *, limit: int) -> tuple[UUID, ...]:
         _validate_limit(limit)
         with self._lock:
@@ -102,6 +111,19 @@ class InMemoryEvaluationRepository:
             return tuple(
                 sorted(
                     self._evaluations.values(),
+                    key=lambda item: (item.created_at, item.id),
+                )
+            )
+
+    def list_for_owner(self, owner_user_id: UUID) -> tuple[Evaluation, ...]:
+        with self._lock:
+            return tuple(
+                sorted(
+                    (
+                        evaluation
+                        for evaluation in self._evaluations.values()
+                        if evaluation.owner_user_id == owner_user_id
+                    ),
                     key=lambda item: (item.created_at, item.id),
                 )
             )
