@@ -6,6 +6,8 @@ El proyecto sigue [Semantic Versioning](https://semver.org/) y, mientras permane
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-09-22
+
 ### Added
 
 - Documentación de navegación y contribución del repositorio.
@@ -17,6 +19,7 @@ El proyecto sigue [Semantic Versioning](https://semver.org/) y, mientras permane
 - El README raíz presenta VIA como sistema completo, en lugar de describir únicamente el PoC de CropSuiteLite.
 - Graphify usa `graphify-out/` como grafo canónico del repositorio para navegación asistida por agentes.
 - El tooling local de agentes bajo `.codex/` queda fuera de Git y del knowledge graph del proyecto.
+- La verificación del backend es independiente del directorio desde el que se invoque.
 
 ### Removed
 
