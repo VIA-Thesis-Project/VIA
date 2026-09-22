@@ -38,6 +38,9 @@ COPY CropSuiteLite /opt/via/CropSuiteLite
 COPY data/huaura/boundary/huaura_province.geojson /opt/via/data/huaura/boundary/huaura_province.geojson
 COPY data/huaura/boundary/metadata.json /opt/via/data/huaura/boundary/metadata.json
 
+ENV VIA_HUAURA_AOI_BOUNDARY_PATH=/opt/via/data/huaura/boundary/huaura_province.geojson
+ENV VIA_HUAURA_AOI_METADATA_PATH=/opt/via/data/huaura/boundary/metadata.json
+
 RUN groupadd --system via \
     && useradd --system --gid via --home-dir /nonexistent --shell /usr/sbin/nologin via \
     && mkdir -p /etc/via /mnt/via/sources /var/lib/via/workspace /var/lib/via/artifacts /var/lib/via/knowledge/sources \

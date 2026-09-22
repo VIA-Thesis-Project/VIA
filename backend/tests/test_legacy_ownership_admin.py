@@ -145,7 +145,7 @@ def test_assignment_is_dry_run_by_default_and_never_infers_related_resources() -
         )
     )
     store = ownership_admin.PostgreSQLLegacyOwnershipStore(
-        engine
+        engine  # type: ignore[arg-type]
     )
 
     result = store.assign(
@@ -194,7 +194,7 @@ def test_apply_assigns_only_explicit_unowned_ids_to_explicit_existing_user() -> 
 def test_assignment_rejects_missing_target_user_and_preowned_resource() -> None:
     missing_user_engine = _Engine(_FakeDatabase(projects={PROJECT_ID: None}))
     missing_user_store = ownership_admin.PostgreSQLLegacyOwnershipStore(  # type: ignore[arg-type]
-        missing_user_engine
+        missing_user_engine  # type: ignore[arg-type]
     )
     with pytest.raises(ownership_admin.LegacyOwnershipError, match="Target user does not exist"):
         missing_user_store.assign(

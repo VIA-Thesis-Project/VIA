@@ -145,6 +145,23 @@ def test_image_does_not_bake_deployment_secrets_or_bindings() -> None:
         assert forbidden_copy not in copied_text
     assert "COPY . " not in dockerfile
 
+def test_image_configures_huaura_aoi_runtime_paths() -> None:
+    dockerfile = (REPOSITORY_ROOT / "Dockerfile").read_text(encoding="utf-8")
+    instructions = [
+        line.strip()
+        for line in dockerfile.splitlines()
+        if line.strip() and not line.lstrip().startswith("#")
+    ]
+
+    assert (
+        f"ENV VIA_HUAURA_AOI_BOUNDARY_PATH={HUAURA_BOUNDARY_DESTINATION}"
+        in instructions
+    )
+    assert (
+        f"ENV VIA_HUAURA_AOI_METADATA_PATH={HUAURA_METADATA_DESTINATION}"
+        in instructions
+    )
+
 
 def test_image_declares_b5_canonical_filesystem_contract() -> None:
     dockerfile = (REPOSITORY_ROOT / "Dockerfile").read_text(encoding="utf-8")
