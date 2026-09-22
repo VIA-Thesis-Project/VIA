@@ -10,6 +10,7 @@ from via_backend.contexts.agroclimatic_evaluation.infrastructure import (
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
 COMPOSE_PATH = REPOSITORY_ROOT / "compose.production-smoke.yaml"
+SMOKE_SCRIPT_PATH = REPOSITORY_ROOT / "scripts" / "verify_production_compose.sh"
 
 
 def _mapping_keys(text: str, section: str) -> set[str]:
@@ -108,3 +109,22 @@ def test_b6_worker_bindings_fixture_is_valid_for_startup() -> None:
 
     assert len(bindings) == 1
     assert bindings[0].storage_reference == "/mnt/via/sources"
+
+def test_b6_smoke_requires_health_and_rejects_anonymous_projects_access() -> None:
+    script = SMOKE_SCRIPT_PATH.read_text(encoding="utf-8")
+
+    assert (
+        'health_json="$(curl --fail --silent http://127.0.0.1:18000/health)"'
+        in script
+    )
+    assert 'grep -q \'"status":"ok"\' <<<"${health_json}"' in script
+
+    assert "--write-out '%{http_code}'" in script
+    assert "http://127.0.0.1:18000/projects" in script
+    assert 'test "${projects_status}" = "401"' in script
+
+    assert (
+        'projects_json="$(curl --fail --silent http://127.0.0.1:18000/projects)"'
+        not in script
+    )
+    assert 'test "${projects_json}" = "[]"' not in script

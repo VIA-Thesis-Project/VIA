@@ -85,8 +85,14 @@ done
 
 health_json="$(curl --fail --silent http://127.0.0.1:18000/health)"
 grep -q '"status":"ok"' <<<"${health_json}"
-projects_json="$(curl --fail --silent http://127.0.0.1:18000/projects)"
-test "${projects_json}" = "[]"
+projects_status="$(
+  curl \
+    --silent \
+    --output /dev/null \
+    --write-out '%{http_code}' \
+    http://127.0.0.1:18000/projects
+)"
+test "${projects_status}" = "401"
 
 "${compose[@]}" run --rm --no-deps -T migrate python - <<'PY'
 import os
