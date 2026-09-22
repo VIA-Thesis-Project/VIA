@@ -1344,9 +1344,9 @@
     "semantic_hash": ""
   },
   "backend/scripts/verify.ps1": {
-    "mtime": 1789245384.6687436,
-    "seen": 1789245876.3741722,
-    "ast_hash": "46a890432b1937bfef0b80fe5c5b0fcb",
+    "mtime": 1790059130.5096223,
+    "seen": 1790059477.2571292,
+    "ast_hash": "ef176e6ba0738ed16c980c72837a34d3",
     "semantic_hash": ""
   },
   "graphify-out/memory/query_20260912_201749_7ae7cc97_dataset_version_coverage_parcel_geometry_contract.md": {
@@ -2514,9 +2514,9 @@
     "semantic_hash": ""
   },
   "CHANGELOG.md": {
-    "mtime": 1790058253.0567474,
-    "seen": 1790058579.2480206,
-    "ast_hash": "3fd07390b5b49454a4b86bc09874735b",
+    "mtime": 1790059331.111805,
+    "seen": 1790059477.2573435,
+    "ast_hash": "053982acaae1e2ad23f831cdccd5e197",
     "semantic_hash": ""
   },
   "CONTRIBUTING.md": {
