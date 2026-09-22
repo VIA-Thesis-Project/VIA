@@ -237,7 +237,6 @@ class LimitingFactorResponse(BaseModel):
         description="Fraction of the valid analyzed area affected by this factor.",
     )
     dominant: bool
-    source_storage_reference: str | None
     source_sha256: str
 
 
@@ -287,6 +286,7 @@ def create_router(
             "Rainfed and irrigated are distinct scientific scenarios; irrigated does not "
             "confirm real water or irrigation-infrastructure availability."
         ),
+        responses={429: {"description": "Evaluation quota exceeded."}},
     )
     def request_evaluation(
         body: RequestEvaluationBody,

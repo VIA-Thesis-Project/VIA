@@ -164,7 +164,15 @@ def test_owner_scoped_project_and_project_scoped_parcel_queries(
     assert parcels.get_for_project(project_a.id, parcel_a.id) == parcel_a
     assert parcels.get_for_project(project_b.id, parcel_a.id) is None
 
-    snapshot = FarmManagementService(projects, parcels).resolve_authorized_parcel_snapshot(
+    class _AllowAllAreaOfInterest:
+        def validate(self, geometry: object) -> None:
+            pass
+
+    snapshot = FarmManagementService(
+        projects,
+        parcels,
+        area_of_interest=_AllowAllAreaOfInterest(),
+    ).resolve_authorized_parcel_snapshot(
         owner_user_id=owner_a,
         project_id=project_a.id,
         parcel_id=parcel_a.id,

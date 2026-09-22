@@ -499,6 +499,12 @@ artifact/database storage, disposable workspace, release ordering, no B6 smoke
 fixture dependency, no raw Huaura path, no obvious committed credentials, and
 same-commit GHCR publication gating.
 
+The operator-facing release, Tailscale Funnel, smoke, legacy ownership,
+migration-gate, and rollback procedure is maintained in
+[`docs/operations/production-release.md`](../operations/production-release.md).
+It preserves this architecture: HTTPS terminates at Funnel, which proxies only
+to `127.0.0.1:8000`; no Caddy layer and no public port-8000 bind are introduced.
+
 ## B2 reproducible Linux container image
 
 The root [`Dockerfile`](../../Dockerfile) packages the VIA backend and

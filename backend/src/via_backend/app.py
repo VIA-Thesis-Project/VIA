@@ -68,6 +68,7 @@ from via_backend.contexts.farm_management.application import (
     FarmManagementService,
 )
 from via_backend.contexts.farm_management.infrastructure import (
+    HuauraAreaOfInterestValidator,
     InMemoryParcelRepository,
     InMemoryProjectRepository,
     PostgreSQLParcelRepository,
@@ -140,7 +141,11 @@ class _FarmAuthorizedParcelSnapshotProvider:
         )
 
 
-def create_app(settings: Settings | None = None) -> FastAPI:
+def create_app(
+    settings: Settings | None = None,
+    *,
+    include_api_docs: bool = True,
+) -> FastAPI:
     """Build the VIA API and register its technical interfaces."""
     settings = settings or Settings.from_env()
     engine: Engine | None = None
@@ -210,7 +215,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 engine.dispose()
 
     application = FastAPI(
-        title="VIA Backend", version="0.1.0", lifespan=lifespan
+        title="VIA Backend",
+        version="0.1.0",
+        lifespan=lifespan,
+        docs_url="/docs" if include_api_docs else None,
+        redoc_url="/redoc" if include_api_docs else None,
+        openapi_url="/openapi.json" if include_api_docs else None,
     )
     if settings.cors_allowed_origins:
         application.add_middleware(
@@ -223,6 +233,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     farm_management = FarmManagementService(
         projects=projects,
         parcels=parcels,
+        area_of_interest=HuauraAreaOfInterestValidator(
+            settings.huaura_aoi_boundary_path,
+            settings.huaura_aoi_metadata_path,
+        ),
     )
     environmental_information = EnvironmentalInformationService(
         datasets=datasets,
@@ -348,4 +362,4 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 def create_production_app() -> FastAPI:
     """Build the production API after enforcing durable persistence settings."""
     settings = Settings.from_env().require_production()
-    return create_app(settings)
+    return create_app(settings, include_api_docs=False)

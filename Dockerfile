@@ -36,6 +36,7 @@ RUN python -m pip install --no-cache-dir /opt/via/backend \
 
 COPY CropSuiteLite /opt/via/CropSuiteLite
 COPY data/huaura/boundary/huaura_province.geojson /opt/via/data/huaura/boundary/huaura_province.geojson
+COPY data/huaura/boundary/metadata.json /opt/via/data/huaura/boundary/metadata.json
 
 RUN groupadd --system via \
     && useradd --system --gid via --home-dir /nonexistent --shell /usr/sbin/nologin via \

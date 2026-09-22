@@ -83,6 +83,12 @@ def create_router(
             "Retrieve evidence for one successful crop scenario without generating a "
             "recommendation. affected_fraction values in the source context are 0..1."
         ),
+        responses={
+            404: {"description": "Owned evaluation or scenario was not found."},
+            409: {"description": "Evaluation scenario is not final."},
+            429: {"description": "Knowledge rate limit exceeded."},
+            503: {"description": "Knowledge provider is unavailable."},
+        },
     )
     def get_knowledge(
         evaluation_id: UUID,
@@ -109,6 +115,13 @@ def create_router(
             "Generate or reuse an evidence-grounded recommendation for one finalized "
             "crop and water-regime scenario."
         ),
+        responses={
+            403: {"description": "Administrator permission required for force regeneration."},
+            404: {"description": "Owned evaluation or scenario was not found."},
+            409: {"description": "Evaluation scenario is not final."},
+            429: {"description": "Recommendation rate or daily quota exceeded."},
+            503: {"description": "Recommendation provider is unavailable."},
+        },
     )
     def generate_recommendation(
         evaluation_id: UUID,

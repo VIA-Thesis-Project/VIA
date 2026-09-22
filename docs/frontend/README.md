@@ -5,6 +5,7 @@ This directory is the frontend-facing contract for the current VIA backend. It d
 Start with:
 
 - `api-reference.md` for endpoint paths and operation IDs.
+- `security-route-matrix.md` for authentication, role, ownership, and limit rules.
 - `integration-flows.md` for the end-to-end user flow.
 - `async-evaluations.md` for polling and lifecycle handling.
 - `scientific-result-semantics.md` before rendering suitability, coverage, rankings, or limitations.
@@ -32,3 +33,13 @@ Do not silently prepend `/api/v1` to every route in a frontend API wrapper.
 5. Rainfed and irrigated are separate scientific scenarios. An irrigated result does not assert that irrigation water or infrastructure is available in the real parcel.
 6. Crop and scientific-binding discovery comes from `GET /api/v1/evaluation-capabilities`. Environmental `input_key` values are caller-defined unique logical identifiers; use `scientifically_bound_dataset_versions` to choose versions configured with scientific bindings.
 7. Keep the exact parcel version and dataset-version identifiers used in an evaluation visible in application state. Historical evaluations are versioned evidence, not a live view of mutable inputs.
+8. Send the access token as `Authorization: Bearer ...`. Keep it in memory where practical. The refresh token exists only in the `HttpOnly` cookie set by the API and must never be copied into JavaScript state or `localStorage`.
+9. Evaluation creation sends `parcel_reference` only. The backend resolves and persists the exact `ParcelVersion`; clients must not submit geometry, CRS, capture time, or `parcel_snapshot` for this operation.
+
+## Authentication bootstrap
+
+1. `POST /api/v1/auth/login` with email/password. The JSON body returns a short-lived access token; the response also sets the rotating refresh cookie.
+2. Send the access token on `/me` and every functional route.
+3. On one `401`, serialize a single `POST /api/v1/auth/refresh` across all requests and browser tabs, then retry each failed request once with the replacement access token.
+4. If refresh returns `401`, clear in-memory session state and require login. Never retry refresh reuse in a loop: rotation intentionally invalidates the previous cookie and reuse revokes the token family.
+5. `POST /api/v1/auth/logout` clears the refresh cookie and revokes the family. Refresh and logout must include the browser `Origin` accepted by the backend.

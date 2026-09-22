@@ -37,6 +37,7 @@ data/huaura/*
 !data/huaura/boundary/
 data/huaura/boundary/*
 !data/huaura/boundary/huaura_province.geojson
+!data/huaura/boundary/metadata.json
 !CropSuiteLite/data/
 CropSuiteLite/data/*
 !CropSuiteLite/data/usda_texture_classification.dat

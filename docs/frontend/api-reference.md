@@ -5,6 +5,10 @@ All paths below are relative to the configured backend origin. Operation IDs are
 | Area | Method | Path | Operation ID | Success |
 | --- | --- | --- | --- | --- |
 | Health | GET | `/health` | `get_health` | 200 |
+| Auth | POST | `/api/v1/auth/login` | `auth_login` | 200 |
+| Auth | POST | `/api/v1/auth/refresh` | `auth_refresh` | 200 |
+| Auth | POST | `/api/v1/auth/logout` | `auth_logout` | 204 |
+| Auth | GET | `/api/v1/auth/me` | `auth_me` | 200 |
 | Projects | GET | `/projects` | `list_projects` | 200 |
 | Projects | POST | `/projects` | `create_project` | 201 |
 | Projects | GET | `/projects/{project_id}` | `get_project` | 200 |
@@ -66,14 +70,18 @@ The endpoint returns `503` with `{ "detail": "..." }` if the scientific catalog 
 
 ## Evaluation request
 
-`POST /api/v1/evaluations` queues an evaluation. Its request has three parts:
+`POST /api/v1/evaluations` queues an evaluation. Its request has four parts:
 
-- `parcel_snapshot`: exact project, parcel, parcel version, geometry, CRS, and capture time.
+- `parcel_reference`: exact `project_id`, `parcel_id`, and positive `parcel_version`.
 - `requested_crops`: one or more crop identifiers obtained from capabilities.
 - `water_regimes`: one or more of `rainfed`, `irrigated`; default is rainfed when omitted.
 - `environmental_inputs`: one or more exact dataset-version references. Each entry contains `input_key`, `dataset_id`, and `dataset_version_id`.
 
-The current API validates that environmental input keys are unique/non-empty and bounded, but it does not publish canonical keys. See `known-gaps.md`.
+The backend resolves the owned immutable parcel version and stores the authoritative snapshot. Request bodies containing client-supplied `geometry`, `crs`, `captured_at`, or `parcel_snapshot` are rejected with `422`. Evaluation responses may return the persisted authoritative snapshot for audit and display.
+
+## Authentication and authorization
+
+Every route except `/health`, login, refresh, and logout requires `BearerAuth`. Dataset reads are available to authenticated USER and ADMIN principals; dataset creation and dataset-version creation require ADMIN. Ownership failures for Project, Parcel, Evaluation, and Decision Support return `404` even for an ADMIN, so existence is not disclosed. `force_regenerate=true` requires an ADMIN who also owns the evaluation. See `security-route-matrix.md` for the complete matrix.
 
 ## Decision Support request shapes
 
@@ -94,5 +102,7 @@ Recommendation generation is a POST:
 ```
 
 Listing recommendations performs no provider call and supports optional `crop_id` and `water_regime` query filters.
+
+Recommendation generation reuses a persisted cache when possible. `force_regenerate=false` is the normal frontend path. Do not expose `force_regenerate=true` to USER accounts; the backend returns `403`. A foreign ADMIN still receives `404`.
 
 For exact field schemas, enum values, validation limits, and nullable properties, use `openapi.json` as the machine-readable source of truth.

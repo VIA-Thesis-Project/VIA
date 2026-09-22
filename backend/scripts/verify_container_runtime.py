@@ -41,6 +41,7 @@ REQUIRED_CROPSUITE_FILES = (
     "scripts/run_evaluation_engine.py",
 )
 HUAURA_BOUNDARY = Path("/opt/via/data/huaura/boundary/huaura_province.geojson")
+HUAURA_BOUNDARY_METADATA = Path("/opt/via/data/huaura/boundary/metadata.json")
 USDA_TEXTURE_CLASSIFICATION = Path(
     "/opt/via/CropSuiteLite/data/usda_texture_classification.dat"
 )
@@ -143,6 +144,10 @@ def verify_runtime(*, require_linux: bool) -> None:
         raise RuntimeError("CropSuiteLite source must not be writable by the runtime user.")
 
     _require_read_only_file(HUAURA_BOUNDARY, label="Required Huaura boundary")
+    _require_read_only_file(
+        HUAURA_BOUNDARY_METADATA,
+        label="Required Huaura boundary metadata",
+    )
     _require_read_only_file(
         USDA_TEXTURE_CLASSIFICATION,
         label="Required USDA texture classification",

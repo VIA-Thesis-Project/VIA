@@ -809,12 +809,11 @@ def test_limitations_endpoint_exposes_traceable_evidence_without_host_paths() ->
         "affected_area_m2": 25.0,
         "affected_fraction": 1.0,
         "dominant": True,
-        "source_storage_reference": (
-            "evaluations/e/scenarios/rainfed/crops/maize/crop_limiting_factor.tif"
-        ),
         "source_sha256": "c" * 64,
     }
     serialized = json.dumps(body).casefold()
+    assert "source_storage_reference" not in serialized
+    assert "crop_limiting_factor.tif" not in serialized
     assert "execution_reference" not in serialized
     assert "c:\\private" not in serialized
     assert "/tmp/" not in serialized

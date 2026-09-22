@@ -96,6 +96,10 @@ def create_router(
         "/login",
         response_model=AuthenticationResponse,
         operation_id="auth_login",
+        responses={
+            401: {"description": "Invalid credentials."},
+            429: {"description": "Login rate limit exceeded."},
+        },
     )
     def login(body: LoginBody, response: Response, request: Request) -> AuthenticationResponse:
         if limiter is not None:
@@ -132,6 +136,11 @@ def create_router(
         "/refresh",
         response_model=AuthenticationResponse,
         operation_id="auth_refresh",
+        responses={
+            401: {"description": "Invalid or missing refresh cookie."},
+            403: {"description": "Origin is not trusted."},
+            429: {"description": "Refresh rate limit exceeded."},
+        },
     )
     def refresh(
         request: Request,
@@ -174,6 +183,7 @@ def create_router(
         "/logout",
         status_code=status.HTTP_204_NO_CONTENT,
         operation_id="auth_logout",
+        responses={403: {"description": "Origin is not trusted."}},
     )
     def logout(
         request: Request,
@@ -199,6 +209,7 @@ def create_router(
         "/me",
         response_model=UserResponse,
         operation_id="auth_me",
+        responses={401: {"description": "Invalid or missing bearer token."}},
     )
     def me(
         response: Response,

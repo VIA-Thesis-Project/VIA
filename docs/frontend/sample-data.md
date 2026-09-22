@@ -9,10 +9,12 @@ Environmental `input_key` values in fixtures are illustrative logical identifier
 See `fixtures/evaluation-request.example.json`. Before submitting it:
 
 1. replace project, parcel, and dataset UUIDs with registered resources;
-2. copy the exact selected parcel geometry/version into `parcel_snapshot`;
+2. select the exact owned `ParcelVersion` and send only its IDs/version in `parcel_reference`;
 3. obtain crop identifiers and `scientifically_bound_dataset_versions` from `/api/v1/evaluation-capabilities`;
 4. select a bound dataset version and resolve its visible metadata through the dataset endpoints;
 5. generate a unique logical environmental `input_key`, for example `environmental-input-1`.
+
+Do not add geometry, CRS, capture time, or `parcel_snapshot` to the evaluation request. The backend resolves and persists those fields from the selected immutable parcel version.
 
 ## Polling response
 

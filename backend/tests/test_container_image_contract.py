@@ -9,6 +9,8 @@ from pathlib import Path
 REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
 HUAURA_BOUNDARY_SOURCE = "data/huaura/boundary/huaura_province.geojson"
 HUAURA_BOUNDARY_DESTINATION = "/opt/via/data/huaura/boundary/huaura_province.geojson"
+HUAURA_METADATA_SOURCE = "data/huaura/boundary/metadata.json"
+HUAURA_METADATA_DESTINATION = "/opt/via/data/huaura/boundary/metadata.json"
 USDA_TEXTURE_SOURCE = "CropSuiteLite/data/usda_texture_classification.dat"
 USDA_TEXTURE_DESTINATION = "/opt/via/CropSuiteLite/data/usda_texture_classification.dat"
 USDA_TEXTURE_SHA256 = "e1397f6f47f26ad2f2bb42d1ac9c80c17473c50d856a4f9bd90778955b5eb46a"
@@ -53,6 +55,7 @@ def test_docker_context_excludes_local_scientific_and_development_state() -> Non
         "!data/huaura/boundary/",
         "data/huaura/boundary/*",
         f"!{HUAURA_BOUNDARY_SOURCE}",
+        f"!{HUAURA_METADATA_SOURCE}",
         "!CropSuiteLite/data/",
         "CropSuiteLite/data/*",
         f"!{USDA_TEXTURE_SOURCE}",
@@ -69,10 +72,12 @@ def test_docker_context_excludes_local_scientific_and_development_state() -> Non
         "!data/huaura/",
         "!data/huaura/boundary/",
         f"!{HUAURA_BOUNDARY_SOURCE}",
+        f"!{HUAURA_METADATA_SOURCE}",
         "!CropSuiteLite/data/",
         f"!{USDA_TEXTURE_SOURCE}",
     }
     assert (REPOSITORY_ROOT / HUAURA_BOUNDARY_SOURCE).is_file()
+    assert (REPOSITORY_ROOT / HUAURA_METADATA_SOURCE).is_file()
     usda_texture = REPOSITORY_ROOT / USDA_TEXTURE_SOURCE
     assert usda_texture.is_file()
     assert hashlib.sha256(usda_texture.read_bytes()).hexdigest() == USDA_TEXTURE_SHA256
@@ -106,6 +111,8 @@ def test_container_runtime_gate_imports_real_cropsuite_with_same_interpreter() -
     assert '[sys.executable, "-c", CROPSUITE_IMPORT_SMOKE]' in verifier
     assert "cwd=engine_root" in verifier
     assert USDA_TEXTURE_DESTINATION in verifier
+    assert HUAURA_BOUNDARY_DESTINATION in verifier
+    assert HUAURA_METADATA_DESTINATION in verifier
     assert "_require_read_only_file(" in verifier
 
 
@@ -125,10 +132,14 @@ def test_image_does_not_bake_deployment_secrets_or_bindings() -> None:
         if line.lstrip().upper().startswith("COPY ")
     ]
     boundary_copy = f"COPY {HUAURA_BOUNDARY_SOURCE} {HUAURA_BOUNDARY_DESTINATION}"
+    metadata_copy = f"COPY {HUAURA_METADATA_SOURCE} {HUAURA_METADATA_DESTINATION}"
     assert copy_instructions.count(boundary_copy) == 1
+    assert copy_instructions.count(metadata_copy) == 1
 
     copied_text = "\n".join(
-        instruction for instruction in copy_instructions if instruction != boundary_copy
+        instruction
+        for instruction in copy_instructions
+        if instruction not in {boundary_copy, metadata_copy}
     ).casefold()
     for forbidden_copy in ("input-bindings.json", "data/", "downloads/", "/etc/via"):
         assert forbidden_copy not in copied_text

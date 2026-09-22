@@ -1,6 +1,34 @@
 {
   "components": {
     "schemas": {
+      "AuthenticationResponse": {
+        "properties": {
+          "access_token": {
+            "title": "Access Token",
+            "type": "string"
+          },
+          "expires_in": {
+            "title": "Expires In",
+            "type": "integer"
+          },
+          "token_type": {
+            "const": "bearer",
+            "default": "bearer",
+            "title": "Token Type",
+            "type": "string"
+          },
+          "user": {
+            "$ref": "#/components/schemas/UserResponse"
+          }
+        },
+        "required": [
+          "access_token",
+          "expires_in",
+          "user"
+        ],
+        "title": "AuthenticationResponse",
+        "type": "object"
+      },
       "CapabilityStatus": {
         "enum": [
           "complete",
@@ -665,10 +693,6 @@
             ],
             "title": "Scenario"
           },
-          "storage_reference": {
-            "title": "Storage Reference",
-            "type": "string"
-          },
           "valid_from": {
             "anyOf": [
               {
@@ -709,7 +733,6 @@
           "valid_to",
           "scenario",
           "checksum",
-          "storage_reference",
           "registered_at"
         ],
         "title": "DatasetVersionResponse",
@@ -1401,17 +1424,6 @@
           "source_sha256": {
             "title": "Source Sha256",
             "type": "string"
-          },
-          "source_storage_reference": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Source Storage Reference"
           }
         },
         "required": [
@@ -1423,10 +1435,55 @@
           "affected_area_m2",
           "affected_fraction",
           "dominant",
-          "source_storage_reference",
           "source_sha256"
         ],
         "title": "LimitingFactorResponse",
+        "type": "object"
+      },
+      "LoginBody": {
+        "additionalProperties": false,
+        "properties": {
+          "email": {
+            "title": "Email",
+            "type": "string"
+          },
+          "password": {
+            "title": "Password",
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ],
+        "title": "LoginBody",
+        "type": "object"
+      },
+      "ParcelReferenceBody": {
+        "additionalProperties": false,
+        "properties": {
+          "parcel_id": {
+            "format": "uuid",
+            "title": "Parcel Id",
+            "type": "string"
+          },
+          "parcel_version": {
+            "exclusiveMinimum": 0.0,
+            "title": "Parcel Version",
+            "type": "integer"
+          },
+          "project_id": {
+            "format": "uuid",
+            "title": "Project Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "project_id",
+          "parcel_id",
+          "parcel_version"
+        ],
+        "title": "ParcelReferenceBody",
         "type": "object"
       },
       "ParcelResponse": {
@@ -1471,50 +1528,6 @@
           "created_at"
         ],
         "title": "ParcelResponse",
-        "type": "object"
-      },
-      "ParcelSnapshotBody": {
-        "additionalProperties": false,
-        "properties": {
-          "captured_at": {
-            "format": "date-time",
-            "title": "Captured At",
-            "type": "string"
-          },
-          "crs": {
-            "maxLength": 32,
-            "minLength": 1,
-            "title": "Crs",
-            "type": "string"
-          },
-          "geometry": {
-            "$ref": "#/components/schemas/SnapshotGeometryBody"
-          },
-          "parcel_id": {
-            "format": "uuid",
-            "title": "Parcel Id",
-            "type": "string"
-          },
-          "parcel_version": {
-            "exclusiveMinimum": 0.0,
-            "title": "Parcel Version",
-            "type": "integer"
-          },
-          "project_id": {
-            "format": "uuid",
-            "title": "Project Id",
-            "type": "string"
-          }
-        },
-        "required": [
-          "project_id",
-          "parcel_id",
-          "parcel_version",
-          "geometry",
-          "crs",
-          "captured_at"
-        ],
-        "title": "ParcelSnapshotBody",
         "type": "object"
       },
       "ParcelSnapshotResponse": {
@@ -1810,8 +1823,8 @@
             "title": "Environmental Inputs",
             "type": "array"
           },
-          "parcel_snapshot": {
-            "$ref": "#/components/schemas/ParcelSnapshotBody"
+          "parcel_reference": {
+            "$ref": "#/components/schemas/ParcelReferenceBody"
           },
           "requested_crops": {
             "items": {
@@ -1831,7 +1844,7 @@
           }
         },
         "required": [
-          "parcel_snapshot",
+          "parcel_reference",
           "requested_crops",
           "environmental_inputs"
         ],
@@ -2060,30 +2073,6 @@
         "title": "ScientificallyBoundDatasetVersionResponse",
         "type": "object"
       },
-      "SnapshotGeometryBody": {
-        "additionalProperties": false,
-        "properties": {
-          "coordinates": {
-            "items": {},
-            "title": "Coordinates",
-            "type": "array"
-          },
-          "type": {
-            "enum": [
-              "Polygon",
-              "MultiPolygon"
-            ],
-            "title": "Type",
-            "type": "string"
-          }
-        },
-        "required": [
-          "type",
-          "coordinates"
-        ],
-        "title": "SnapshotGeometryBody",
-        "type": "object"
-      },
       "SnapshotGeometryResponse": {
         "properties": {
           "coordinates": {
@@ -2287,6 +2276,49 @@
         "title": "SuitabilitySummaryResponse",
         "type": "object"
       },
+      "UserResponse": {
+        "properties": {
+          "email": {
+            "title": "Email",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "role": {
+            "$ref": "#/components/schemas/UserRole"
+          },
+          "status": {
+            "$ref": "#/components/schemas/UserStatus"
+          }
+        },
+        "required": [
+          "id",
+          "email",
+          "status",
+          "role"
+        ],
+        "title": "UserResponse",
+        "type": "object"
+      },
+      "UserRole": {
+        "enum": [
+          "user",
+          "admin"
+        ],
+        "title": "UserRole",
+        "type": "string"
+      },
+      "UserStatus": {
+        "enum": [
+          "active",
+          "disabled"
+        ],
+        "title": "UserStatus",
+        "type": "string"
+      },
       "ValidationError": {
         "properties": {
           "ctx": {
@@ -2354,6 +2386,12 @@
         "title": "WaterRegime",
         "type": "string"
       }
+    },
+    "securitySchemes": {
+      "BearerAuth": {
+        "scheme": "bearer",
+        "type": "http"
+      }
     }
   },
   "info": {
@@ -2362,6 +2400,185 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/v1/auth/login": {
+      "post": {
+        "operationId": "auth_login",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Invalid credentials."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "429": {
+            "description": "Login rate limit exceeded."
+          }
+        },
+        "summary": "Login",
+        "tags": [
+          "identity-access"
+        ]
+      }
+    },
+    "/api/v1/auth/logout": {
+      "post": {
+        "operationId": "auth_logout",
+        "parameters": [
+          {
+            "in": "cookie",
+            "name": "__Secure-via_refresh",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "  Secure-Via Refresh"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Origin is not trusted."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Logout",
+        "tags": [
+          "identity-access"
+        ]
+      }
+    },
+    "/api/v1/auth/me": {
+      "get": {
+        "operationId": "auth_me",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Invalid or missing bearer token."
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Me",
+        "tags": [
+          "identity-access"
+        ]
+      }
+    },
+    "/api/v1/auth/refresh": {
+      "post": {
+        "operationId": "auth_refresh",
+        "parameters": [
+          {
+            "in": "cookie",
+            "name": "__Secure-via_refresh",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "  Secure-Via Refresh"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Invalid or missing refresh cookie."
+          },
+          "403": {
+            "description": "Origin is not trusted."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "429": {
+            "description": "Refresh rate limit exceeded."
+          }
+        },
+        "summary": "Refresh",
+        "tags": [
+          "identity-access"
+        ]
+      }
+    },
     "/api/v1/decision-support/evaluations/{evaluation_id}/knowledge": {
       "get": {
         "description": "Retrieve evidence for one successful crop scenario without generating a recommendation. affected_fraction values in the source context are 0..1.",
@@ -2407,6 +2624,12 @@
             },
             "description": "Successful Response"
           },
+          "404": {
+            "description": "Owned evaluation or scenario was not found."
+          },
+          "409": {
+            "description": "Evaluation scenario is not final."
+          },
           "422": {
             "content": {
               "application/json": {
@@ -2416,8 +2639,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "429": {
+            "description": "Knowledge rate limit exceeded."
+          },
+          "503": {
+            "description": "Knowledge provider is unavailable."
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Get Knowledge",
         "tags": [
           "decision-support"
@@ -2499,6 +2733,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "List Recommendations",
         "tags": [
           "decision-support"
@@ -2540,6 +2779,15 @@
             },
             "description": "Successful Response"
           },
+          "403": {
+            "description": "Administrator permission required for force regeneration."
+          },
+          "404": {
+            "description": "Owned evaluation or scenario was not found."
+          },
+          "409": {
+            "description": "Evaluation scenario is not final."
+          },
           "422": {
             "content": {
               "application/json": {
@@ -2549,8 +2797,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "429": {
+            "description": "Recommendation rate or daily quota exceeded."
+          },
+          "503": {
+            "description": "Recommendation provider is unavailable."
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Generate Recommendation",
         "tags": [
           "decision-support"
@@ -2573,6 +2832,11 @@
             "description": "Successful Response"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Get Evaluation Capabilities",
         "tags": [
           "agroclimatic-evaluation"
@@ -2599,6 +2863,11 @@
             "description": "Successful Response"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "List Evaluations",
         "tags": [
           "agroclimatic-evaluation"
@@ -2637,8 +2906,16 @@
               }
             },
             "description": "Validation Error"
+          },
+          "429": {
+            "description": "Evaluation quota exceeded."
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Request Evaluation",
         "tags": [
           "agroclimatic-evaluation"
@@ -2683,6 +2960,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Get Evaluation",
         "tags": [
           "agroclimatic-evaluation"
@@ -2727,6 +3009,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Get Evaluation Evidence",
         "tags": [
           "agroclimatic-evaluation"
@@ -2771,6 +3058,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Get Evaluation Limitations",
         "tags": [
           "agroclimatic-evaluation"
@@ -2815,6 +3107,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Get Evaluation Result",
         "tags": [
           "agroclimatic-evaluation"
@@ -2841,6 +3138,11 @@
             "description": "Successful Response"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "List Datasets",
         "tags": [
           "environmental-information"
@@ -2870,6 +3172,9 @@
             },
             "description": "Successful Response"
           },
+          "403": {
+            "description": "Administrator permission required."
+          },
           "422": {
             "content": {
               "application/json": {
@@ -2881,6 +3186,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Create Dataset",
         "tags": [
           "environmental-information"
@@ -2925,6 +3235,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Get Dataset",
         "tags": [
           "environmental-information"
@@ -2973,6 +3288,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "List Dataset Versions",
         "tags": [
           "environmental-information"
@@ -3014,6 +3334,9 @@
             },
             "description": "Successful Response"
           },
+          "403": {
+            "description": "Administrator permission required."
+          },
           "422": {
             "content": {
               "application/json": {
@@ -3025,6 +3348,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Create Dataset Version",
         "tags": [
           "environmental-information"
@@ -3079,6 +3407,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Get Dataset Version",
         "tags": [
           "environmental-information"
@@ -3141,8 +3474,16 @@
               }
             },
             "description": "Validation Error"
+          },
+          "429": {
+            "description": "Coverage rate limit exceeded."
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Check Dataset Version Coverage",
         "tags": [
           "environmental-information"
@@ -3195,6 +3536,11 @@
             "description": "Successful Response"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "List Projects",
         "tags": [
           "farm-management"
@@ -3235,6 +3581,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Create Project",
         "tags": [
           "farm-management"
@@ -3279,6 +3630,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Get Project",
         "tags": [
           "farm-management"
@@ -3327,6 +3683,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "List Parcels",
         "tags": [
           "farm-management"
@@ -3379,6 +3740,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Create Parcel",
         "tags": [
           "farm-management"
@@ -3433,6 +3799,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Get Parcel",
         "tags": [
           "farm-management"
@@ -3497,6 +3868,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Revise Parcel Geometry",
         "tags": [
           "farm-management"

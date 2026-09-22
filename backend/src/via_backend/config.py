@@ -10,6 +10,13 @@ from typing import Literal, cast
 
 RepositoryBackend = Literal["memory", "postgresql"]
 CookieSameSite = Literal["lax", "strict", "none"]
+REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
+DEFAULT_HUAURA_AOI_BOUNDARY_PATH = (
+    REPOSITORY_ROOT / "data" / "huaura" / "boundary" / "huaura_province.geojson"
+)
+DEFAULT_HUAURA_AOI_METADATA_PATH = (
+    REPOSITORY_ROOT / "data" / "huaura" / "boundary" / "metadata.json"
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -26,6 +33,8 @@ class Settings:
     auth_refresh_cookie_name: str = "__Secure-via_refresh"
     auth_refresh_cookie_secure: bool = True
     auth_refresh_cookie_samesite: CookieSameSite = "lax"
+    huaura_aoi_boundary_path: Path = DEFAULT_HUAURA_AOI_BOUNDARY_PATH
+    huaura_aoi_metadata_path: Path = DEFAULT_HUAURA_AOI_METADATA_PATH
     cropsuite_catalog: Path | None = None
     cropsuite_input_bindings: Path | None = None
     knowledge_source_dir: Path | None = None
@@ -191,6 +200,18 @@ class Settings:
             auth_refresh_cookie_samesite=cast(
                 CookieSameSite,
                 os.getenv("VIA_AUTH_REFRESH_COOKIE_SAMESITE", "lax").casefold(),
+            ),
+            huaura_aoi_boundary_path=Path(
+                os.getenv(
+                    "VIA_HUAURA_AOI_BOUNDARY_PATH",
+                    str(DEFAULT_HUAURA_AOI_BOUNDARY_PATH),
+                )
+            ),
+            huaura_aoi_metadata_path=Path(
+                os.getenv(
+                    "VIA_HUAURA_AOI_METADATA_PATH",
+                    str(DEFAULT_HUAURA_AOI_METADATA_PATH),
+                )
             ),
             cropsuite_catalog=_optional_path("VIA_CROPSUITE_CATALOG"),
             cropsuite_input_bindings=_optional_path("VIA_CROPSUITE_INPUT_BINDINGS"),

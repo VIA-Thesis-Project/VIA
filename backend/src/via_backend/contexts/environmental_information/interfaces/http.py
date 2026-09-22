@@ -151,6 +151,7 @@ def create_router(
         status_code=status.HTTP_201_CREATED,
         operation_id="create_dataset",
         description="Register environmental dataset identity and variable metadata.",
+        responses={403: {"description": "Administrator permission required."}},
     )
     def create_dataset(
         body: CreateDatasetBody, principal: AuthenticatedPrincipal = principal_dependency
@@ -199,6 +200,7 @@ def create_router(
         status_code=status.HTTP_201_CREATED,
         operation_id="create_dataset_version",
         description="Register an immutable environmental dataset version.",
+        responses={403: {"description": "Administrator permission required."}},
     )
     def create_dataset_version(
         dataset_id: UUID,
@@ -267,6 +269,7 @@ def create_router(
         description=(
             "Check spatial compatibility and parcel coverage for one exact dataset version."
         ),
+        responses={429: {"description": "Coverage rate limit exceeded."}},
     )
     def check_dataset_version_coverage(
         dataset_id: UUID,

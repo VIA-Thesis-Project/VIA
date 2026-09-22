@@ -1,6 +1,7 @@
 """Farm Management application layer."""
 
 from .commands import CreateParcel, CreateProject, ReviseParcelGeometry
+from .ports import ParcelAreaOfInterestValidator
 from .public import (
     AuthorizedParcelGeometry,
     AuthorizedParcelSnapshot,
@@ -29,6 +30,7 @@ __all__ = [
     "InvalidCommandError",
     "ListParcels",
     "ListProjects",
+    "ParcelAreaOfInterestValidator",
     "ParcelResult",
     "ParcelVersionResult",
     "ProjectResult",

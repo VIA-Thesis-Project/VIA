@@ -55,6 +55,11 @@ DATASET_ID = UUID("dddddddd-dddd-4ddd-8ddd-dddddddddddd")
 DATASET_VERSION_ID = UUID("eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee")
 
 
+class _AllowAllAreaOfInterest:
+    def validate(self, geometry: Any) -> None:
+        pass
+
+
 def _polygon(offset: float = 0.0) -> dict[str, Any]:
     return {
         "type": "Polygon",
@@ -75,6 +80,7 @@ def test_farm_ownership_and_authoritative_exact_version_resolution() -> None:
     service = FarmManagementService(
         projects,
         parcels,
+        area_of_interest=_AllowAllAreaOfInterest(),
         new_id=lambda: next(identifiers),
         clock=lambda: next(instants),
     )

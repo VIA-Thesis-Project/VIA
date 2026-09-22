@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+from pathlib import Path
 from typing import Any
 
 import via_backend.app as app_module
@@ -15,6 +17,10 @@ class _Engine:
 
 class _Sessions:
     pass
+
+
+REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
+COMMITTED_OPENAPI = REPOSITORY_ROOT / "docs" / "frontend" / "openapi.json"
 
 
 def _schema(monkeypatch: Any) -> dict[str, Any]:
@@ -135,3 +141,94 @@ def test_ia3_routes_publish_bearer_security_and_authoritative_parcel_reference(
     assert set(
         schema["components"]["schemas"][parcel_reference_name]["properties"]
     ) == {"project_id", "parcel_id", "parcel_version"}
+
+
+def test_all_live_functional_routes_publish_bearer_security(monkeypatch: Any) -> None:
+    schema = _schema(monkeypatch)
+    bearer = [{"BearerAuth": []}]
+    public_operations = {
+        ("/health", "get"),
+        ("/api/v1/auth/login", "post"),
+        ("/api/v1/auth/refresh", "post"),
+        ("/api/v1/auth/logout", "post"),
+    }
+
+    for path, path_item in schema["paths"].items():
+        for method, operation in path_item.items():
+            if method not in {"get", "post", "put", "patch", "delete"}:
+                continue
+            if (path, method) in public_operations:
+                assert "security" not in operation
+            else:
+                assert operation["security"] == bearer, (path, method)
+
+
+def test_openapi_publishes_role_and_cost_failures(monkeypatch: Any) -> None:
+    schema = _schema(monkeypatch)
+    expected = {
+        ("/api/v1/auth/login", "post"): {"401", "429"},
+        ("/api/v1/auth/refresh", "post"): {"401", "403", "429"},
+        ("/api/v1/auth/logout", "post"): {"403"},
+        ("/datasets", "post"): {"403"},
+        ("/datasets/{dataset_id}/versions", "post"): {"403"},
+        ("/datasets/{dataset_id}/versions/{version_id}/coverage", "post"): {"429"},
+        ("/api/v1/evaluations", "post"): {"429"},
+        (
+            "/api/v1/decision-support/evaluations/{evaluation_id}/knowledge",
+            "get",
+        ): {"404", "409", "429", "503"},
+        (
+            "/api/v1/decision-support/evaluations/{evaluation_id}/recommendations",
+            "post",
+        ): {"403", "404", "409", "429", "503"},
+    }
+
+    for (path, method), statuses in expected.items():
+        assert statuses <= set(schema["paths"][path][method]["responses"]), (path, method)
+
+
+def test_openapi_response_dtos_do_not_publish_storage_or_secret_fields(
+    monkeypatch: Any,
+) -> None:
+    schema = _schema(monkeypatch)
+    components = schema["components"]["schemas"]
+
+    assert "storage_reference" not in components["DatasetVersionResponse"]["properties"]
+    assert (
+        "source_storage_reference"
+        not in components["LimitingFactorResponse"]["properties"]
+    )
+    assert "refresh_token" not in components["AuthenticationResponse"]["properties"]
+    serialized = json.dumps(schema).casefold()
+    for forbidden in (
+        "/srv/",
+        "/opt/",
+        "database_url",
+        "openai_api_key",
+        "access_token_hash",
+        "refresh_token_hash",
+        "traceback",
+    ):
+        assert forbidden not in serialized
+
+
+def test_evaluation_request_accepts_only_authoritative_references(monkeypatch: Any) -> None:
+    schema = _schema(monkeypatch)
+    request_ref = schema["paths"]["/api/v1/evaluations"]["post"]["requestBody"][
+        "content"
+    ]["application/json"]["schema"]["$ref"]
+    request = schema["components"]["schemas"][request_ref.rsplit("/", 1)[-1]]
+
+    assert set(request["properties"]) == {
+        "parcel_reference",
+        "requested_crops",
+        "water_regimes",
+        "environmental_inputs",
+    }
+    assert request["additionalProperties"] is False
+
+
+def test_committed_openapi_matches_live_non_production_schema(monkeypatch: Any) -> None:
+    committed = json.loads(COMMITTED_OPENAPI.read_text(encoding="utf-8"))
+
+    assert committed == _schema(monkeypatch)

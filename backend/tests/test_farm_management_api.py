@@ -22,11 +22,17 @@ USER_A_HEADERS = {"Authorization": "Bearer user-a"}
 USER_B_HEADERS = {"Authorization": "Bearer user-b"}
 
 
+class _AllowAllAreaOfInterest:
+    def validate(self, geometry: Any) -> None:
+        pass
+
+
 def _test_app():
     app = FastAPI()
     service = FarmManagementService(
         projects=InMemoryProjectRepository(),
         parcels=InMemoryParcelRepository(),
+        area_of_interest=_AllowAllAreaOfInterest(),
     )
 
     def resolve_principal(

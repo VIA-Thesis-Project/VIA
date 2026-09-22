@@ -11,6 +11,7 @@ from ..domain.geometry import ParcelGeometry
 from ..domain.models import Parcel, ParcelVersion, Project
 from ..domain.repositories import ParcelRepository, ProjectRepository
 from .commands import CreateParcel, CreateProject, ReviseParcelGeometry
+from .ports import ParcelAreaOfInterestValidator
 from .public import (
     AuthorizedParcelGeometry,
     AuthorizedParcelSnapshot,
@@ -40,11 +41,13 @@ class FarmManagementService:
         projects: ProjectRepository,
         parcels: ParcelRepository,
         *,
+        area_of_interest: ParcelAreaOfInterestValidator,
         new_id: Callable[[], UUID] = uuid4,
         clock: Callable[[], datetime] | None = None,
     ) -> None:
         self._projects = projects
         self._parcels = parcels
+        self._area_of_interest = area_of_interest
         self._new_id = new_id
         self._clock = clock or (lambda: datetime.now(UTC))
 
@@ -76,6 +79,8 @@ class FarmManagementService:
         self._require_project(command.project_id, command.owner_user_id)
         created_at = self._clock()
         try:
+            geometry = ParcelGeometry.from_geojson(command.geometry)
+            self._area_of_interest.validate(geometry)
             parcel = Parcel(
                 id=self._new_id(),
                 project_id=command.project_id,
@@ -83,7 +88,7 @@ class FarmManagementService:
                 versions=(
                     ParcelVersion(
                         number=1,
-                        geometry=ParcelGeometry.from_geojson(command.geometry),
+                        geometry=geometry,
                         created_at=created_at,
                     ),
                 ),
@@ -111,8 +116,10 @@ class FarmManagementService:
         self._require_project(command.project_id, command.owner_user_id)
         parcel = self._require_parcel(command.project_id, command.parcel_id)
         try:
+            geometry = ParcelGeometry.from_geojson(command.geometry)
+            self._area_of_interest.validate(geometry)
             revised = parcel.revise_geometry(
-                ParcelGeometry.from_geojson(command.geometry), self._clock()
+                geometry, self._clock()
             )
         except DomainValidationError as error:
             raise InvalidCommandError(str(error)) from error

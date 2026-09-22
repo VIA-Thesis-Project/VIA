@@ -162,6 +162,44 @@ def test_create_production_app_validates_before_composition(
     assert validation_calls == [settings]
 
 
+def test_production_composition_disables_interactive_and_openapi_routes(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    settings = Settings(
+        farm_management_repository="postgresql",
+        environmental_information_repository="postgresql",
+        agroclimatic_evaluation_repository="postgresql",
+        database_url="postgresql+psycopg://example.invalid/via",
+    )
+    calls: list[tuple[Settings | None, bool]] = []
+
+    monkeypatch.setattr(Settings, "from_env", lambda: settings)
+
+    def compose(
+        candidate: Settings | None = None,
+        *,
+        include_api_docs: bool = True,
+    ) -> object:
+        calls.append((candidate, include_api_docs))
+        return object()
+
+    monkeypatch.setattr(app_module, "create_app", compose)
+
+    app_module.create_production_app()
+
+    assert calls == [(settings, False)]
+
+
+def test_docs_can_be_disabled_without_affecting_development_openapi_generation() -> None:
+    hidden = app_module.create_app(Settings(), include_api_docs=False)
+    visible = app_module.create_app(Settings())
+
+    hidden_paths = {getattr(route, "path", None) for route in hidden.routes}
+    visible_paths = {getattr(route, "path", None) for route in visible.routes}
+    assert {"/docs", "/redoc", "/openapi.json"}.isdisjoint(hidden_paths)
+    assert {"/docs", "/redoc", "/openapi.json"} <= visible_paths
+
+
 def test_postgresql_app_composition_does_not_initialize_openai_client(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

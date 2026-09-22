@@ -44,6 +44,31 @@ def test_digitalocean_compose_preserves_runtime_and_durability_contracts() -> No
     assert "restart: unless-stopped" in worker
     assert "ports:" not in worker
     assert '"127.0.0.1:${VIA_API_HOST_PORT:-8000}:8000"' in api
+    assert "VIA_CORS_ALLOWED_ORIGINS: ${VIA_CORS_ALLOWED_ORIGINS:?" in api
+    for setting in (
+        "VIA_AUTH_ACCESS_TOKEN_TTL_SECONDS",
+        "VIA_AUTH_REFRESH_TOKEN_TTL_SECONDS",
+        "VIA_AUTH_REFRESH_COOKIE_NAME",
+        "VIA_AUTH_REFRESH_COOKIE_SECURE",
+        "VIA_AUTH_REFRESH_COOKIE_SAMESITE",
+        "VIA_RATE_LOGIN_PER_MINUTE",
+        "VIA_RATE_REFRESH_PER_MINUTE",
+        "VIA_RATE_DATASET_COVERAGE_PER_MINUTE",
+        "VIA_RATE_KNOWLEDGE_PER_USER_PER_MINUTE",
+        "VIA_RATE_RECOMMENDATIONS_PER_USER_PER_MINUTE",
+        "VIA_MAX_ACTIVE_EVALUATIONS_PER_USER",
+        "VIA_DAILY_EVALUATION_QUOTA_PER_USER",
+        "VIA_DAILY_RECOMMENDATION_QUOTA_PER_USER",
+    ):
+        assert f"{setting}: ${{{setting}:-" in api
+    assert (
+        "VIA_HUAURA_AOI_BOUNDARY_PATH: "
+        "/opt/via/data/huaura/boundary/huaura_province.geojson"
+    ) in api
+    assert (
+        "VIA_HUAURA_AOI_METADATA_PATH: /opt/via/data/huaura/boundary/metadata.json"
+        in api
+    )
     assert "VIA_CROPSUITE_SOURCE_CONFIG: ${VIA_CROPSUITE_SOURCE_CONFIG:-}" in worker
     assert "VIA_CROPSUITE_CATALOG: ${VIA_CROPSUITE_CATALOG:-}" in worker
     assert "VIA_CROPSUITE_MAX_WORKERS: ${VIA_CROPSUITE_MAX_WORKERS:-1}" in worker
@@ -55,7 +80,7 @@ def test_digitalocean_compose_preserves_runtime_and_durability_contracts() -> No
 
     assert "compose.production-smoke.yaml" not in compose
     assert "deploy/smoke" not in compose
-    assert "data/huaura" not in compose.casefold()
+    assert re.search(r"(?<!/opt/via/)data/huaura", compose, re.IGNORECASE) is None
 
 
 def test_deployment_script_enforces_release_order_without_destructive_cleanup() -> None:
@@ -110,15 +135,22 @@ def test_provider_files_do_not_embed_secrets_or_raw_huaura_paths() -> None:
         r"(-----BEGIN [A-Z ]*PRIVATE KEY-----|"
         r"github_pat_[A-Za-z0-9_]+|ghp_[A-Za-z0-9]+|dop_v1_[A-Za-z0-9]+)"
     )
+    raw_huaura_path = re.compile(r"(?<!/opt/via/)data/huaura", re.IGNORECASE)
 
     for relative_path in provider_files:
         text = _read(relative_path)
         assert secret_pattern.search(text) is None, relative_path
-        assert "data/huaura" not in text.casefold(), relative_path
+        assert raw_huaura_path.search(text) is None, relative_path
         assert "doctl " not in text.casefold(), relative_path
 
     runtime_example = _read("deploy/digitalocean/runtime.env.example")
     assert "VIA_POSTGRES_PASSWORD=REPLACE_ME" in runtime_example
+    assert "frontend.example.com" not in runtime_example
+    assert "VIA_CORS_ALLOWED_ORIGINS=REPLACE_WITH_FRONTEND_HTTPS_ORIGIN" in runtime_example
+    assert "VIA_AUTH_REFRESH_COOKIE_SECURE=true" in runtime_example
+    assert "VIA_AUTH_REFRESH_COOKIE_SAMESITE=lax" in runtime_example
+    assert "VIA_DAILY_EVALUATION_QUOTA_PER_USER=20" in runtime_example
+    assert "VIA_DAILY_RECOMMENDATION_QUOTA_PER_USER=10" in runtime_example
     assert "VIA_CROPSUITE_SOURCE_CONFIG=/etc/via/huaura-runtime.ini" in runtime_example
     assert (
         "VIA_CROPSUITE_CATALOG=/opt/via/CropSuiteLite/plant_params/huaura_maize"
