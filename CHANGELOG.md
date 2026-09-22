@@ -10,9 +10,9 @@ El proyecto sigue [Semantic Versioning](https://semver.org/) y, mientras permane
 
 ### Added
 
-- Documentación de navegación y contribución del repositorio.
-- Guía de integración y pruebas de la API mediante Postman.
-- Política explícita de finales de línea multiplataforma mediante `.gitattributes`.
+- Colección Postman v2.1 importable para probar el flujo completo de integración frontend.
+- Environment Postman sin credenciales con propagación automática de tokens e identificadores.
+- Polling acotado para evaluaciones asíncronas y pruebas de sesión mediante cookie jar.
 
 ### Changed
 
