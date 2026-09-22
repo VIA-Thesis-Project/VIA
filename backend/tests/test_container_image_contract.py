@@ -26,8 +26,7 @@ def test_docker_context_excludes_local_scientific_and_development_state() -> Non
     required = {
         ".git/",
         ".codex/",
-        "graphify-out/",
-        "backend/graphify-out/",
+        "**/graphify-out/",
         "**/.venv/",
         "**/__pycache__/",
         "**/.pytest_cache/",

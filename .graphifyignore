@@ -1,2 +1,2 @@
-# Graphify's own Codex skill documentation is tooling metadata, not VIA domain knowledge.
-.codex/skills/graphify/references/
+# Local AI agent tooling is not VIA domain knowledge.
+.codex/
