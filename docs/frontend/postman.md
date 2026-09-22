@@ -302,3 +302,11 @@ El valor real debe configurarse por entorno.
 - No exportes environments con secretos.
 - No reutilices credenciales administrativas para desarrollo frontend.
 - Respeta ownership: un usuario no debe acceder a recursos de otro.
+
+## Colección importable
+
+Los archivos listos para importar en Postman se encuentran en:
+
+- `docs/frontend/postman/VIA.postman_collection.json`
+- `docs/frontend/postman/VIA.postman_environment.json`
+- `docs/frontend/postman/README.md`

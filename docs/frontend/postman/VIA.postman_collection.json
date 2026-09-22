@@ -1,0 +1,1372 @@
+{
+  "info": {
+    "_postman_id": "36d5169b-61be-4f35-8c4b-f4e778160ef2",
+    "name": "VIA Backend",
+    "description": "Importable frontend integration flow generated from the current FastAPI routes and schemas. Select the VIA environment before running.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{access_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "const requiredVariables = [\"base_url\"];",
+          "const missingVariables = requiredVariables.filter((name) => {",
+          "  const value = pm.environment.get(name);",
+          "  return value === undefined || value === null || String(value).trim() === '';",
+          "});",
+          "if (missingVariables.length > 0) {",
+          "  throw new Error(`Missing required environment variable(s): ${missingVariables.join(\", \")}`);",
+          "}",
+          "const normalizedBaseUrl = String(pm.environment.get(\"base_url\")).replace(/\\/+$/, \"\");",
+          "pm.environment.set(\"base_url\", normalizedBaseUrl);"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "00 - Health",
+      "description": "Public process health.",
+      "item": [
+        {
+          "name": "Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/health",
+            "description": "Public liveness check.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Content-Type is JSON\", () => {",
+                  "  pm.expect(pm.response.headers.get(\"Content-Type\") || \"\").to.include(\"application/json\");",
+                  "});",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Health status is ok\", () => pm.expect(body.status).to.eql(\"ok\"));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "01 - Authentication",
+      "description": "Credential login and a negative Bearer-auth check.",
+      "item": [
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/v1/auth/login",
+            "description": "Authenticates the integration user. Postman stores the Secure HttpOnly refresh cookie in its cookie jar; the test stores only the access token.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const requiredVariables = [\"email\", \"password\"];",
+                  "const missingVariables = requiredVariables.filter((name) => {",
+                  "  const value = pm.environment.get(name);",
+                  "  return value === undefined || value === null || String(value).trim() === '';",
+                  "});",
+                  "if (missingVariables.length > 0) {",
+                  "  throw new Error(`Missing required environment variable(s): ${missingVariables.join(\", \")}`);",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Content-Type is JSON\", () => {",
+                  "  pm.expect(pm.response.headers.get(\"Content-Type\") || \"\").to.include(\"application/json\");",
+                  "});",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Authentication response has required fields\", () => {",
+                  "  pm.expect(body).to.have.property(\"access_token\").that.is.a(\"string\").and.not.empty;",
+                  "  pm.expect(body.token_type).to.eql(\"bearer\");",
+                  "  pm.expect(body).to.have.property(\"expires_in\").that.is.a(\"number\");",
+                  "  pm.expect(body).to.have.property(\"user\").that.is.an(\"object\");",
+                  "  pm.expect(body.user).to.include.all.keys(\"id\", \"email\", \"status\", \"role\");",
+                  "});",
+                  "if (body.access_token) {",
+                  "  pm.environment.set(\"access_token\", body.access_token);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Protected Request Without Bearer (expects 401)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/api/v1/auth/me",
+            "description": "Negative authentication check using the real /auth/me route without Bearer auth.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 401\", () => pm.response.to.have.status(401));",
+                  "pm.test(\"Content-Type is JSON\", () => {",
+                  "  pm.expect(pm.response.headers.get(\"Content-Type\") || \"\").to.include(\"application/json\");",
+                  "});",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Error detail is present\", () => pm.expect(body.detail).to.be.a(\"string\").and.not.empty);",
+                  "pm.test(\"Bearer challenge is returned\", () => pm.expect(pm.response.headers.get(\"WWW-Authenticate\")).to.eql(\"Bearer\"));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "02 - Projects",
+      "description": "Owned project lifecycle used by the integration flow.",
+      "item": [
+        {
+          "name": "Create Project",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/projects",
+            "description": "Creates an owned project and stores project_id.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"{{project_name}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const requiredVariables = [\"access_token\"];",
+                  "const missingVariables = requiredVariables.filter((name) => {",
+                  "  const value = pm.environment.get(name);",
+                  "  return value === undefined || value === null || String(value).trim() === '';",
+                  "});",
+                  "if (missingVariables.length > 0) {",
+                  "  throw new Error(`Missing required environment variable(s): ${missingVariables.join(\", \")}`);",
+                  "}",
+                  "pm.variables.set(\"project_name\", `VIA Postman ${Date.now()}`);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 201\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"Content-Type is JSON\", () => {",
+                  "  pm.expect(pm.response.headers.get(\"Content-Type\") || \"\").to.include(\"application/json\");",
+                  "});",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Project has required fields\", () => pm.expect(body).to.include.all.keys(\"id\", \"name\", \"created_at\"));",
+                  "if (body.id) pm.environment.set(\"project_id\", body.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List Projects",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/projects",
+            "description": "Lists projects owned by the authenticated user."
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const requiredVariables = [\"access_token\"];",
+                  "const missingVariables = requiredVariables.filter((name) => {",
+                  "  const value = pm.environment.get(name);",
+                  "  return value === undefined || value === null || String(value).trim() === '';",
+                  "});",
+                  "if (missingVariables.length > 0) {",
+                  "  throw new Error(`Missing required environment variable(s): ${missingVariables.join(\", \")}`);",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Content-Type is JSON\", () => {",
+                  "  pm.expect(pm.response.headers.get(\"Content-Type\") || \"\").to.include(\"application/json\");",
+                  "});",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Response is an array\", () => pm.expect(body).to.be.an(\"array\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Project",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/projects/{{project_id}}",
+            "description": "Reads the project created or selected in project_id."
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const requiredVariables = [\"access_token\", \"project_id\"];",
+                  "const missingVariables = requiredVariables.filter((name) => {",
+                  "  const value = pm.environment.get(name);",
+                  "  return value === undefined || value === null || String(value).trim() === '';",
+                  "});",
+                  "if (missingVariables.length > 0) {",
+                  "  throw new Error(`Missing required environment variable(s): ${missingVariables.join(\", \")}`);",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Content-Type is JSON\", () => {",
+                  "  pm.expect(pm.response.headers.get(\"Content-Type\") || \"\").to.include(\"application/json\");",
+                  "});",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Project ID matches\", () => pm.expect(body.id).to.eql(pm.environment.get(\"project_id\")));",
+                  "pm.test(\"Project has required fields\", () => pm.expect(body).to.include.all.keys(\"id\", \"name\", \"created_at\"));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "03 - Parcels",
+      "description": "Owned parcels and immutable geometry versions.",
+      "item": [
+        {
+          "name": "Create Parcel",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/projects/{{project_id}}/parcels",
+            "description": "Creates a parcel using synthetic coordinates verified to be covered by the repository's authoritative Huaura AOI asset; stores parcel_id and parcel_version.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"VIA Postman synthetic parcel\",\n  \"geometry\": {\n    \"type\": \"Polygon\",\n    \"coordinates\": [\n      [\n        [\n          -77.1400370943541,\n          -11.028550000000001\n        ],\n        [\n          -77.1400370943541,\n          -11.026550000000002\n        ],\n        [\n          -77.14203709435411,\n          -11.026550000000002\n        ],\n        [\n          -77.14203709435411,\n          -11.028550000000001\n        ],\n        [\n          -77.1400370943541,\n          -11.028550000000001\n        ]\n      ]\n    ]\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const requiredVariables = [\"access_token\", \"project_id\"];",
+                  "const missingVariables = requiredVariables.filter((name) => {",
+                  "  const value = pm.environment.get(name);",
+                  "  return value === undefined || value === null || String(value).trim() === '';",
+                  "});",
+                  "if (missingVariables.length > 0) {",
+                  "  throw new Error(`Missing required environment variable(s): ${missingVariables.join(\", \")}`);",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 201\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"Content-Type is JSON\", () => {",
+                  "  pm.expect(pm.response.headers.get(\"Content-Type\") || \"\").to.include(\"application/json\");",
+                  "});",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Parcel has required fields\", () => pm.expect(body).to.include.all.keys(\"id\", \"project_id\", \"name\", \"current_version\", \"versions\", \"created_at\"));",
+                  "pm.test(\"Parcel belongs to project\", () => pm.expect(body.project_id).to.eql(pm.environment.get(\"project_id\")));",
+                  "if (body.id) pm.environment.set(\"parcel_id\", body.id);",
+                  "if (body.current_version) pm.environment.set(\"parcel_version\", String(body.current_version));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List Parcels",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/projects/{{project_id}}/parcels",
+            "description": "Lists parcels in the selected owned project."
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const requiredVariables = [\"access_token\", \"project_id\"];",
+                  "const missingVariables = requiredVariables.filter((name) => {",
+                  "  const value = pm.environment.get(name);",
+                  "  return value === undefined || value === null || String(value).trim() === '';",
+                  "});",
+                  "if (missingVariables.length > 0) {",
+                  "  throw new Error(`Missing required environment variable(s): ${missingVariables.join(\", \")}`);",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Content-Type is JSON\", () => {",
+                  "  pm.expect(pm.response.headers.get(\"Content-Type\") || \"\").to.include(\"application/json\");",
+                  "});",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Response is an array\", () => pm.expect(body).to.be.an(\"array\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Parcel",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/projects/{{project_id}}/parcels/{{parcel_id}}",
+            "description": "Reads the selected parcel and its immutable geometry-version history."
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const requiredVariables = [\"access_token\", \"project_id\", \"parcel_id\"];",
+                  "const missingVariables = requiredVariables.filter((name) => {",
+                  "  const value = pm.environment.get(name);",
+                  "  return value === undefined || value === null || String(value).trim() === '';",
+                  "});",
+                  "if (missingVariables.length > 0) {",
+                  "  throw new Error(`Missing required environment variable(s): ${missingVariables.join(\", \")}`);",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Content-Type is JSON\", () => {",
+                  "  pm.expect(pm.response.headers.get(\"Content-Type\") || \"\").to.include(\"application/json\");",
+                  "});",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Parcel ID matches\", () => pm.expect(body.id).to.eql(pm.environment.get(\"parcel_id\")));",
+                  "pm.test(\"Versions are present\", () => pm.expect(body.versions).to.be.an(\"array\").that.is.not.empty);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create Parcel Version",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/projects/{{project_id}}/parcels/{{parcel_id}}/versions",
+            "description": "Appends a second synthetic geometry version and updates parcel_version.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"geometry\": {\n    \"type\": \"Polygon\",\n    \"coordinates\": [\n      [\n        [\n          -77.1398370943541,\n          -11.028350000000001\n        ],\n        [\n          -77.1398370943541,\n          -11.026350000000003\n        ],\n        [\n          -77.1418370943541,\n          -11.026350000000003\n        ],\n        [\n          -77.1418370943541,\n          -11.028350000000001\n        ],\n        [\n          -77.1398370943541,\n          -11.028350000000001\n        ]\n      ]\n    ]\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const requiredVariables = [\"access_token\", \"project_id\", \"parcel_id\"];",
+                  "const missingVariables = requiredVariables.filter((name) => {",
+                  "  const value = pm.environment.get(name);",
+                  "  return value === undefined || value === null || String(value).trim() === '';",
+                  "});",
+                  "if (missingVariables.length > 0) {",
+                  "  throw new Error(`Missing required environment variable(s): ${missingVariables.join(\", \")}`);",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 201\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"Content-Type is JSON\", () => {",
+                  "  pm.expect(pm.response.headers.get(\"Content-Type\") || \"\").to.include(\"application/json\");",
+                  "});",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Parcel version was appended\", () => {",
+                  "  pm.expect(body.current_version).to.be.a(\"number\").and.to.be.above(1);",
+                  "  pm.expect(body.versions).to.be.an(\"array\").that.is.not.empty;",
+                  "});",
+                  "if (body.current_version) pm.environment.set(\"parcel_version\", String(body.current_version));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "04 - Environmental Inputs",
+      "description": "Capability discovery, catalog reads, and spatial coverage. ADMIN catalog mutations are intentionally omitted from the portable Runner.",
+      "item": [
+        {
+          "name": "Get Evaluation Capabilities",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/api/v1/evaluation-capabilities",
+            "description": "Discovers the deployed crop catalog and exact dataset versions with scientific bindings. Stores the first bound dataset pair for the portable evaluation flow."
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const requiredVariables = [\"access_token\", \"crop_id\", \"water_regime\"];",
+                  "const missingVariables = requiredVariables.filter((name) => {",
+                  "  const value = pm.environment.get(name);",
+                  "  return value === undefined || value === null || String(value).trim() === '';",
+                  "});",
+                  "if (missingVariables.length > 0) {",
+                  "  throw new Error(`Missing required environment variable(s): ${missingVariables.join(\", \")}`);",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Content-Type is JSON\", () => {",
+                  "  pm.expect(pm.response.headers.get(\"Content-Type\") || \"\").to.include(\"application/json\");",
+                  "});",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Capabilities have required fields\", () => pm.expect(body).to.include.all.keys(\"status\", \"crops\", \"environmental_inputs\", \"limitations\"));",
+                  "const crop = (body.crops || []).find((item) => item.crop_id === pm.environment.get(\"crop_id\"));",
+                  "pm.test(\"Configured crop is available\", () => pm.expect(crop, `crop_id=${pm.environment.get(\"crop_id\")}`).to.be.an(\"object\"));",
+                  "if (crop) pm.test(\"Configured water regime is supported\", () => pm.expect(crop.water_regimes).to.include(pm.environment.get(\"water_regime\")));",
+                  "const bindings = body.environmental_inputs && body.environmental_inputs.scientifically_bound_dataset_versions;",
+                  "pm.test(\"At least one scientific dataset binding is available\", () => pm.expect(bindings).to.be.an(\"array\").that.is.not.empty);",
+                  "if (Array.isArray(bindings) && bindings.length > 0) {",
+                  "  pm.environment.set(\"dataset_id\", bindings[0].dataset_id);",
+                  "  pm.environment.set(\"dataset_version_id\", bindings[0].dataset_version_id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List Datasets",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/datasets",
+            "description": "Lists registered environmental datasets."
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const requiredVariables = [\"access_token\"];",
+                  "const missingVariables = requiredVariables.filter((name) => {",
+                  "  const value = pm.environment.get(name);",
+                  "  return value === undefined || value === null || String(value).trim() === '';",
+                  "});",
+                  "if (missingVariables.length > 0) {",
+                  "  throw new Error(`Missing required environment variable(s): ${missingVariables.join(\", \")}`);",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Content-Type is JSON\", () => {",
+                  "  pm.expect(pm.response.headers.get(\"Content-Type\") || \"\").to.include(\"application/json\");",
+                  "});",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Response is an array\", () => pm.expect(body).to.be.an(\"array\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Bound Dataset",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/datasets/{{dataset_id}}",
+            "description": "Resolves metadata for the dataset selected from capabilities."
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const requiredVariables = [\"access_token\", \"dataset_id\"];",
+                  "const missingVariables = requiredVariables.filter((name) => {",
+                  "  const value = pm.environment.get(name);",
+                  "  return value === undefined || value === null || String(value).trim() === '';",
+                  "});",
+                  "if (missingVariables.length > 0) {",
+                  "  throw new Error(`Missing required environment variable(s): ${missingVariables.join(\", \")}`);",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Content-Type is JSON\", () => {",
+                  "  pm.expect(pm.response.headers.get(\"Content-Type\") || \"\").to.include(\"application/json\");",
+                  "});",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Dataset ID matches\", () => pm.expect(body.id).to.eql(pm.environment.get(\"dataset_id\")));",
+                  "pm.test(\"Dataset has required fields\", () => pm.expect(body).to.include.all.keys(\"id\", \"name\", \"source\", \"variable\", \"unit\", \"created_at\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List Dataset Versions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/datasets/{{dataset_id}}/versions",
+            "description": "Lists immutable versions for the selected dataset."
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const requiredVariables = [\"access_token\", \"dataset_id\"];",
+                  "const missingVariables = requiredVariables.filter((name) => {",
+                  "  const value = pm.environment.get(name);",
+                  "  return value === undefined || value === null || String(value).trim() === '';",
+                  "});",
+                  "if (missingVariables.length > 0) {",
+                  "  throw new Error(`Missing required environment variable(s): ${missingVariables.join(\", \")}`);",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Content-Type is JSON\", () => {",
+                  "  pm.expect(pm.response.headers.get(\"Content-Type\") || \"\").to.include(\"application/json\");",
+                  "});",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Response is an array\", () => pm.expect(body).to.be.an(\"array\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Bound Dataset Version",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/datasets/{{dataset_id}}/versions/{{dataset_version_id}}",
+            "description": "Reads the exact scientifically bound dataset version."
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const requiredVariables = [\"access_token\", \"dataset_id\", \"dataset_version_id\"];",
+                  "const missingVariables = requiredVariables.filter((name) => {",
+                  "  const value = pm.environment.get(name);",
+                  "  return value === undefined || value === null || String(value).trim() === '';",
+                  "});",
+                  "if (missingVariables.length > 0) {",
+                  "  throw new Error(`Missing required environment variable(s): ${missingVariables.join(\", \")}`);",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Content-Type is JSON\", () => {",
+                  "  pm.expect(pm.response.headers.get(\"Content-Type\") || \"\").to.include(\"application/json\");",
+                  "});",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Dataset version IDs match\", () => {",
+                  "  pm.expect(body.id).to.eql(pm.environment.get(\"dataset_version_id\"));",
+                  "  pm.expect(body.dataset_id).to.eql(pm.environment.get(\"dataset_id\"));",
+                  "});",
+                  "pm.test(\"Version has required metadata\", () => pm.expect(body).to.include.all.keys(\"version_identifier\", \"crs\", \"resolution\", \"extent\", \"checksum\", \"registered_at\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Check Dataset Coverage",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/datasets/{{dataset_id}}/versions/{{dataset_version_id}}/coverage",
+            "description": "Checks the selected bound dataset version against the same synthetic parcel geometry.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"geometry\": {\n    \"type\": \"Polygon\",\n    \"coordinates\": [\n      [\n        [\n          -77.1398370943541,\n          -11.028350000000001\n        ],\n        [\n          -77.1398370943541,\n          -11.026350000000003\n        ],\n        [\n          -77.1418370943541,\n          -11.026350000000003\n        ],\n        [\n          -77.1418370943541,\n          -11.028350000000001\n        ],\n        [\n          -77.1398370943541,\n          -11.028350000000001\n        ]\n      ]\n    ]\n  },\n  \"crs\": \"EPSG:4326\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const requiredVariables = [\"access_token\", \"dataset_id\", \"dataset_version_id\"];",
+                  "const missingVariables = requiredVariables.filter((name) => {",
+                  "  const value = pm.environment.get(name);",
+                  "  return value === undefined || value === null || String(value).trim() === '';",
+                  "});",
+                  "if (missingVariables.length > 0) {",
+                  "  throw new Error(`Missing required environment variable(s): ${missingVariables.join(\", \")}`);",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Content-Type is JSON\", () => {",
+                  "  pm.expect(pm.response.headers.get(\"Content-Type\") || \"\").to.include(\"application/json\");",
+                  "});",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Coverage response has required fields\", () => pm.expect(body).to.include.all.keys(\"dataset_id\", \"dataset_version_id\", \"compatible\", \"coverage\", \"dataset_crs\", \"parcel_crs\", \"transformations\", \"warnings\", \"reasons\"));",
+                  "pm.test(\"Coverage IDs match\", () => {",
+                  "  pm.expect(body.dataset_id).to.eql(pm.environment.get(\"dataset_id\"));",
+                  "  pm.expect(body.dataset_version_id).to.eql(pm.environment.get(\"dataset_version_id\"));",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "05 - Evaluations",
+      "description": "Queue, list, and bounded-poll asynchronous evaluations.",
+      "item": [
+        {
+          "name": "Create Evaluation",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/v1/evaluations",
+            "description": "Queues asynchronous scientific work and stores evaluation_id.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"parcel_reference\": {\n    \"project_id\": \"{{project_id}}\",\n    \"parcel_id\": \"{{parcel_id}}\",\n    \"parcel_version\": {{parcel_version}}\n  },\n  \"requested_crops\": [\"{{crop_id}}\"],\n  \"water_regimes\": [\"{{water_regime}}\"],\n  \"environmental_inputs\": [\n    {\n      \"input_key\": \"postman-environmental-input-1\",\n      \"dataset_id\": \"{{dataset_id}}\",\n      \"dataset_version_id\": \"{{dataset_version_id}}\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const requiredVariables = [\"access_token\", \"project_id\", \"parcel_id\", \"parcel_version\", \"crop_id\", \"water_regime\", \"dataset_id\", \"dataset_version_id\"];",
+                  "const missingVariables = requiredVariables.filter((name) => {",
+                  "  const value = pm.environment.get(name);",
+                  "  return value === undefined || value === null || String(value).trim() === '';",
+                  "});",
+                  "if (missingVariables.length > 0) {",
+                  "  throw new Error(`Missing required environment variable(s): ${missingVariables.join(\", \")}`);",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 201\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"Content-Type is JSON\", () => {",
+                  "  pm.expect(pm.response.headers.get(\"Content-Type\") || \"\").to.include(\"application/json\");",
+                  "});",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Evaluation has required fields\", () => pm.expect(body).to.include.all.keys(\"id\", \"parcel_snapshot\", \"requested_crops\", \"requested_water_regimes\", \"status\", \"created_at\"));",
+                  "if (body.id) pm.environment.set(\"evaluation_id\", body.id);",
+                  "pm.environment.set(\"evaluation_poll_count\", \"0\");"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List Evaluations",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/api/v1/evaluations",
+            "description": "Lists evaluations owned by the authenticated user."
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const requiredVariables = [\"access_token\"];",
+                  "const missingVariables = requiredVariables.filter((name) => {",
+                  "  const value = pm.environment.get(name);",
+                  "  return value === undefined || value === null || String(value).trim() === '';",
+                  "});",
+                  "if (missingVariables.length > 0) {",
+                  "  throw new Error(`Missing required environment variable(s): ${missingVariables.join(\", \")}`);",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Content-Type is JSON\", () => {",
+                  "  pm.expect(pm.response.headers.get(\"Content-Type\") || \"\").to.include(\"application/json\");",
+                  "});",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Response is an array\", () => pm.expect(body).to.be.an(\"array\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Poll Evaluation Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/api/v1/evaluations/{{evaluation_id}}",
+            "description": "Manual or Runner-safe polling. Runner loops at most evaluation_poll_max times, waiting evaluation_poll_delay_ms between attempts, and stops on failed/cancelled."
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const requiredVariables = [\"access_token\", \"evaluation_id\"];",
+                  "const missingVariables = requiredVariables.filter((name) => {",
+                  "  const value = pm.environment.get(name);",
+                  "  return value === undefined || value === null || String(value).trim() === '';",
+                  "});",
+                  "if (missingVariables.length > 0) {",
+                  "  throw new Error(`Missing required environment variable(s): ${missingVariables.join(\", \")}`);",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Content-Type is JSON\", () => {",
+                  "  pm.expect(pm.response.headers.get(\"Content-Type\") || \"\").to.include(\"application/json\");",
+                  "});",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Status response has required fields\", () => pm.expect(body).to.include.all.keys(\"evaluation_id\", \"status\", \"requested_execution_count\", \"completed_execution_count\", \"failed\"));",
+                  "pm.test(\"Evaluation ID matches\", () => pm.expect(body.evaluation_id).to.eql(pm.environment.get(\"evaluation_id\")));",
+                  "const activeStates = [\"queued\", \"preparing\", \"running\", \"summarizing\"];",
+                  "const terminalStates = [\"succeeded\", \"failed\", \"cancelled\"];",
+                  "pm.test(\"Status is part of the real lifecycle\", () => pm.expect(activeStates.concat(terminalStates)).to.include(body.status));",
+                  "pm.environment.set(\"last_evaluation_status\", body.status);",
+                  "const currentCount = Number(pm.environment.get(\"evaluation_poll_count\") || 0);",
+                  "const maxCount = Number(pm.environment.get(\"evaluation_poll_max\") || 30);",
+                  "const delayMs = Number(pm.environment.get(\"evaluation_poll_delay_ms\") || 2000);",
+                  "if (activeStates.includes(body.status)) {",
+                  "  const nextCount = currentCount + 1;",
+                  "  pm.environment.set(\"evaluation_poll_count\", String(nextCount));",
+                  "  if (nextCount < maxCount) {",
+                  "    console.log(`Evaluation ${body.evaluation_id} is ${body.status}; poll ${nextCount}/${maxCount} in ${delayMs} ms.`);",
+                  "    setTimeout(() => {}, delayMs);",
+                  "    if (pm.execution && pm.execution.setNextRequest) pm.execution.setNextRequest(\"Poll Evaluation Status\");",
+                  "    else postman.setNextRequest(\"Poll Evaluation Status\");",
+                  "  } else {",
+                  "    pm.test(\"Evaluation reached a terminal state before the polling limit\", () => pm.expect.fail(`Polling stopped after ${maxCount} attempts; last status: ${body.status}`));",
+                  "    if (pm.execution && pm.execution.setNextRequest) pm.execution.setNextRequest(null);",
+                  "    else postman.setNextRequest(null);",
+                  "  }",
+                  "} else {",
+                  "  pm.environment.set(\"evaluation_poll_count\", \"0\");",
+                  "  if ([\"failed\", \"cancelled\"].includes(body.status)) {",
+                  "    pm.test(\"Evaluation completed successfully\", () => pm.expect(body.status).to.eql(\"succeeded\"));",
+                  "    if (pm.execution && pm.execution.setNextRequest) pm.execution.setNextRequest(null);",
+                  "    else postman.setNextRequest(null);",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "06 - Scientific Results",
+      "description": "Scientific result, evidence, and limitation resources.",
+      "item": [
+        {
+          "name": "Get Evaluation Result",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/api/v1/evaluations/{{evaluation_id}}/result",
+            "description": "Reads pending, partial, final, or failed scientific results without asserting concrete scores."
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const requiredVariables = [\"access_token\", \"evaluation_id\"];",
+                  "const missingVariables = requiredVariables.filter((name) => {",
+                  "  const value = pm.environment.get(name);",
+                  "  return value === undefined || value === null || String(value).trim() === '';",
+                  "});",
+                  "if (missingVariables.length > 0) {",
+                  "  throw new Error(`Missing required environment variable(s): ${missingVariables.join(\", \")}`);",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Content-Type is JSON\", () => {",
+                  "  pm.expect(pm.response.headers.get(\"Content-Type\") || \"\").to.include(\"application/json\");",
+                  "});",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Result has required fields\", () => pm.expect(body).to.include.all.keys(\"evaluation_id\", \"evaluation_status\", \"availability\", \"outcomes\", \"common_support\", \"comparable_crops\", \"scenarios\"));",
+                  "pm.test(\"Availability is valid\", () => pm.expect([\"pending\", \"partial\", \"final\", \"failed\"]).to.include(body.availability));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Evaluation Evidence",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/api/v1/evaluations/{{evaluation_id}}/evidence",
+            "description": "Reads safe scientific trace evidence."
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const requiredVariables = [\"access_token\", \"evaluation_id\"];",
+                  "const missingVariables = requiredVariables.filter((name) => {",
+                  "  const value = pm.environment.get(name);",
+                  "  return value === undefined || value === null || String(value).trim() === '';",
+                  "});",
+                  "if (missingVariables.length > 0) {",
+                  "  throw new Error(`Missing required environment variable(s): ${missingVariables.join(\", \")}`);",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Content-Type is JSON\", () => {",
+                  "  pm.expect(pm.response.headers.get(\"Content-Type\") || \"\").to.include(\"application/json\");",
+                  "});",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Evidence has required fields\", () => pm.expect(body).to.include.all.keys(\"evaluation_id\", \"evaluation_status\", \"availability\", \"evidence\"));",
+                  "pm.test(\"Evidence is an array\", () => pm.expect(body.evidence).to.be.an(\"array\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Evaluation Limitations",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/api/v1/evaluations/{{evaluation_id}}/limitations",
+            "description": "Reads limiting-factor evidence; no fixed scientific values are asserted."
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const requiredVariables = [\"access_token\", \"evaluation_id\"];",
+                  "const missingVariables = requiredVariables.filter((name) => {",
+                  "  const value = pm.environment.get(name);",
+                  "  return value === undefined || value === null || String(value).trim() === '';",
+                  "});",
+                  "if (missingVariables.length > 0) {",
+                  "  throw new Error(`Missing required environment variable(s): ${missingVariables.join(\", \")}`);",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Content-Type is JSON\", () => {",
+                  "  pm.expect(pm.response.headers.get(\"Content-Type\") || \"\").to.include(\"application/json\");",
+                  "});",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Limitations have required fields\", () => pm.expect(body).to.include.all.keys(\"evaluation_id\", \"evaluation_status\", \"availability\", \"limitations\"));",
+                  "pm.test(\"Limitations is an array\", () => pm.expect(body.limitations).to.be.an(\"array\"));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "07 - Decision Support",
+      "description": "Final-scenario knowledge retrieval and recommendations.",
+      "item": [
+        {
+          "name": "Get Evaluation Knowledge",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/api/v1/decision-support/evaluations/{{evaluation_id}}/knowledge?crop_id={{crop_id}}&water_regime={{water_regime}}",
+            "description": "Retrieves scenario-specific evidence after the evaluation has finalized."
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const requiredVariables = [\"access_token\", \"evaluation_id\", \"crop_id\", \"water_regime\"];",
+                  "const missingVariables = requiredVariables.filter((name) => {",
+                  "  const value = pm.environment.get(name);",
+                  "  return value === undefined || value === null || String(value).trim() === '';",
+                  "});",
+                  "if (missingVariables.length > 0) {",
+                  "  throw new Error(`Missing required environment variable(s): ${missingVariables.join(\", \")}`);",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Content-Type is JSON\", () => {",
+                  "  pm.expect(pm.response.headers.get(\"Content-Type\") || \"\").to.include(\"application/json\");",
+                  "});",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Knowledge has required fields\", () => pm.expect(body).to.include.all.keys(\"retrieval_run_id\", \"evaluation_id\", \"crop_id\", \"water_regime\", \"retrieval_status\", \"evidence\"));",
+                  "pm.test(\"Knowledge context matches\", () => {",
+                  "  pm.expect(body.evaluation_id).to.eql(pm.environment.get(\"evaluation_id\"));",
+                  "  pm.expect(body.crop_id).to.eql(pm.environment.get(\"crop_id\"));",
+                  "  pm.expect(body.water_regime).to.eql(pm.environment.get(\"water_regime\"));",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create Recommendation",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/v1/decision-support/evaluations/{{evaluation_id}}/recommendations",
+            "description": "Generates or reuses an evidence-grounded recommendation with force_regenerate=false.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"crop_id\": \"{{crop_id}}\",\n  \"water_regime\": \"{{water_regime}}\",\n  \"force_regenerate\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const requiredVariables = [\"access_token\", \"evaluation_id\", \"crop_id\", \"water_regime\"];",
+                  "const missingVariables = requiredVariables.filter((name) => {",
+                  "  const value = pm.environment.get(name);",
+                  "  return value === undefined || value === null || String(value).trim() === '';",
+                  "});",
+                  "if (missingVariables.length > 0) {",
+                  "  throw new Error(`Missing required environment variable(s): ${missingVariables.join(\", \")}`);",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Content-Type is JSON\", () => {",
+                  "  pm.expect(pm.response.headers.get(\"Content-Type\") || \"\").to.include(\"application/json\");",
+                  "});",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Recommendation run has required fields\", () => pm.expect(body).to.include.all.keys(\"run_id\", \"evaluation_id\", \"crop_id\", \"water_regime\", \"status\", \"recommendation\", \"created_at\"));",
+                  "pm.test(\"Recommendation context matches\", () => {",
+                  "  pm.expect(body.evaluation_id).to.eql(pm.environment.get(\"evaluation_id\"));",
+                  "  pm.expect(body.crop_id).to.eql(pm.environment.get(\"crop_id\"));",
+                  "  pm.expect(body.water_regime).to.eql(pm.environment.get(\"water_regime\"));",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List Recommendations",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/api/v1/decision-support/evaluations/{{evaluation_id}}/recommendations?crop_id={{crop_id}}&water_regime={{water_regime}}",
+            "description": "Lists persisted recommendation runs without invoking the provider."
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const requiredVariables = [\"access_token\", \"evaluation_id\", \"crop_id\", \"water_regime\"];",
+                  "const missingVariables = requiredVariables.filter((name) => {",
+                  "  const value = pm.environment.get(name);",
+                  "  return value === undefined || value === null || String(value).trim() === '';",
+                  "});",
+                  "if (missingVariables.length > 0) {",
+                  "  throw new Error(`Missing required environment variable(s): ${missingVariables.join(\", \")}`);",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Content-Type is JSON\", () => {",
+                  "  pm.expect(pm.response.headers.get(\"Content-Type\") || \"\").to.include(\"application/json\");",
+                  "});",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Response is an array\", () => pm.expect(body).to.be.an(\"array\"));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "08 - Session",
+      "description": "Current identity, cookie-based refresh rotation, and logout.",
+      "item": [
+        {
+          "name": "Current User",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/api/v1/auth/me",
+            "description": "Returns the active authenticated user."
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const requiredVariables = [\"access_token\"];",
+                  "const missingVariables = requiredVariables.filter((name) => {",
+                  "  const value = pm.environment.get(name);",
+                  "  return value === undefined || value === null || String(value).trim() === '';",
+                  "});",
+                  "if (missingVariables.length > 0) {",
+                  "  throw new Error(`Missing required environment variable(s): ${missingVariables.join(\", \")}`);",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Content-Type is JSON\", () => {",
+                  "  pm.expect(pm.response.headers.get(\"Content-Type\") || \"\").to.include(\"application/json\");",
+                  "});",
+                  "const body = pm.response.json();",
+                  "pm.test(\"User has required fields\", () => pm.expect(body).to.include.all.keys(\"id\", \"email\", \"status\", \"role\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Refresh Session",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{base_url}}/api/v1/auth/refresh",
+            "description": "Uses the rotating Secure HttpOnly refresh cookie from Postman's cookie jar. There is no request body and the cookie is not read by JavaScript.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Content-Type is JSON\", () => {",
+                  "  pm.expect(pm.response.headers.get(\"Content-Type\") || \"\").to.include(\"application/json\");",
+                  "});",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Refresh returns a replacement access token\", () => pm.expect(body.access_token).to.be.a(\"string\").and.not.empty);",
+                  "if (body.access_token) pm.environment.set(\"access_token\", body.access_token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{base_url}}/api/v1/auth/logout",
+            "description": "Revokes the refresh-token family, clears the cookie, and clears the local access_token variable.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 204\", () => pm.response.to.have.status(204));",
+                  "pm.test(\"Response has no body\", () => pm.expect(pm.response.text()).to.eql(\"\"));",
+                  "pm.environment.set(\"access_token\", \"\");"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
