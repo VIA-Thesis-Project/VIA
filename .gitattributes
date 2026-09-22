@@ -1,0 +1,33 @@
+# Normalize text files in Git.
+* text=auto
+
+# Linux/runtime files must always use LF.
+*.sh text eol=lf
+*.py text eol=lf
+*.toml text eol=lf
+*.ini text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+
+Dockerfile text eol=lf
+.dockerignore text eol=lf
+.gitignore text eol=lf
+.graphifyignore text eol=lf
+
+# Windows scripts.
+*.ps1 text eol=crlf
+
+# Binary/scientific artifacts.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.pdf binary
+*.docx binary
+*.zip binary
+*.tif binary
+*.tiff binary
+*.nc binary
+*.dat binary

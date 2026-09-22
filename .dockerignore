@@ -6,8 +6,7 @@
 **/.git/
 **/.codex/
 
-graphify-out/
-backend/graphify-out/
+# AI knowledge graph artifacts are development-only.
 **/graphify-out/
 
 **/.venv/

@@ -73,3 +73,6 @@ Thumbs.db
 
 # Local scientific benchmark materialization
 .benchmark/
+
+# Local AI agent tooling
+.codex/

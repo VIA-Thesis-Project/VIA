@@ -1,123 +1,205 @@
-# CropSuiteLite con insumos de Huaura
+# VIA
 
-Proyecto de evaluación multicultivo con clima, suelo, DEM y máscara de Huaura.
-La evaluación recibe una parcela GeoJSON dentro de Huaura y uno o varios
-cultivos seleccionados. Produce resultados separados y una comparación.
-Se verificó el flujo con maíz, papa y arroz; la referencia anterior de maíz se conserva.
+VIA es un sistema de apoyo a decisiones para evaluar la viabilidad agroclimática de cultivos a nivel de parcela en Huaura, Lima.
 
-## Catálogo y selección de cultivos
+Integra procesamiento geoespacial, un motor científico determinista basado en CropSuiteLite y un módulo de Decision Support con recuperación de evidencia agronómica y generación de recomendaciones asistida por LLM.
 
-El catálogo completo se conserva en `CropSuiteLite/plant_params/available/`:
-79 archivos `.inf`, que incluyen cultivos y variantes de parametrización.
-Los 78 archivos retirados durante la limpieza se restauraron desde el respaldo
-y se verificaron por SHA256. Se mantiene el archivo original de maíz.
+> Estado: desarrollo pre-1.0 orientado a tesis e integración frontend.
 
-`evaluate.py --list-crops` ofrece todo el catálogo para seleccionar uno o varios
-cultivos por evaluación. Cada trabajo utiliza únicamente los archivos seleccionados,
-copiados sin modificaciones a carpetas propias y referenciadas por `plant_param_dir`.
-La selección no elimina ni reescribe archivos del catálogo compartido.
+## Arquitectura
 
-La selección por CLI y el motor científico Python están implementados. VIA ya
-dispone de un backend modular con persistencia PostgreSQL/PostGIS, ejecución
-agroclimática en background, integración aislada con CropSuiteLite y API de
-consulta de estado, resultados y evidencia. La interfaz web continúa pendiente.
-Los parámetros disponibles no implican que los 79 cultivos y variantes hayan
-sido ejecutados o validados para Huaura.
+VIA está implementado como un modular monolith con bounded contexts independientes y separación entre Domain, Application, Infrastructure e Interfaces.
 
-## Evaluar varios cultivos en una parcela
+Principales módulos:
 
-Desde `CropSuiteLite`:
+- Identity & Access
+- Farm Management
+- Environmental Information
+- Agroclimatic Evaluation
+- Decision Support
 
-```powershell
-.venv/Scripts/python.exe evaluate.py --list-crops
-.venv/Scripts/python.exe evaluate.py --parcel mi_parcela.geojson --crops maize potato rice
-```
+La evaluación científica es ejecutada por CropSuiteLite mediante un adapter aislado. El LLM no determina la viabilidad científica de los cultivos.
 
-Para probar con una parcela **sintética**, incluida en las pruebas:
+## Stack
 
-```powershell
-.venv/Scripts/python.exe evaluate.py --parcel tests/fixtures/huaura_parcel_example.geojson --crops maize potato rice
-```
+- Python 3.11+
+- FastAPI
+- PostgreSQL / PostGIS
+- SQLAlchemy
+- Alembic
+- CropSuiteLite
+- OpenAI API
+- Docker / Docker Compose
+- GitHub Actions
+- GHCR
+- DigitalOcean
 
-Cada solicitud crea `results/evaluations/evaluation_*/evaluation.json`, con
-estados, resúmenes por cultivo, cobertura y ranking sobre la superficie válida
-común. Los cultivos se calculan por turnos en procesos aislados; si uno falla,
-continúan los demás. Se preservan insumos, parámetros y configuración de referencia.
-La opción `--whole-huaura` permite un diagnóstico provincial explícito.
-Véase [uso y alcance del flujo multicultivo](CropSuiteLite/docs/multicrop_evaluation.md).
-
-La [versión 2 del documento de arquitectura](docs/Arquitectura_y_backend_CropSuiteLite_Huaura_v2.docx)
-incorpora la selección multicultivo, los resultados por parcela y la arquitectura que actualmente guía su integración con el backend modular.
-
-## Ejecutar la referencia anterior de maíz
-
-Desde esta carpeta:
-
-```powershell
-cd CropSuiteLite
-.venv/Scripts/python.exe run_cropsuitelite.py -config yaml_configurations/general_config_huaura.yaml
-```
-
-El YAML selecciona `config_access_esm1_5_ssp126_2021_2040.ini` mediante
-`GENERAL.run_config`. Ese INI es la configuración operativa: conserva
-`plant_params/huaura_maize/maize.inf` y apunta a la ejecución validada.
-El motor reutiliza los archivos existentes; no recalcula al volver a ejecutar.
-El resto de las opciones del YAML sirve como referencia para el flujo de
-generación de configuraciones, que no se usa mientras `run_config` esté definido.
-
-## Validar después de cambiar código
-
-Desde `CropSuiteLite`:
-
-```powershell
-.venv/Scripts/python.exe -m unittest discover -s tests -v
-.venv/Scripts/python.exe scripts/validate_huaura_environment.py
-```
-
-La segunda orden regenera los datos derivados y ejecuta el pipeline en una
-carpeta nueva, preservando la salida operativa y los datos originales.
-
-## Carpetas conservadas
-
-| Ruta | Uso |
-|---|---|
-| `CropSuiteLite/src/` | Motor corregido de interpolación y aptitud. |
-| `CropSuiteLite/datasets/`, `solutions/` | Preparación de datos y dependencias del lanzador. |
-| `CropSuiteLite/tests/`, `scripts/` | Pruebas y validación completa. |
-| `CropSuiteLite/plant_params/available/` | Catálogo completo de cultivos y variantes para seleccionar por evaluación. |
-| `CropSuiteLite/plant_params/huaura_maize/` | Parámetros de la ejecución de referencia de maíz. |
-| `data/huaura/processed_0041667/` | Insumos preparados que usa el INI. |
-| `data/huaura/boundary/`, `masks/` | Límite provincial y máscaras. |
-| `data/huaura/raw/`, `downloads/`, `scripts/` | Fuentes y herramientas de preparación; los scripts históricos conservan su contexto. |
-| `CropSuiteLite/docs/` | Documentación del motor y las correcciones. |
-
-La salida operativa está en:
+## Estructura del repositorio
 
 ```text
-CropSuiteLite/results/huaura_environment_validation/run_mw_8gsjo/
-  simulation_downscaled/Area_-10N-77E--11N-76E/
-  simulation_novar/Area_-10N-77E--11N-76E/maize/
-  config.ini
-  report.json
+.
+├── backend/          Backend VIA y migraciones
+├── CropSuiteLite/    Motor de evaluación científica
+├── data/             Configuración y datos mínimos versionables
+├── knowledge/        Corpus agronómico para Decision Support
+├── docs/             Arquitectura, ADRs, frontend y operaciones
+├── deploy/           Configuración de despliegue
+├── infra/            Infraestructura
+├── scripts/          Automatización, validación y operaciones
+├── graphify-out/     Knowledge graph del repositorio para agentes IA
+└── .github/          CI/CD
 ```
 
-Resultados validados: 231 celdas terrestres con clima y pendiente disponibles;
-siete celdas sin resultado de cultivo por faltantes en suelos originales.
-La resolución aproximada de 4,6 km no proporciona detalle dentro de una
-parcela pequeña. Véase el [informe de corrección](CropSuiteLite/docs/huaura_environment_correction.md).
+## Backend
 
-## Archivo y limpieza
+El backend se encuentra en:
 
-Los antecedentes se guardan fuera del proyecto operativo, en
-`../poc_via_cslite_archive/cleanup_20260910_012022/`:
+```text
+backend/src/via_backend/
+```
 
-- `before_cleanup/`: copias de los archivos actualizados durante la limpieza.
-- `archived/`: código anterior, otros cultivos, utilidades y preparación antigua.
-- `reports/`: reportes, configuraciones y logs de resultados retirados.
-- `manifest.json`: inventario de las operaciones y su verificación.
-- `crop_catalog_restoration.json`: registro de los 78 parámetros restaurados al catálogo activo después de la limpieza.
+Los bounded contexts principales están en:
 
-Las cachés temporales, documentación HTML generada, intermediarios de descarga
-y resultados de ejecuciones superadas se eliminaron. Los archivos que se
-archivaron pueden recuperarse desde la carpeta anterior. Los datos originales,
-el entorno `.venv`, el historial `.git` y la ejecución validada se conservan.
+```text
+backend/src/via_backend/contexts/
+```
+
+La dirección de dependencias arquitectónicas se valida automáticamente con Import Linter.
+
+## Motor científico
+
+CropSuiteLite vive en:
+
+```text
+CropSuiteLite/
+```
+
+VIA lo consume mediante adapters y procesos aislados. Los datasets originales y resultados pesados no se almacenan normalmente en Git.
+
+La documentación específica del motor se encuentra en:
+
+```text
+CropSuiteLite/docs/
+```
+
+## Desarrollo local
+
+Instalar el backend en modo editable:
+
+```bash
+cd backend
+python -m pip install -e ".[test]"
+```
+
+Ejecutar pruebas:
+
+```bash
+python -m pytest
+```
+
+Ejecutar API local:
+
+```bash
+via-api
+```
+
+La configuración de entorno de ejemplo está disponible en:
+
+```text
+backend/.env.example
+backend/.env.production.example
+```
+
+No se deben versionar secretos ni archivos `.env` reales.
+
+## API e integración frontend
+
+La documentación destinada a frontend se encuentra en:
+
+```text
+docs/frontend/
+```
+
+Incluye contratos de API, evaluaciones asíncronas, manejo de errores y configuración de desarrollo.
+
+Los endpoints de producción requieren autenticación salvo aquellos explícitamente públicos, como `/health`.
+
+Swagger/OpenAPI público está deshabilitado en producción.
+
+## Evaluaciones
+
+Las evaluaciones son asíncronas:
+
+```text
+Request
+   ↓
+PostgreSQL
+   ↓
+Worker
+   ↓
+CropSuiteLite
+   ↓
+Scientific result
+   ↓
+Decision Support
+```
+
+El resultado científico, su evidencia y sus limitaciones permanecen separados de las recomendaciones generadas por LLM.
+
+## Persistencia
+
+VIA utiliza PostgreSQL/PostGIS.
+
+Las migraciones se encuentran en:
+
+```text
+backend/migrations/
+```
+
+y se administran mediante Alembic.
+
+## CI/CD
+
+GitHub Actions valida, entre otros aspectos:
+
+- build del contenedor Linux;
+- ejecución non-root;
+- integridad de dependencias;
+- migraciones PostgreSQL/PostGIS;
+- almacenamiento persistente de artifacts;
+- mounts científicos read-only;
+- configuración Compose de producción.
+
+Las imágenes validadas se publican en GHCR usando tags inmutables asociados al commit Git.
+
+## Documentación
+
+- `docs/adr/` — Architecture Decision Records
+- `docs/architecture/` — arquitectura del sistema
+- `docs/frontend/` — integración frontend
+- `docs/implementation/` — roadmap e implementación
+- `docs/operations/` — despliegue y operación
+- `docs/scientific/` — aspectos científicos
+- `knowledge/` — documentación del corpus RAG
+
+## Versionado
+
+VIA utiliza Semantic Versioning.
+
+La etapa actual corresponde a la serie:
+
+```text
+0.x.y
+```
+
+hasta alcanzar una interfaz y comportamiento considerados estables para `1.0.0`.
+
+## Estado del proyecto
+
+Actualmente están implementados el backend, persistencia, ejecución agroclimática, autenticación/autorización, trazabilidad científica, Decision Support, contenerización y despliegue backend.
+
+La interfaz web continúa en desarrollo.
+
+## License
+
+Pendiente de definir.
