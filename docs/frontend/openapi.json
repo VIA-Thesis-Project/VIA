@@ -1618,6 +1618,61 @@
         "title": "ProjectResponse",
         "type": "object"
       },
+      "RecommendationCitation": {
+        "properties": {
+          "chunk_id": {
+            "title": "Chunk Id",
+            "type": "string"
+          },
+          "evidence_id": {
+            "title": "Evidence Id",
+            "type": "string"
+          },
+          "organization": {
+            "title": "Organization",
+            "type": "string"
+          },
+          "page_end": {
+            "title": "Page End",
+            "type": "integer"
+          },
+          "page_start": {
+            "title": "Page Start",
+            "type": "integer"
+          },
+          "section": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Section"
+          },
+          "source_reference": {
+            "title": "Source Reference",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "evidence_id",
+          "chunk_id",
+          "organization",
+          "title",
+          "page_start",
+          "page_end",
+          "section",
+          "source_reference"
+        ],
+        "title": "RecommendationCitation",
+        "type": "object"
+      },
       "RecommendationItem": {
         "properties": {
           "citation_ids": {
@@ -1673,6 +1728,14 @@
           "cache_key": {
             "title": "Cache Key",
             "type": "string"
+          },
+          "citations": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/RecommendationCitation"
+            },
+            "title": "Citations",
+            "type": "array"
           },
           "corpus_version": {
             "title": "Corpus Version",

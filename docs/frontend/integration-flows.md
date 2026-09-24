@@ -63,3 +63,5 @@ Decision Support is scenario-specific: always send both `crop_id` and `water_reg
 Knowledge/recommendation context is only valid for a finalized scenario. Handle `409` as "not final yet" and `404` as "requested evaluation/scenario context does not exist". A provider outage is `503` and should be retryable without altering scientific results.
 
 Normal generation uses cache/reuse semantics. Send `force_regenerate: false` for USER flows. Only an ADMIN who owns the evaluation may send `true`; USER receives `403`, and any foreign principal, including ADMIN, receives `404`.
+
+For recommendation citations, keep `SOURCE_n` only as the join key. Match each recommendation item's `citation_ids` against `RecommendationRun.citations[].evidence_id` and render the citation's `organization`, `title`, pages, and section when present.

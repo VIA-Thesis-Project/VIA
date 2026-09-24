@@ -103,6 +103,8 @@ Recommendation generation is a POST:
 
 Listing recommendations performs no provider call and supports optional `crop_id` and `water_regime` query filters.
 
+Recommendation `citation_ids` such as `SOURCE_1` are stable evidence identifiers, not display labels. Resolve them against the same run's `citations` array by `evidence_id` and show `organization`, `title`, page range, and optional `section`/`source_reference` in the UI.
+
 Recommendation generation reuses a persisted cache when possible. `force_regenerate=false` is the normal frontend path. Do not expose `force_regenerate=true` to USER accounts; the backend returns `403`. A foreign ADMIN still receives `404`.
 
 For exact field schemas, enum values, validation limits, and nullable properties, use `openapi.json` as the machine-readable source of truth.

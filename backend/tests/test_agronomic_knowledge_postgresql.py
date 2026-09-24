@@ -22,6 +22,7 @@ from via_backend.contexts.decision_support.application.knowledge_models import (
     KnowledgeChunk,
     KnowledgeDocument,
     KnowledgeDocumentStatus,
+    RecommendationCitation,
     RecommendationItem,
     RecommendationRun,
     RecommendationStatus,
@@ -340,6 +341,18 @@ def test_retrieval_and_recommendation_traces_persist_closed_citations(
         input_tokens=20,
         output_tokens=10,
         created_at=datetime.now(UTC),
+        citations=(
+            RecommendationCitation(
+                evidence_id="SOURCE_1",
+                chunk_id=chunk.chunk_id,
+                organization="FAO",
+                title="Agronomic guidance",
+                page_start=1,
+                page_end=1,
+                section=None,
+                source_reference="fao/fao-water.pdf",
+            ),
+        ),
     )
     recommendation_repository.save(run, retrieval)
 

@@ -1770,9 +1770,9 @@
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/decision_support/infrastructure/postgresql_repositories.py": {
-    "mtime": 1790026516.9156847,
-    "seen": 1790044734.8397856,
-    "ast_hash": "3872262609d5f556572d5e7995bf7b86",
+    "mtime": 1790287134.6210668,
+    "seen": 1790287241.9011188,
+    "ast_hash": "6225e0dc91c8e368498881bc5df5fc7c",
     "semantic_hash": ""
   },
   "backend/tests/test_decision_support_postgresql.py": {
@@ -2040,9 +2040,9 @@
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/decision_support/application/knowledge_models.py": {
-    "mtime": 1789860415.9777434,
-    "seen": 1789899838.8571553,
-    "ast_hash": "de0692fc9ae37e3065fa3454d526d130",
+    "mtime": 1790287051.6679127,
+    "seen": 1790287241.9011028,
+    "ast_hash": "6a9c2a6dd75bb611067301e99bc660a7",
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/decision_support/application/knowledge_ports.py": {
@@ -2052,9 +2052,9 @@
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py": {
-    "mtime": 1790026516.9176917,
-    "seen": 1790044734.8397686,
-    "ast_hash": "541f5893768f9f844f8e8fa489ef1a37",
+    "mtime": 1790287134.6210668,
+    "seen": 1790287241.901105,
+    "ast_hash": "334ce6a600698822b5ce1d0fb4c236b6",
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/decision_support/infrastructure/knowledge_manifest.py": {
@@ -2088,9 +2088,9 @@
     "semantic_hash": ""
   },
   "backend/tests/test_agronomic_knowledge.py": {
-    "mtime": 1790026418.2478387,
-    "seen": 1790044734.8398988,
-    "ast_hash": "029dc843f7ea361bec34aa1de6208d7a",
+    "mtime": 1790287051.6725116,
+    "seen": 1790287241.9011936,
+    "ast_hash": "899ee8b717fa8c826c88d86086451ca4",
     "semantic_hash": ""
   },
   "backend/tests/test_agronomic_knowledge_http.py": {
@@ -2100,9 +2100,9 @@
     "semantic_hash": ""
   },
   "backend/tests/test_agronomic_knowledge_postgresql.py": {
-    "mtime": 1789807116.0490267,
-    "seen": 1789831594.8577445,
-    "ast_hash": "9baf3b1bae4a675a680be4d3b4d30a0b",
+    "mtime": 1790287134.6200607,
+    "seen": 1790287241.9011955,
+    "ast_hash": "fe3ec089a140cd99c17d7b5b876eea9c",
     "semantic_hash": ""
   },
   "knowledge/README.md": {
@@ -2202,9 +2202,9 @@
     "semantic_hash": ""
   },
   "docs/frontend/openapi.json": {
-    "mtime": 1790044473.4820926,
-    "seen": 1790044734.8399844,
-    "ast_hash": "16f4f384a8518a4bcbea6f06767039b9",
+    "mtime": 1790287096.8845055,
+    "seen": 1790287241.9012418,
+    "ast_hash": "c2e2dda88d15c52fe2ea9387f31a7f5d",
     "semantic_hash": ""
   },
   "scripts/generate_frontend_openapi.py": {
@@ -2232,9 +2232,9 @@
     "semantic_hash": ""
   },
   "docs/frontend/api-reference.md": {
-    "mtime": 1790044299.3059256,
-    "seen": 1790044734.8401308,
-    "ast_hash": "25982105197812fda0873255a5f6a270",
+    "mtime": 1790287051.675534,
+    "seen": 1790287241.9013414,
+    "ast_hash": "cf611a2c0b0fb78c1afdf98f8bc0aaf9",
     "semantic_hash": ""
   },
   "docs/frontend/async-evaluations.md": {
@@ -2256,9 +2256,9 @@
     "semantic_hash": ""
   },
   "docs/frontend/integration-flows.md": {
-    "mtime": 1790044299.306926,
-    "seen": 1790044734.8401356,
-    "ast_hash": "ed21f926d297234b9a60b30b509fb853",
+    "mtime": 1790287051.6765356,
+    "seen": 1790287241.9013448,
+    "ast_hash": "3f417cc7829e236a30083ddf2b5262fd",
     "semantic_hash": ""
   },
   "docs/frontend/known-gaps.md": {
@@ -2514,9 +2514,9 @@
     "semantic_hash": ""
   },
   "CHANGELOG.md": {
-    "mtime": 1790093355.9167461,
-    "seen": 1790095980.9249847,
-    "ast_hash": "053982acaae1e2ad23f831cdccd5e197",
+    "mtime": 1790096375.1981544,
+    "seen": 1790287241.9012852,
+    "ast_hash": "b736ef5b9d230496419565b520e05aa7",
     "semantic_hash": ""
   },
   "CONTRIBUTING.md": {
@@ -2559,6 +2559,42 @@
     "mtime": 1790095952.7806952,
     "seen": 1790095980.9250474,
     "ast_hash": "e6a5b5a75cfa3e01d5e4e20dfea97df7",
+    "semantic_hash": ""
+  },
+  "graphify-out/memory/query_20260923_201900_d72368ba_qu\u00e9_te_parece_el_proyecto_en_cuanto_a_software_hab.md": {
+    "mtime": 1790194740.709758,
+    "seen": 1790287241.9013731,
+    "ast_hash": "de4c8a22ee7386e15bf2fba8a7e40d3a",
+    "semantic_hash": ""
+  },
+  "graphify-out/memory/query_20260924_184532_beab7917_sabes_c\u00f3mo_est\u00e1_configurado_el_deployment.md": {
+    "mtime": 1790275532.7737627,
+    "seen": 1790287241.9013746,
+    "ast_hash": "e1abff073f3c453ba5fbec413d9e1410",
+    "semantic_hash": ""
+  },
+  "graphify-out/memory/query_20260924_185030_ea20827d_dame_componentes_y_relaciones_para_poder_dibujar_c.md": {
+    "mtime": 1790275830.1266303,
+    "seen": 1790287241.9013753,
+    "ast_hash": "da8ca3935d9e825d03e451b62041e323",
+    "semantic_hash": ""
+  },
+  "graphify-out/memory/query_20260924_190012_a808acdd_explain_tailscale_and_trusted_proxy_decision_for_t.md": {
+    "mtime": 1790276412.57534,
+    "seen": 1790287241.9013758,
+    "ast_hash": "9bba29fe6f4387afd627779b4ecf77c4",
+    "semantic_hash": ""
+  },
+  "graphify-out/memory/query_20260924_212052_77be94f2_does_via_worker_execute_simultaneous_evaluation_re.md": {
+    "mtime": 1790284852.000145,
+    "seen": 1790287241.9013765,
+    "ast_hash": "5e13ef9b4c48dba50cf30367af235c6d",
+    "semantic_hash": ""
+  },
+  "graphify-out/memory/query_20260924_212430_ae12eee1_es_factible_arquitect\u00f3nicamente_con_m\u00e1s_de_100_pe.md": {
+    "mtime": 1790285070.2228272,
+    "seen": 1790287241.9013774,
+    "ast_hash": "f25bff88dd7c0f253f650386bba9dcb3",
     "semantic_hash": ""
   }
 }

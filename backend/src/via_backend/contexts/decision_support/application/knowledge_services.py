@@ -30,6 +30,7 @@ from .knowledge_models import (
     KnowledgeChunk,
     KnowledgeDocument,
     KnowledgeDocumentStatus,
+    RecommendationCitation,
     RecommendationContext,
     RecommendationFactor,
     RecommendationRun,
@@ -937,6 +938,10 @@ class RecommendationApplicationService:
                 input_tokens=generated.input_tokens,
                 output_tokens=generated.output_tokens,
                 created_at=created_at,
+                citations=_recommendation_citations(
+                    generated.recommendation,
+                    evidence,
+                ),
             )
 
         except Exception as error:
@@ -977,6 +982,34 @@ class RecommendationApplicationService:
         return self._repository.list_for_evaluation(
             evaluation_id
         )
+
+
+def _recommendation_citations(
+    recommendation: StructuredRecommendation,
+    evidence: RetrievedKnowledge,
+) -> tuple[RecommendationCitation, ...]:
+    by_evidence_id = {
+        item.evidence_id: item
+        for item in evidence.evidence
+    }
+    citation_ids = list(recommendation.citation_ids)
+    for item in recommendation.recommendations:
+        citation_ids.extend(item.citation_ids)
+
+    return tuple(
+        RecommendationCitation(
+            evidence_id=evidence_item.evidence_id,
+            chunk_id=evidence_item.chunk_id,
+            organization=evidence_item.organization,
+            title=evidence_item.title,
+            page_start=evidence_item.page_start,
+            page_end=evidence_item.page_end,
+            section=evidence_item.section,
+            source_reference=evidence_item.source_reference,
+        )
+        for evidence_id in dict.fromkeys(citation_ids)
+        if (evidence_item := by_evidence_id.get(evidence_id)) is not None
+    )
 
 
 def build_lexical_retrieval_query(

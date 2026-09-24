@@ -1210,6 +1210,9 @@ def test_recommendation_validates_citations_and_reuses_cache() -> None:
     second = service.generate(context)
     third = service.generate(context, force_regenerate=True)
     assert first.status is RecommendationStatus.SUCCEEDED
+    assert first.citations[0].evidence_id == "SOURCE_1"
+    assert first.citations[0].organization == evidence.evidence[0].organization
+    assert first.citations[0].title == evidence.evidence[0].title
     assert second.run_id == first.run_id
     assert third.run_id != first.run_id
     assert generator.calls == 2

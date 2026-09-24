@@ -211,6 +211,18 @@ class StructuredRecommendation:
 
 
 @dataclass(frozen=True, slots=True)
+class RecommendationCitation:
+    evidence_id: str
+    chunk_id: str
+    organization: str
+    title: str
+    page_start: int
+    page_end: int
+    section: str | None
+    source_reference: str
+
+
+@dataclass(frozen=True, slots=True)
 class RecommendationGeneration:
     recommendation: StructuredRecommendation
     provider: str
@@ -240,6 +252,7 @@ class RecommendationRun:
     input_tokens: int | None
     output_tokens: int | None
     created_at: datetime
+    citations: tuple[RecommendationCitation, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)

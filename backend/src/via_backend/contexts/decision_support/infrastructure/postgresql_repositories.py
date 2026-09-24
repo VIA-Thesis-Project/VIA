@@ -7,6 +7,7 @@ from uuid import UUID, uuid4
 
 from sqlalchemy import delete, func, or_, select, text, update
 from sqlalchemy.dialects.postgresql import insert as postgresql_insert
+from sqlalchemy.orm import Session
 from sqlalchemy.sql.elements import ColumnElement
 
 from via_backend.cost_protection import QuotaExceededError
@@ -24,6 +25,7 @@ from ..application.knowledge_models import (
     KnowledgeDocument,
     KnowledgeDocumentStatus,
     LexicalSearchHit,
+    RecommendationCitation,
     RecommendationItem,
     RecommendationRun,
     RecommendationStatus,
@@ -563,7 +565,13 @@ class PostgreSQLRecommendationRepository:
                 .order_by(RecommendationRunRecord.created_at.desc())
                 .limit(1)
             ).scalar_one_or_none()
-            return None if record is None else _recommendation_run_from_record(record)
+            if record is None:
+                return None
+            citations = _recommendation_citations_for_runs(
+                session,
+                (record.id,),
+            ).get(record.id, ())
+            return _recommendation_run_from_record(record, citations)
 
     def save(self, run: RecommendationRun, evidence: RetrievedKnowledge) -> None:
         with self._sessions.begin() as session:
@@ -618,12 +626,22 @@ class PostgreSQLRecommendationRepository:
 
     def list_for_evaluation(self, evaluation_id: UUID) -> tuple[RecommendationRun, ...]:
         with self._sessions() as session:
-            records = session.execute(
+            records = tuple(session.execute(
                 select(RecommendationRunRecord)
                 .where(RecommendationRunRecord.evaluation_id == evaluation_id)
                 .order_by(RecommendationRunRecord.created_at.desc(), RecommendationRunRecord.id)
-            ).scalars()
-            return tuple(_recommendation_run_from_record(record) for record in records)
+            ).scalars())
+            citations_by_run = _recommendation_citations_for_runs(
+                session,
+                tuple(record.id for record in records),
+            )
+            return tuple(
+                _recommendation_run_from_record(
+                    record,
+                    citations_by_run.get(record.id, ()),
+                )
+                for record in records
+            )
 
 
 def _knowledge_document_values(
@@ -783,7 +801,62 @@ def _json_array(value: object) -> tuple[object, ...]:
     return tuple(value) if isinstance(value, list) else ()
 
 
-def _recommendation_run_from_record(record: RecommendationRunRecord) -> RecommendationRun:
+def _recommendation_citations_for_runs(
+    session: Session,
+    run_ids: tuple[UUID, ...],
+) -> dict[UUID, tuple[RecommendationCitation, ...]]:
+    if not run_ids:
+        return {}
+
+    rows = session.execute(
+        select(
+            RecommendationCitationRecord,
+            KnowledgeChunkRecord,
+            KnowledgeDocumentRecord,
+        )
+        .join(
+            KnowledgeChunkRecord,
+            KnowledgeChunkRecord.chunk_id == RecommendationCitationRecord.chunk_id,
+        )
+        .join(
+            KnowledgeDocumentRecord,
+            KnowledgeDocumentRecord.id == KnowledgeChunkRecord.document_id,
+        )
+        .where(RecommendationCitationRecord.recommendation_run_id.in_(run_ids))
+        .order_by(
+            RecommendationCitationRecord.recommendation_run_id,
+            RecommendationCitationRecord.evidence_id,
+        )
+    ).all()
+
+    grouped: dict[UUID, list[RecommendationCitation]] = {}
+    for citation, chunk, document in rows:
+        grouped.setdefault(citation.recommendation_run_id, []).append(
+            RecommendationCitation(
+                evidence_id=citation.evidence_id,
+                chunk_id=chunk.chunk_id,
+                organization=document.organization,
+                title=document.title,
+                page_start=chunk.page_start,
+                page_end=chunk.page_end,
+                section=chunk.section,
+                source_reference=(
+                    document.source_reference
+                    or document.relative_path
+                ),
+            )
+        )
+
+    return {
+        run_id: tuple(citations)
+        for run_id, citations in grouped.items()
+    }
+
+
+def _recommendation_run_from_record(
+    record: RecommendationRunRecord,
+    citations: tuple[RecommendationCitation, ...] = (),
+) -> RecommendationRun:
     structured = record.structured_output
     recommendation = (
         _structured_recommendation_from_dict(structured) if structured is not None else None
@@ -807,4 +880,5 @@ def _recommendation_run_from_record(record: RecommendationRunRecord) -> Recommen
         input_tokens=record.input_tokens,
         output_tokens=record.output_tokens,
         created_at=record.created_at,
+        citations=citations,
     )
