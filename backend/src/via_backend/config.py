@@ -28,6 +28,7 @@ class Settings:
     environmental_information_repository: RepositoryBackend = "memory"
     agroclimatic_evaluation_repository: RepositoryBackend = "memory"
     database_url: str | None = None
+    database_transaction_pooler: bool = False
     database_pool_size: int = 5
     database_max_overflow: int = 0
     database_pool_timeout_seconds: int = 30
@@ -200,6 +201,9 @@ class Settings:
                 RepositoryBackend, evaluation_backend.casefold()
             ),
             database_url=database_url,
+            database_transaction_pooler=_environment_boolean(
+                "VIA_API_DATABASE_TRANSACTION_POOLER", False
+            ),
             database_pool_size=_environment_integer("VIA_API_DATABASE_POOL_SIZE", 5),
             database_max_overflow=_environment_integer("VIA_API_DATABASE_MAX_OVERFLOW", 0),
             database_pool_timeout_seconds=_environment_integer(

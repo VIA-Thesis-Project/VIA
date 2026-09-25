@@ -159,6 +159,7 @@ def create_app(
         assert settings.database_url is not None
         engine, sessions = create_database(
             settings.database_url,
+            transaction_pooler=settings.database_transaction_pooler,
             pool_size=settings.database_pool_size,
             max_overflow=settings.database_max_overflow,
             pool_timeout_seconds=settings.database_pool_timeout_seconds,

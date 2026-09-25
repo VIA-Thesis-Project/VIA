@@ -23,6 +23,22 @@ def test_database_url_selects_postgresql_by_default(monkeypatch: pytest.MonkeyPa
     assert settings.agroclimatic_evaluation_repository == "postgresql"
 
 
+@pytest.mark.parametrize(
+    ("raw", "expected"),
+    [("true", True), ("ON", True), ("false", False), ("0", False)],
+)
+def test_api_database_transaction_pooler_parses_boolean_environment(
+    monkeypatch: pytest.MonkeyPatch,
+    raw: str,
+    expected: bool,
+) -> None:
+    monkeypatch.setenv("VIA_API_DATABASE_TRANSACTION_POOLER", raw)
+
+    settings = Settings.from_env()
+
+    assert settings.database_transaction_pooler is expected
+
+
 def test_development_settings_can_fall_back_to_memory(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("VIA_DATABASE_URL", raising=False)
     monkeypatch.delenv("VIA_FARM_MANAGEMENT_REPOSITORY", raising=False)
@@ -232,6 +248,46 @@ def test_postgresql_app_composition_does_not_initialize_openai_client(
     paths = set(application.openapi()["paths"])
     assert "/api/v1/decision-support/evaluations/{evaluation_id}/knowledge" in paths
     assert "/api/v1/decision-support/evaluations/{evaluation_id}/recommendations" in paths
+
+
+def test_api_composition_passes_transaction_pooler_setting(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class _Engine:
+        def dispose(self) -> None:
+            pass
+
+    class _Sessions:
+        pass
+
+    calls: list[tuple[tuple[object, ...], dict[str, object]]] = []
+
+    def create_database(*args: object, **kwargs: object) -> tuple[_Engine, _Sessions]:
+        calls.append((args, kwargs))
+        return _Engine(), _Sessions()
+
+    monkeypatch.setattr(app_module, "create_database", create_database)
+
+    app_module.create_app(
+        Settings(
+            agroclimatic_evaluation_repository="postgresql",
+            database_url="postgresql+psycopg://example.invalid/via",
+            database_transaction_pooler=True,
+        )
+    )
+
+    assert calls == [
+        (
+            ("postgresql+psycopg://example.invalid/via",),
+            {
+                "transaction_pooler": True,
+                "pool_size": 5,
+                "max_overflow": 0,
+                "pool_timeout_seconds": 30,
+                "pool_recycle_seconds": 300,
+            },
+        )
+    ]
 
 
 def test_postgresql_selection_requires_database_url() -> None:

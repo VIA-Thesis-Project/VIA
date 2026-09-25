@@ -565,9 +565,12 @@ The runtime responsibilities are:
 API, worker, and migration have separate database variables because their
 connection lifecycles differ:
 
-- `VIA_API_DATABASE_URL` is intended for the Supabase transaction-pooling
-  endpoint used by serverless API instances. API SQLAlchemy defaults are pool
-  size 5, overflow 0, timeout 30 seconds, recycle 300 seconds.
+- `VIA_API_DATABASE_URL` is intended for the Supabase Transaction Pooler
+  endpoint on port 6543 used by serverless API instances. Production Cloud Run
+  sets `VIA_API_DATABASE_TRANSACTION_POOLER=true`; the API then uses SQLAlchemy
+  `NullPool` because Supavisor owns pooling and disables psycopg prepared
+  statements with `prepare_threshold=None`. The API QueuePool size, overflow,
+  timeout, and recycle settings apply only when transaction-pooler mode is off.
 - `VIA_WORKER_DATABASE_URL` is intended for the session/direct endpoint that is
   reachable from the persistent Droplet. Worker defaults are pool size 2,
   overflow 0, timeout 30 seconds, recycle 300 seconds.

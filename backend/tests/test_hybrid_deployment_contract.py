@@ -44,6 +44,9 @@ def test_cloud_run_examples_separate_api_and_migration_database_endpoints() -> N
     migrate = _read("deploy/cloudrun/migrate.env.example")
 
     assert "VIA_API_DATABASE_URL=REPLACE_WITH_SUPABASE_TRANSACTION_POOLER_URL" in api
+    assert "VIA_API_DATABASE_TRANSACTION_POOLER=true" in api
+    assert "port 6543" in api
+    assert "SQLAlchemy NullPool" in api
     assert "VIA_API_DATABASE_POOL_SIZE=5" in api
     assert "VIA_API_PORT=" not in api
     assert "VIA_KNOWLEDGE_SOURCE_DIR=" not in api
