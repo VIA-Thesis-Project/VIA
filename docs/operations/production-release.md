@@ -1,6 +1,196 @@
-# VIA production release, migration, Funnel, and rollback runbook
+# VIA production release, migration, and rollback runbook
 
-This is the manual operator procedure for the current single-Droplet release. It does not authorize a deployment by itself. Run it only after the repository gates are green, from a reviewed checkout on the Droplet. Never paste secrets into shell history or logs.
+Real-provider staging validation is documented separately in
+[`staging-validation.md`](staging-validation.md). Complete that evidence before
+using this production release procedure for the hybrid target.
+
+ADR-016 makes the hybrid managed topology the production target: Cloud Run API,
+Cloud Run migration job, Supabase PostgreSQL/PostGIS, DigitalOcean scientific
+worker, and Cloudflare R2 sources/artifacts. The existing B7 single-Droplet
+procedure is retained later in this document as the rollback/legacy topology.
+This runbook does not authorize a deployment by itself. Run only reviewed,
+immutable releases and never paste secrets into shell history or logs.
+
+## Target hybrid release inputs
+
+Record before changing any runtime:
+
+- release git SHA and green verification run;
+- immutable `VIA_IMAGE=ghcr.io/<owner>/<repo>@sha256:<digest>`;
+- previous Cloud Run API revision/image and previous worker image digest;
+- current Alembic revision and expected single head;
+- pre-cutover PostgreSQL logical backup plus checksum;
+- reviewed API, worker, and migration configuration versions;
+- reviewed `input-bindings.json` version/hash;
+- R2 source/artifact bucket names and credential references (never secret values);
+- exact frontend HTTPS origin and target Cloud Run service URL.
+
+Never deploy `latest` or a mutable branch tag.
+
+## Supabase and R2 preparation
+
+Create the Supabase project through normal provider administration. Enable and
+verify PostGIS before moving application traffic. Using the reviewed migration
+connection, the database capability check is conceptually:
+
+```sql
+CREATE EXTENSION IF NOT EXISTS postgis;
+SELECT PostGIS_Version();
+```
+
+For an existing VIA database, take a consistent logical backup before cutover.
+Restore that backup into the target database using the approved PostgreSQL
+restore workflow, then run `via-migrate upgrade`. Do not make the application
+create Supabase resources or extensions during normal startup. Validate the
+single Alembic head and representative geometry/PostGIS queries before allowing
+API or worker traffic.
+
+Use separate externally managed database URLs:
+
+```text
+VIA_API_DATABASE_URL       -> transaction-pooling endpoint for Cloud Run
+VIA_WORKER_DATABASE_URL    -> reachable session/direct endpoint for the Droplet
+VIA_MIGRATION_DATABASE_URL -> direct migration endpoint when available
+```
+
+Connection URLs may contain provider-required SSL parameters. Do not copy real
+URLs into Git, logs, issue text, or tracked env files.
+
+Create separate R2 buckets or clearly separated prefixes for authoritative
+scientific sources and finalized artifacts. Upload sources under stable
+`object_key` values and prepare the reviewed binding manifest with logical
+dataset/version identity, relative path, SHA-256, size, and media type. Verify
+the uploaded bytes against the expected SHA-256 before cutover. The R2 URL is
+physical storage metadata, not scientific identity.
+
+The worker's local `/srv/via/cache/sources` and workspace are disposable. Do
+not seed scientific identity from those directories and do not treat them as a
+backup of R2.
+
+## Target hybrid deployment procedure
+
+1. Build/test the exact commit and publish one immutable image SHA/digest. Keep
+   the same reviewed image for API, worker, and migration unless a later ADR
+   explicitly separates them.
+
+2. Prepare Cloud Run API configuration from
+   `deploy/cloudrun/api.env.example`. Supply `VIA_API_DATABASE_URL` and secrets
+   through the cloud secret/config mechanism. Leave `VIA_API_PORT` unset so
+   `via-api` consumes Cloud Run's `PORT`.
+
+3. Provide the reviewed small binding manifest at
+   `/etc/via/input-bindings.json` to the API as configuration. The crop catalog
+   is already shipped in the image at
+   `/opt/via/CropSuiteLite/plant_params/huaura_maize`. Do not mount raw R2
+   rasters or `/mnt/via/sources` into Cloud Run. Normal knowledge serving also
+   does not require the original knowledge PDFs.
+
+4. Create/update the one-shot Cloud Run Job from the same immutable image with
+   command `via-migrate upgrade` and the configuration in
+   `deploy/cloudrun/migrate.env.example`. Execute the job and wait for exit 0.
+   On any migration failure, abort the release before changing API or worker.
+
+5. Update the Cloud Run API to the reviewed immutable digest and verify its
+   `/health` endpoint plus one database-backed read. Confirm the effective
+   frontend CORS origin and secure refresh-cookie settings.
+
+6. On the DigitalOcean compute Droplet, copy
+   `deploy/digitalocean/worker.env.example` to
+   `/srv/via/config/worker.env`, fill externally managed Supabase/R2 secrets,
+   install the reviewed `input-bindings.json` and CropSuite runtime config under
+   `/srv/via/config`, and set the env file to mode `0600`.
+
+7. Pull and start only the worker using the immutable image:
+
+   ```bash
+   export VIA_IMAGE='ghcr.io/<owner>/<repo>@sha256:<digest>'
+   docker pull "$VIA_IMAGE"
+   docker compose --env-file /srv/via/config/worker.env \
+     -f /opt/via-deploy/compose.digitalocean.worker.yaml \
+     up -d --no-deps --force-recreate worker
+   docker compose --env-file /srv/via/config/worker.env \
+     -f /opt/via-deploy/compose.digitalocean.worker.yaml ps
+   ```
+
+   The target compose publishes no host ports. Keep
+   `VIA_WORKER_BATCH_SIZE=1` and `VIA_CROPSUITE_MAX_WORKERS=1` for initial
+   production.
+
+8. Keep Tailscale on the Droplet for administration only. Remove/reset any old
+   Funnel exposure after Cloud Run HTTPS is validated; do not create a new
+   public ingress path to the worker.
+
+9. Run the production smoke against the Cloud Run HTTPS URL with a reviewed
+   Huaura parcel. Confirm authentication, project/parcel persistence, evaluation
+   completion, result/evidence/limitations, source fingerprints, and artifact
+   retrieval semantics. A valid low/zero suitability remains a valid scientific
+   result.
+
+10. Inspect Cloud Run, Supabase, worker, and R2 operational signals. Specifically
+    check connection exhaustion/timeouts, worker claim conflicts, failed source
+    integrity checks, repeated R2 downloads, cache growth, OOM/swap pressure,
+    and artifact publication failures. Do not log database URLs, R2 keys,
+    access tokens, refresh cookies, or OpenAI keys.
+
+The release order is therefore fixed:
+
+```text
+build/test -> publish immutable image -> migration job
+                                   failure -> abort
+                                   success -> Cloud Run API
+                                            -> DO worker
+                                            -> smoke
+```
+
+## Target hybrid rollback
+
+Prefer component rollback before topology rollback.
+
+1. Stop further rollout and preserve migration/API/worker logs plus the exact
+   failing image/config references.
+2. If migration failed, leave API and worker on their previous images. Do not
+   run an automatic Alembic downgrade.
+3. If the new API or worker image fails after a successful additive migration,
+   redeploy the previous immutable API revision/image and previous worker digest
+   while leaving the database at the newer compatible revision when possible.
+4. If only worker configuration/R2 access fails, stop the target worker, restore
+   its previous reviewed env/config, and recreate the worker. R2 remains the
+   authority; deleting the local cache is safe when investigating corruption.
+5. If a full return to B7 is required, enter a maintenance window and restore a
+   validated Supabase backup/export into the B7 PostgreSQL instance before
+   reopening writes. Never run old local PostgreSQL and Supabase as independent
+   writable authorities. Then use the legacy B7 procedure below with the
+   previous immutable image.
+
+After any rollback, repeat health/authenticated reads and one controlled
+evaluation read/smoke against the active topology.
+
+## Benchmark and concurrency gate
+
+The credential-free repository benchmark remains
+`scripts/benchmark_production_runtime.sh`. Run the same real fixture twice with
+identical host/image/config except for:
+
+```bash
+VIA_BENCHMARK_CROPSUITE_MAX_WORKERS=1 ./scripts/benchmark_production_runtime.sh
+VIA_BENCHMARK_CROPSUITE_MAX_WORKERS=2 ./scripts/benchmark_production_runtime.sh
+```
+
+Record both JSON results. For the live R2 target, additionally record a cold
+source-cache run (delete only `/srv/via/cache/sources` contents before the run)
+and an otherwise identical warm-cache run. Capture cache file/byte counts and
+provider request/transfer telemetry. These measurements are opt-in because the
+normal suite never requires real Supabase/R2/GCP credentials.
+
+Do not increase production concurrency from this experiment alone. Multiple VIA
+worker consumers require a separate claim/recovery design covering atomic claim
+(`FOR UPDATE SKIP LOCKED` or equivalent), duplicate-execution prevention,
+orphan recovery, retries, idempotency, and heartbeat/lease semantics.
+
+## B7 single-Droplet rollback/legacy procedure
+
+The remainder of this document is the retained B7 operator procedure. Its
+public edge is intentionally different from the target architecture:
 
 The intended edge remains:
 

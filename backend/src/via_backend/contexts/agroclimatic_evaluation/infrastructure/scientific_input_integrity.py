@@ -16,10 +16,11 @@ from ..application.ports import (
     ScientificSourceFingerprint,
 )
 from ..domain.environmental_inputs import EnvironmentalInputManifest
+from .scientific_source_store import ScientificSourceObject
 
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 _ROOT_FIELDS = frozenset({"bindings"})
-_BINDING_FIELDS = frozenset(
+_BINDING_REQUIRED_FIELDS = frozenset(
     {
         "dataset_id",
         "dataset_version_id",
@@ -27,6 +28,10 @@ _BINDING_FIELDS = frozenset(
         "checksum",
         "source_sha256",
     }
+)
+_BINDING_OPTIONAL_FIELDS = frozenset({"sources"})
+_SOURCE_FIELDS = frozenset(
+    {"object_key", "relative_path", "sha256", "size_bytes", "media_type"}
 )
 
 
@@ -39,6 +44,7 @@ class CropSuiteEnvironmentalInputBinding:
     storage_reference: str
     checksum: str
     source_sha256: tuple[str, ...]
+    sources: tuple[ScientificSourceObject, ...] = ()
 
     def __post_init__(self) -> None:
         if not isinstance(self.dataset_id, UUID):
@@ -60,6 +66,19 @@ class CropSuiteEnvironmentalInputBinding:
             raise ValueError("source_sha256 must not contain duplicate hashes.")
 
         object.__setattr__(self, "source_sha256", hashes)
+
+        sources = tuple(self.sources)
+        if sources:
+            source_hashes = tuple(source.sha256 for source in sources)
+            if set(source_hashes) != set(hashes):
+                raise ValueError(
+                    "sources must describe exactly the SHA-256 values declared by "
+                    "source_sha256."
+                )
+            relative_paths = tuple(source.relative_path for source in sources)
+            if len(relative_paths) != len(set(relative_paths)):
+                raise ValueError("sources must not contain duplicate relative_path values.")
+        object.__setattr__(self, "sources", sources)
 
 
 class ConfiguredEnvironmentalInputIntegrityVerifier(IEnvironmentalInputIntegrityVerifier):
@@ -156,7 +175,12 @@ def load_cropsuite_environmental_input_bindings(
     seen_versions: set[UUID] = set()
     for index, raw_binding in enumerate(raw_bindings):
         item = _require_mapping(raw_binding, f"bindings[{index}]")
-        _require_exact_fields(item, _BINDING_FIELDS, f"bindings[{index}]")
+        _require_fields(
+            item,
+            required=_BINDING_REQUIRED_FIELDS,
+            optional=_BINDING_OPTIONAL_FIELDS,
+            name=f"bindings[{index}]",
+        )
 
         dataset_id = _parse_uuid(item.get("dataset_id"), f"bindings[{index}].dataset_id")
         dataset_version_id = _parse_uuid(
@@ -174,6 +198,47 @@ def load_cropsuite_environmental_input_bindings(
         if not isinstance(source_sha256, list):
             raise ValueError(f"bindings[{index}].source_sha256 must be an array.")
 
+        raw_sources = item.get("sources", [])
+        if not isinstance(raw_sources, list):
+            raise ValueError(f"bindings[{index}].sources must be an array.")
+        sources: list[ScientificSourceObject] = []
+        for source_index, raw_source in enumerate(raw_sources):
+            source_item = _require_mapping(
+                raw_source,
+                f"bindings[{index}].sources[{source_index}]",
+            )
+            _require_exact_fields(
+                source_item,
+                _SOURCE_FIELDS,
+                f"bindings[{index}].sources[{source_index}]",
+            )
+            size_bytes = source_item.get("size_bytes")
+            if isinstance(size_bytes, bool) or not isinstance(size_bytes, int):
+                raise ValueError(
+                    f"bindings[{index}].sources[{source_index}].size_bytes must be an integer."
+                )
+            sources.append(
+                ScientificSourceObject(
+                    object_key=_require_json_string(
+                        source_item.get("object_key"),
+                        f"bindings[{index}].sources[{source_index}].object_key",
+                    ),
+                    relative_path=_require_json_string(
+                        source_item.get("relative_path"),
+                        f"bindings[{index}].sources[{source_index}].relative_path",
+                    ),
+                    sha256=_require_json_string(
+                        source_item.get("sha256"),
+                        f"bindings[{index}].sources[{source_index}].sha256",
+                    ),
+                    size_bytes=size_bytes,
+                    media_type=_require_json_string(
+                        source_item.get("media_type"),
+                        f"bindings[{index}].sources[{source_index}].media_type",
+                    ),
+                )
+            )
+
         binding = CropSuiteEnvironmentalInputBinding(
             dataset_id=dataset_id,
             dataset_version_id=dataset_version_id,
@@ -186,6 +251,7 @@ def load_cropsuite_environmental_input_bindings(
                 f"bindings[{index}].checksum",
             ),
             source_sha256=tuple(cast(list[Any], source_sha256)),
+            sources=tuple(sources),
         )
         bindings.append(binding)
 
@@ -237,6 +303,22 @@ def _require_exact_fields(
     actual = set(value)
     missing = expected - actual
     extra = actual - expected
+    if missing:
+        raise ValueError(f"{name} is missing fields: {', '.join(sorted(missing))}.")
+    if extra:
+        raise ValueError(f"{name} contains unsupported fields: {', '.join(sorted(extra))}.")
+
+
+def _require_fields(
+    value: Mapping[str, Any],
+    *,
+    required: frozenset[str],
+    optional: frozenset[str],
+    name: str,
+) -> None:
+    actual = set(value)
+    missing = required - actual
+    extra = actual - required - optional
     if missing:
         raise ValueError(f"{name} is missing fields: {', '.join(sorted(missing))}.")
     if extra:

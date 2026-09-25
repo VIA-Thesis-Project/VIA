@@ -12,8 +12,6 @@ from alembic.config import Config
 from sqlalchemy.engine import make_url
 from sqlalchemy.exc import ArgumentError
 
-from via_backend.config import Settings
-
 ALEMBIC_CONFIG_ENV = "VIA_ALEMBIC_CONFIG"
 
 
@@ -40,19 +38,30 @@ def resolve_alembic_config() -> Path:
     return config_path
 
 
-def _require_production_postgresql() -> Settings:
-    settings = Settings.from_env()
-    database_url = settings.database_url
-    if database_url is None:
-        raise ValueError("Production migration requires a non-empty VIA_DATABASE_URL.")
-    settings.require_production()
+def _require_production_postgresql() -> str:
+    database_url = os.getenv("VIA_MIGRATION_DATABASE_URL") or os.getenv("VIA_DATABASE_URL")
+    if not database_url:
+        raise ValueError(
+            "Production migration requires VIA_MIGRATION_DATABASE_URL or VIA_DATABASE_URL."
+        )
+    for setting_name in (
+        "VIA_FARM_MANAGEMENT_REPOSITORY",
+        "VIA_ENVIRONMENTAL_INFORMATION_REPOSITORY",
+        "VIA_AGROCLIMATIC_EVALUATION_REPOSITORY",
+    ):
+        selection = os.getenv(setting_name, "postgresql").casefold()
+        if selection != "postgresql":
+            raise ValueError(
+                "Production migration requires PostgreSQL persistence: "
+                f"{setting_name}=postgresql (got {selection!r})."
+            )
     try:
         backend_name = make_url(database_url).get_backend_name()
     except ArgumentError as error:
-        raise ValueError("VIA_DATABASE_URL must be a valid PostgreSQL URL.") from error
+        raise ValueError("Migration database URL must be a valid PostgreSQL URL.") from error
     if backend_name != "postgresql":
         raise ValueError("Production migration requires PostgreSQL persistence.")
-    return settings
+    return database_url
 
 
 def upgrade() -> None:

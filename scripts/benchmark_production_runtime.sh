@@ -13,10 +13,16 @@ catalog="${VIA_BENCHMARK_CATALOG:-}"
 image="${VIA_IMAGE:-via:b6}"
 result_path="${VIA_BENCHMARK_RESULT_PATH:-$repository_root/benchmark-results.json}"
 requested_runs="${VIA_BENCHMARK_RUNS:-1}"
+benchmark_cropsuite_max_workers="${VIA_BENCHMARK_CROPSUITE_MAX_WORKERS:-1}"
 idle_seconds="${VIA_BENCHMARK_IDLE_SECONDS:-45}"
 settle_seconds="${VIA_BENCHMARK_SETTLE_SECONDS:-15}"
 evaluation_timeout_seconds="${VIA_BENCHMARK_EVALUATION_TIMEOUT_SECONDS:-7200}"
 sample_interval_seconds=1
+
+case "$benchmark_cropsuite_max_workers" in
+  1|2) ;;
+  *) fail_later="VIA_BENCHMARK_CROPSUITE_MAX_WORKERS must be 1 or 2 for the comparison benchmark." ;;
+esac
 
 runtime_root=""
 runtime_config_dir=""
@@ -28,6 +34,8 @@ fail() {
   printf 'B6.1 benchmark: %s\n' "$*" >&2
   exit 1
 }
+
+[ -z "${fail_later:-}" ] || fail "$fail_later"
 
 cleanup() {
   status=$?
@@ -484,7 +492,7 @@ python3 - \
   "$fixture_path" "$source_dir" "$image" "$architecture" "$cpu_count" "$host_memory_bytes" \
   "$docker_version" "$image_id" "$git_sha" "$idle_started_ns" "$idle_finished_ns" \
   "$idle_samples" "$run_records" "$result_path" "$sample_interval_seconds" \
-  "$requested_runs" "$all_runs_succeeded" <<'PY'
+  "$requested_runs" "$all_runs_succeeded" "$benchmark_cropsuite_max_workers" <<'PY'
 import json
 import statistics
 import sys
@@ -494,7 +502,7 @@ from pathlib import Path
     fixture_path, source_dir, image, architecture, cpu_count, host_memory_bytes,
     docker_version, image_id, git_sha, idle_started_ns, idle_finished_ns,
     idle_path, run_records_path, result_path, sample_interval, requested_runs,
-    all_runs_succeeded,
+    all_runs_succeeded, cropsuite_max_workers,
 ) = sys.argv[1:]
 
 UNITS = {
@@ -589,6 +597,7 @@ result = {
         "image": image,
         "image_id": image_id,
         "git_sha": git_sha,
+        "cropsuite_max_workers": int(cropsuite_max_workers),
     },
     "fixture": {
         "fixture_path": str(Path(fixture_path).resolve()),

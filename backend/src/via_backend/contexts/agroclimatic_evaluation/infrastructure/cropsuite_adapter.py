@@ -36,11 +36,23 @@ from .scientific_artifact_store import (
     ScientificArtifactStorageError,
     ScientificArtifactStore,
 )
+from .scientific_input_integrity import CropSuiteEnvironmentalInputBinding
+from .scientific_source_store import ScientificSourceMaterializer
 
 EngineRunner = Callable[..., Mapping[str, Any]]
 _SAFE_CROP_ID = re.compile(r"^[A-Za-z0-9_-]+$")
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 _DEFAULT_SOURCE_CONFIG = "config_access_esm1_5_ssp126_2021_2040.ini"
+_SCIENTIFIC_SOURCE_PATH_OPTIONS = frozenset(
+    {
+        "climate_data_dir",
+        "fine_dem",
+        "land_sea_mask",
+        "worldclim_precipitation_data_dir",
+        "worldclim_temperature_data_dir",
+        "data_directory",
+    }
+)
 
 _SCIENTIFIC_BRIDGE = """
 from __future__ import annotations
@@ -414,6 +426,8 @@ class CropSuiteAdapter:
         runner: EngineRunner | None = None,
         artifact_store: ScientificArtifactStore | None = None,
         input_integrity_verifier: IEnvironmentalInputIntegrityVerifier | None = None,
+        source_materializer: ScientificSourceMaterializer | None = None,
+        source_bindings: tuple[CropSuiteEnvironmentalInputBinding, ...] = (),
     ) -> None:
         if isinstance(max_workers, bool) or max_workers < 1:
             raise ValueError("max_workers must be a positive integer.")
@@ -438,6 +452,10 @@ class CropSuiteAdapter:
         self._artifact_store = artifact_store
         self._runner = runner
         self._input_integrity_verifier = input_integrity_verifier
+        self._source_materializer = source_materializer
+        self._source_bindings = {
+            binding.dataset_version_id: binding for binding in source_bindings
+        }
 
         if self._runner is None:
             if self._input_integrity_verifier is None:
@@ -482,10 +500,20 @@ class CropSuiteAdapter:
             encoding="utf-8",
         )
 
+        source_root_overrides: dict[str, Path] = {}
+        if self._source_materializer is not None:
+            source_root_overrides = _materialize_scientific_source_views(
+                request=request,
+                materializer=self._source_materializer,
+                bindings=self._source_bindings,
+                request_workspace=request_workspace,
+            )
+
         scenario_config = _materialize_scenario_config(
             base_config=self._source_config,
             request_workspace=request_workspace,
             water_regime=request.water_regime,
+            source_root_overrides=source_root_overrides,
         )
 
         arguments: dict[str, Any] = {
@@ -1124,6 +1152,7 @@ def _materialize_scenario_config(
     base_config: Path,
     request_workspace: Path,
     water_regime: WaterRegime,
+    source_root_overrides: Mapping[str, Path] | None = None,
 ) -> Path:
     if not base_config.is_file():
         raise CropSuitabilityExecutionError(
@@ -1150,6 +1179,15 @@ def _materialize_scenario_config(
         "0" if water_regime is WaterRegime.RAINFED else "1",
     )
 
+    if source_root_overrides:
+        for section in parser.sections():
+            for option, value in tuple(parser.items(section, raw=True)):
+                if option not in _SCIENTIFIC_SOURCE_PATH_OPTIONS:
+                    continue
+                replacement = _rewrite_source_path(value, source_root_overrides)
+                if replacement != value:
+                    parser.set(section, option, replacement)
+
     try:
         with generated.open("w", encoding="utf-8", newline="\n") as target:
             parser.write(target, space_around_delimiters=True)
@@ -1159,6 +1197,56 @@ def _materialize_scenario_config(
         ) from error
 
     return generated
+
+
+def _materialize_scientific_source_views(
+    *,
+    request: CropSuitabilityRequest,
+    materializer: ScientificSourceMaterializer,
+    bindings: Mapping[Any, CropSuiteEnvironmentalInputBinding],
+    request_workspace: Path,
+) -> dict[str, Path]:
+    grouped: dict[str, list[Any]] = {}
+    for snapshot in request.environmental_input_manifest.inputs:
+        binding = bindings.get(snapshot.dataset_version_id)
+        if binding is None:
+            raise CropSuitabilityExecutionError(
+                "No scientific source binding exists for materialization of dataset version "
+                f"{snapshot.dataset_version_id}."
+            )
+        if not binding.sources:
+            raise CropSuitabilityExecutionError(
+                "Scientific source materialization is enabled but binding "
+                f"{snapshot.dataset_version_id} declares no source objects."
+            )
+        grouped.setdefault(binding.storage_reference, []).extend(binding.sources)
+
+    overrides: dict[str, Path] = {}
+    for index, (logical_root, sources) in enumerate(sorted(grouped.items())):
+        view_root = request_workspace / "scientific-sources" / str(index)
+        try:
+            materialized = materializer.materialize_view(tuple(sources), view_root)
+        except Exception as error:
+            raise CropSuitabilityExecutionError(
+                f"Scientific source materialization failed: {type(error).__name__}: {error}"
+            ) from error
+        overrides[logical_root] = materialized
+    return overrides
+
+
+def _rewrite_source_path(value: str, overrides: Mapping[str, Path]) -> str:
+    normalized_value = value.replace("\\", "/")
+    for logical_root, materialized_root in sorted(
+        overrides.items(), key=lambda item: len(item[0]), reverse=True
+    ):
+        normalized_root = logical_root.replace("\\", "/").rstrip("/")
+        if normalized_value == normalized_root:
+            return str(materialized_root)
+        prefix = normalized_root + "/"
+        if normalized_value.startswith(prefix):
+            suffix = normalized_value[len(prefix) :]
+            return str(materialized_root.joinpath(*suffix.split("/")))
+    return value
 
 def _map_summary(summary: Mapping[str, Any]) -> SuitabilityScoreSummary:
     return SuitabilityScoreSummary(

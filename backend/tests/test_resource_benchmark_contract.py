@@ -22,6 +22,9 @@ def test_benchmark_reuses_b6_topology_and_real_evaluation_endpoint() -> None:
     assert "http://127.0.0.1:18000/datasets" in script
     assert "worker:" in override
     assert "VIA_BENCHMARK_SOURCE_DIR" in override
+    assert "VIA_BENCHMARK_CROPSUITE_MAX_WORKERS" in override
+    assert "VIA_BENCHMARK_CROPSUITE_MAX_WORKERS" in script
+    assert '"cropsuite_max_workers"' in script
     assert "/mnt/via/sources:ro" in override
 
 
@@ -53,4 +56,3 @@ def test_normal_b2_b6_gate_does_not_run_resource_benchmark() -> None:
 
     assert "benchmark_production_runtime.sh" not in gate
     assert "b6-resource-benchmark.yml" not in gate
-

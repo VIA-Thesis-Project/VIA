@@ -32,13 +32,17 @@ class ApiServerSettings:
         """Load API bind settings from the process environment."""
         host = os.getenv("VIA_API_HOST") or "0.0.0.0"
         raw_port = os.getenv("VIA_API_PORT")
+        port_setting = "VIA_API_PORT"
+        if raw_port is None or raw_port == "":
+            raw_port = os.getenv("PORT")
+            port_setting = "PORT"
         if raw_port is None or raw_port == "":
             port = 8000
         else:
             try:
                 port = int(raw_port)
             except ValueError as error:
-                raise ValueError("VIA_API_PORT must be an integer.") from error
+                raise ValueError(f"{port_setting} must be an integer.") from error
         return cls(host=host, port=port)
 
 

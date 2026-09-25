@@ -8,6 +8,7 @@ import logging
 import signal
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
+from pathlib import Path
 from threading import Event
 from types import FrameType
 from uuid import UUID
@@ -24,11 +25,17 @@ from via_backend.contexts.agroclimatic_evaluation.application import (
 )
 from via_backend.contexts.agroclimatic_evaluation.domain import EvaluationStatus
 from via_backend.contexts.agroclimatic_evaluation.infrastructure import (
+    ConfiguredEnvironmentalInputIntegrityVerifier,
     CropSuiteAdapter,
     CropSuiteComparisonAdapter,
     FilesystemScientificArtifactStore,
+    FilesystemScientificSourceStore,
     PostgreSQLEvaluationRepository,
-    load_configured_environmental_input_integrity_verifier,
+    R2ScientificArtifactStore,
+    R2ScientificSourceStore,
+    ScientificSourceMaterializer,
+    create_s3_compatible_client,
+    load_cropsuite_environmental_input_bindings,
 )
 from via_backend.contexts.environmental_information.application import (
     EnvironmentalInformationService,
@@ -62,16 +69,18 @@ def create_worker(settings: WorkerSettings) -> WorkerRuntime:
     ) = (
         settings.require_scientific_execution()
     )
-    input_integrity_verifier = load_configured_environmental_input_integrity_verifier(
-        input_bindings_path
+    source_bindings = load_cropsuite_environmental_input_bindings(input_bindings_path)
+    input_integrity_verifier = ConfiguredEnvironmentalInputIntegrityVerifier(
+        source_bindings
     )
-    database_engine, sessions = create_database(settings.database_url)
+    database_engine, sessions = _create_worker_database(settings)
     evaluations = PostgreSQLEvaluationRepository(sessions)
     environmental_information = EnvironmentalInformationService(
         PostgreSQLDatasetRepository(sessions),
         PostgreSQLDatasetVersionRepository(sessions),
     )
-    artifact_store = FilesystemScientificArtifactStore(artifacts_root)
+    artifact_store = _create_artifact_store(settings, artifacts_root)
+    source_materializer = _create_source_materializer(settings)
     scientific_engine = CropSuiteAdapter(
         engine_root=engine_root,
         python_executable=python_executable,
@@ -81,6 +90,8 @@ def create_worker(settings: WorkerSettings) -> WorkerRuntime:
         max_workers=settings.cropsuite_max_workers,
         artifact_store=artifact_store,
         input_integrity_verifier=input_integrity_verifier,
+        source_materializer=source_materializer,
+        source_bindings=source_bindings,
     )
     comparison_engine = CropSuiteComparisonAdapter(
         engine_root=engine_root,
@@ -102,6 +113,72 @@ def create_worker(settings: WorkerSettings) -> WorkerRuntime:
             batch_size=settings.batch_size,
             logger=LOGGER,
         ),
+    )
+
+
+def _create_source_materializer(
+    settings: WorkerSettings,
+) -> ScientificSourceMaterializer | None:
+    backend = settings.scientific_source_backend
+    if backend is None:
+        return None
+
+    cache_root = settings.scientific_source_cache_dir
+    assert cache_root is not None
+    if backend == "filesystem":
+        source_root = settings.scientific_source_dir
+        assert source_root is not None
+        store = FilesystemScientificSourceStore(source_root)
+    else:
+        bucket = settings.scientific_source_bucket
+        endpoint = settings.scientific_source_endpoint
+        access_key_id = settings.scientific_source_access_key_id
+        secret_access_key = settings.scientific_source_secret_access_key
+        assert bucket is not None
+        assert endpoint is not None
+        assert access_key_id is not None
+        assert secret_access_key is not None
+        client = create_s3_compatible_client(
+            endpoint_url=endpoint,
+            region_name=settings.scientific_source_region,
+            access_key_id=access_key_id,
+            secret_access_key=secret_access_key,
+        )
+        store = R2ScientificSourceStore(client, bucket)
+    return ScientificSourceMaterializer(store, cache_root)
+
+
+def _create_artifact_store(
+    settings: WorkerSettings,
+    artifacts_root: Path,
+) -> FilesystemScientificArtifactStore | R2ScientificArtifactStore:
+    if settings.scientific_artifact_backend == "filesystem":
+        return FilesystemScientificArtifactStore(artifacts_root)
+
+    bucket = settings.scientific_artifact_bucket
+    endpoint = settings.scientific_artifact_endpoint
+    access_key_id = settings.scientific_artifact_access_key_id
+    secret_access_key = settings.scientific_artifact_secret_access_key
+    assert bucket is not None
+    assert endpoint is not None
+    assert access_key_id is not None
+    assert secret_access_key is not None
+    client = create_s3_compatible_client(
+        endpoint_url=endpoint,
+        region_name=settings.scientific_artifact_region,
+        access_key_id=access_key_id,
+        secret_access_key=secret_access_key,
+    )
+    return R2ScientificArtifactStore(client, bucket, artifacts_root)
+
+
+def _create_worker_database(settings: WorkerSettings):
+    return create_database(
+        settings.database_url,
+        pool_size=settings.database_pool_size,
+        max_overflow=settings.database_max_overflow,
+        pool_timeout_seconds=settings.database_pool_timeout_seconds,
+        pool_recycle_seconds=settings.database_pool_recycle_seconds,
     )
 
 
@@ -159,7 +236,7 @@ def list_active_evaluations(
     limit: int,
 ) -> tuple[ActiveEvaluationResult, ...]:
     """List active evaluations without composing scientific execution dependencies."""
-    database_engine, sessions = create_database(settings.database_url)
+    database_engine, sessions = _create_worker_database(settings)
     try:
         evaluations = PostgreSQLEvaluationRepository(sessions)
         return AgroclimaticEvaluationRecoveryService(evaluations).list_active_evaluations(
@@ -197,7 +274,7 @@ def recover_evaluation(
     reason: str,
 ) -> None:
     """Run explicit fail-only orphan recovery without composing CropSuiteLite."""
-    database_engine, sessions = create_database(settings.database_url)
+    database_engine, sessions = _create_worker_database(settings)
     try:
         evaluations = PostgreSQLEvaluationRepository(sessions)
         AgroclimaticEvaluationRecoveryService(evaluations, logger=LOGGER).recover_evaluation(

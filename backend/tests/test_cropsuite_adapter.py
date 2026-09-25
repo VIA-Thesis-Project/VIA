@@ -34,6 +34,7 @@ from via_backend.contexts.agroclimatic_evaluation.domain import (
 )
 from via_backend.contexts.agroclimatic_evaluation.infrastructure.cropsuite_adapter import (
     CropSuiteAdapter,
+    _materialize_scenario_config,
 )
 from via_backend.contexts.agroclimatic_evaluation.infrastructure.scientific_artifact_store import (
     FilesystemScientificArtifactStore,
@@ -509,6 +510,35 @@ def test_adapter_materializes_isolated_water_regime_configs(tmp_path: Path) -> N
     assert irrigated.trace.configuration_sha256 == generated_hashes[1]
     assert rainfed.water_regime is WaterRegime.RAINFED
     assert irrigated.water_regime is WaterRegime.IRRIGATED
+
+
+def test_materialized_source_root_rewrites_paths_below_logical_storage_root(
+    tmp_path: Path,
+) -> None:
+    base_config = tmp_path / "base.ini"
+    base_config.write_text(
+        "[options]\n"
+        "irrigation = 0\n"
+        "[files]\n"
+        "fine_dem = /mnt/via/sources/dem/huaura.tif\n",
+        encoding="utf-8",
+    )
+    request_workspace = tmp_path / "workspace"
+    request_workspace.mkdir()
+    materialized_root = tmp_path / "cache-view"
+
+    generated = _materialize_scenario_config(
+        base_config=base_config,
+        request_workspace=request_workspace,
+        water_regime=WaterRegime.RAINFED,
+        source_root_overrides={"/mnt/via/sources": materialized_root},
+    )
+
+    parser = configparser.ConfigParser(interpolation=None)
+    parser.read(generated, encoding="utf-8")
+    assert parser.get("files", "fine_dem") == str(
+        materialized_root / "dem" / "huaura.tif"
+    )
 
 
 def test_real_execution_requires_explicit_scientific_python(tmp_path: Path) -> None:

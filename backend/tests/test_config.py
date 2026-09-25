@@ -217,7 +217,7 @@ def test_postgresql_app_composition_does_not_initialize_openai_client(
     monkeypatch.setattr(
         app_module,
         "create_database",
-        lambda _: (_Engine(), _Sessions()),
+        lambda *_args, **_kwargs: (_Engine(), _Sessions()),
     )
     monkeypatch.setattr(openai_knowledge, "OpenAI", fail_if_openai_client_is_created)
 
@@ -229,7 +229,7 @@ def test_postgresql_app_composition_does_not_initialize_openai_client(
         )
     )
 
-    paths = {getattr(route, "path", None) for route in application.routes}
+    paths = set(application.openapi()["paths"])
     assert "/api/v1/decision-support/evaluations/{evaluation_id}/knowledge" in paths
     assert "/api/v1/decision-support/evaluations/{evaluation_id}/recommendations" in paths
 
@@ -343,6 +343,46 @@ def test_worker_run_requires_scientific_input_bindings() -> None:
 
     with pytest.raises(ValueError, match="VIA_CROPSUITE_INPUT_BINDINGS"):
         settings.require_scientific_execution()
+
+
+def test_worker_filesystem_source_backend_does_not_require_r2_credentials(
+    tmp_path: Path,
+) -> None:
+    settings = WorkerSettings(
+        database_url="postgresql+psycopg://example.invalid/via",
+        scientific_source_backend="filesystem",
+        scientific_source_dir=tmp_path / "sources",
+        scientific_source_cache_dir=tmp_path / "source-cache",
+    )
+
+    assert settings.scientific_source_backend == "filesystem"
+    assert settings.scientific_source_access_key_id is None
+    assert settings.scientific_source_secret_access_key is None
+
+
+def test_worker_s3_source_backend_requires_provider_configuration(tmp_path: Path) -> None:
+    with pytest.raises(ValueError, match="VIA_SCIENTIFIC_SOURCE_BUCKET"):
+        WorkerSettings(
+            database_url="postgresql+psycopg://example.invalid/via",
+            scientific_source_backend="s3",
+            scientific_source_cache_dir=tmp_path / "source-cache",
+        )
+
+
+def test_worker_s3_artifact_backend_requires_provider_configuration() -> None:
+    with pytest.raises(ValueError, match="VIA_SCIENTIFIC_ARTIFACT_BUCKET"):
+        WorkerSettings(
+            database_url="postgresql+psycopg://example.invalid/via",
+            scientific_artifact_backend="s3",
+        )
+
+
+def test_worker_rejects_invalid_scientific_storage_backend() -> None:
+    with pytest.raises(ValueError, match="VIA_SCIENTIFIC_SOURCE_BACKEND"):
+        WorkerSettings(
+            database_url="postgresql+psycopg://example.invalid/via",
+            scientific_source_backend="ftp",  # type: ignore[arg-type]
+        )
 
 
 def _scientific_worker_settings(

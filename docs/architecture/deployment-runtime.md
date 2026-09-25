@@ -502,8 +502,179 @@ same-commit GHCR publication gating.
 The operator-facing release, Tailscale Funnel, smoke, legacy ownership,
 migration-gate, and rollback procedure is maintained in
 [`docs/operations/production-release.md`](../operations/production-release.md).
-It preserves this architecture: HTTPS terminates at Funnel, which proxies only
-to `127.0.0.1:8000`; no Caddy layer and no public port-8000 bind are introduced.
+For the B7 rollback topology, HTTPS terminates at Funnel, which proxies only to
+`127.0.0.1:8000`; no Caddy layer and no public port-8000 bind are introduced.
+
+## B8 target hybrid managed deployment
+
+ADR-016 defines the target production runtime while B7 remains available as a
+rollback topology during cutover. The target separates the public/control plane
+from scientific compute without changing the application boundaries or the
+scientific identity model.
+
+```text
+[Frontend Hosting]
+└── VIA SPA
+      │ HTTPS
+      ▼
+[Google Cloud]
+├── Cloud Run
+│   └── VIA API
+└── Cloud Run Job
+    └── VIA Migration (via-migrate upgrade, one-shot)
+          │
+          ▼
+[Supabase]
+└── PostgreSQL/PostGIS
+      ▲                 ▲
+      │ API persistence │ worker claim/status/results
+      │                 │
+[DigitalOcean]
+└── VIA Compute Droplet
+    ├── Tailscale (administration only)
+    └── Docker Engine / Compose
+        └── VIA Worker
+            └── CropSuiteLite
+                 │
+                 ▼
+[Cloudflare]
+└── R2
+    ├── Scientific Sources
+    └── Scientific Artifacts
+```
+
+This is a C4 Deployment/runtime view. `ScientificSourceMaterializer`, the R2
+adapters, repositories, and other implementation components are deliberately
+absent because they are not deployment containers. CropSuiteLite remains inside
+the worker process/container and is not promoted to a service.
+
+The runtime responsibilities are:
+
+| Deployment node | Runtime responsibility |
+| --- | --- |
+| Cloud Run / VIA API | HTTP/auth/business APIs, capability discovery, persisted knowledge serving |
+| Cloud Run Job / VIA Migration | one-shot Alembic migration before runtime rollout |
+| Supabase PostgreSQL/PostGIS | authoritative transactional persistence and worker queue state |
+| DigitalOcean VIA Worker | polling/claiming and long scientific execution through `CropSuiteAdapter` |
+| Cloudflare R2 Sources | authoritative scientific source objects |
+| Cloudflare R2 Artifacts | authoritative finalized scientific artifacts |
+| Droplet source cache/workspace | reconstructible/disposable local execution state |
+
+### Database endpoints and pooling
+
+API, worker, and migration have separate database variables because their
+connection lifecycles differ:
+
+- `VIA_API_DATABASE_URL` is intended for the Supabase transaction-pooling
+  endpoint used by serverless API instances. API SQLAlchemy defaults are pool
+  size 5, overflow 0, timeout 30 seconds, recycle 300 seconds.
+- `VIA_WORKER_DATABASE_URL` is intended for the session/direct endpoint that is
+  reachable from the persistent Droplet. Worker defaults are pool size 2,
+  overflow 0, timeout 30 seconds, recycle 300 seconds.
+- `VIA_MIGRATION_DATABASE_URL` is used only by Alembic and should prefer the
+  direct database endpoint when the deployment network supports it. Alembic
+  keeps `NullPool` semantics.
+
+Provider SSL/query parameters belong in the externally supplied connection URL;
+VIA does not hard-code Supabase hostnames or credentials. PostGIS remains a
+required database capability and must be validated before migration/cutover.
+
+### Scientific source and artifact storage
+
+The target worker uses `VIA_SCIENTIFIC_SOURCE_BACKEND=s3` and
+`VIA_SCIENTIFIC_ARTIFACT_BACKEND=s3` against Cloudflare R2's S3-compatible API.
+The persisted/reviewed binding manifest carries provider-neutral object keys,
+relative paths, expected SHA-256, expected size, and media type. A provider URL
+is never the scientific identity.
+
+For sources, the execution path remains:
+
+```text
+R2 authoritative object
+    -> local content-addressed cache (sha256/<hash>)
+    -> SHA-256 + size verification
+    -> materialized local logical path
+    -> CropSuiteLite
+```
+
+Cache entries and workspace can be deleted and reconstructed. A cache hit is
+verified before use; a failed or partial download is never committed as a valid
+entry. The filesystem source/artifact implementations remain supported for
+development, tests, and the B7 rollback topology.
+
+### Cloud Run API filesystem contract
+
+Cloud Run API does not mount `/mnt/via/sources` and does not need original
+knowledge PDFs for normal serving. Knowledge serving uses the packaged
+manifest/taxonomy plus the PostgreSQL corpus; source PDFs remain an explicit
+`via-knowledge ingest` concern.
+
+Capability discovery still needs two small/versioned configuration inputs:
+`VIA_CROPSUITE_CATALOG` points to the catalog shipped in the immutable image,
+and `VIA_CROPSUITE_INPUT_BINDINGS=/etc/via/input-bindings.json` points to the
+same reviewed logical binding manifest used for scientific input availability.
+Cloud Run must provide that small manifest as configuration (for example an
+immutable reviewed config/secret volume); it must not mount the raw raster set.
+
+Cloud Run injects `PORT`. `via-api` uses `VIA_API_PORT` when explicitly set,
+otherwise `PORT`, otherwise 8000. The target Cloud Run configuration therefore
+leaves `VIA_API_PORT` unset.
+
+### DigitalOcean worker-only runtime
+
+`compose.digitalocean.worker.yaml` is the target Droplet topology. It has one
+service, publishes no ports, mounts `/srv/via/config` read-only, stores the R2
+source cache under `/srv/via/cache/sources`, and uses tmpfs for workspace. R2
+artifacts are authoritative; `/srv/via/cache/artifacts` is only local adapter
+scratch/cache state. Tailscale is for SSH/administration of the compute node;
+Tailscale Funnel is not part of target API ingress.
+
+The worker starts with `VIA_WORKER_BATCH_SIZE=1` and
+`VIA_CROPSUITE_MAX_WORKERS=1`. These defaults are intentionally unchanged by the
+infrastructure split.
+
+### Release and CI/CD separation
+
+CI/CD builds and tests one immutable OCI image and publishes a git-SHA tag or
+digest. Runtime deployment then executes the same ordered release gate:
+
+```text
+build/test -> publish immutable image -> Cloud Run migration job
+                                      -> failure: abort
+                                      -> success: update Cloud Run API
+                                                  update DO worker
+                                                  run smoke
+```
+
+The CI/CD system is not part of the C4 runtime diagram. Migration remains a
+one-shot release action and is never coupled to FastAPI or worker startup.
+
+### Benchmark and future worker concurrency
+
+`scripts/benchmark_production_runtime.sh` remains the reproducible scientific
+resource benchmark. It records elapsed time, CPU, peak memory, workspace bytes,
+artifact bytes, and database growth for a real external fixture. The benchmark
+now accepts `VIA_BENCHMARK_CROPSUITE_MAX_WORKERS=1|2` and records that value in
+the result, allowing two otherwise-identical runs to compare engine concurrency
+without changing production defaults.
+
+For the R2 target, perform a cold-cache run after deleting only the disposable
+source cache, then repeat the identical evaluation without deleting it for the
+warm-cache case. Record source-cache bytes/files before and after together with
+R2 request/transfer telemetry available to the operator. These live-provider
+measurements are opt-in and are not part of the credential-free normal test
+suite.
+
+Multiple VIA worker consumers remain deferred. The current PostgreSQL design
+allows workers to discover the same queued evaluation and relies on the
+optimistic `queued -> preparing` compare-and-save as the authoritative claim.
+Before scaling to Worker 1/2/3, a separate decision must cover an atomic dequeue
+strategy such as `FOR UPDATE SKIP LOCKED` (or equivalent), orphan recovery,
+retry policy, idempotency, and any required heartbeat/lease. Benchmark evidence
+must justify the additional compute first.
+
+Remote COG/HTTP Range/GDAL VSI access, Redis, RabbitMQ, Celery, automatic worker
+concurrency, and automatic multi-consumer scaling are outside B8.
 
 ## B2 reproducible Linux container image
 

@@ -18,6 +18,7 @@ from via_backend.api import ApiServerSettings
 def _clear_api_environment(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("VIA_API_HOST", raising=False)
     monkeypatch.delenv("VIA_API_PORT", raising=False)
+    monkeypatch.delenv("PORT", raising=False)
 
 
 def _configure_production_persistence(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -50,6 +51,26 @@ def test_api_server_settings_accept_environment_overrides(
 
     assert settings.host == "10.20.30.40"
     assert settings.port == 9123
+
+
+def test_api_server_settings_accept_cloud_run_port(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _clear_api_environment(monkeypatch)
+    monkeypatch.setenv("PORT", "8080")
+
+    settings = ApiServerSettings.from_env()
+
+    assert settings.port == 8080
+
+
+def test_api_specific_port_overrides_cloud_run_port(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("VIA_API_PORT", "9123")
+    monkeypatch.setenv("PORT", "8080")
+
+    assert ApiServerSettings.from_env().port == 9123
 
 
 @pytest.mark.parametrize("value", ["not-a-port", "8000.5", "true"])

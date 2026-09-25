@@ -10,6 +10,7 @@ from typing import Literal, cast
 
 RepositoryBackend = Literal["memory", "postgresql"]
 CookieSameSite = Literal["lax", "strict", "none"]
+ScientificStorageBackend = Literal["filesystem", "s3"]
 REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
 DEFAULT_HUAURA_AOI_BOUNDARY_PATH = (
     REPOSITORY_ROOT / "data" / "huaura" / "boundary" / "huaura_province.geojson"
@@ -27,6 +28,10 @@ class Settings:
     environmental_information_repository: RepositoryBackend = "memory"
     agroclimatic_evaluation_repository: RepositoryBackend = "memory"
     database_url: str | None = None
+    database_pool_size: int = 5
+    database_max_overflow: int = 0
+    database_pool_timeout_seconds: int = 30
+    database_pool_recycle_seconds: int = 300
     cors_allowed_origins: tuple[str, ...] = ()
     auth_access_token_ttl_seconds: int = 900
     auth_refresh_token_ttl_seconds: int = 1_209_600
@@ -87,10 +92,19 @@ class Settings:
             "VIA_MAX_ACTIVE_EVALUATIONS_PER_USER": self.max_active_evaluations_per_user,
             "VIA_DAILY_EVALUATION_QUOTA_PER_USER": self.daily_evaluation_quota_per_user,
             "VIA_DAILY_RECOMMENDATION_QUOTA_PER_USER": self.daily_recommendation_quota_per_user,
+            "VIA_API_DATABASE_POOL_SIZE": self.database_pool_size,
+            "VIA_API_DATABASE_POOL_TIMEOUT_SECONDS": self.database_pool_timeout_seconds,
+            "VIA_API_DATABASE_POOL_RECYCLE_SECONDS": self.database_pool_recycle_seconds,
         }
         for setting_name, value in positive_integers.items():
             if isinstance(value, bool) or not isinstance(value, int) or value < 1:
                 raise ValueError(f"{setting_name} must be a positive integer.")
+        if (
+            isinstance(self.database_max_overflow, bool)
+            or not isinstance(self.database_max_overflow, int)
+            or self.database_max_overflow < 0
+        ):
+            raise ValueError("VIA_API_DATABASE_MAX_OVERFLOW must be a non-negative integer.")
         required_strings = {
             "VIA_OPENAI_EMBEDDING_MODEL": self.openai_embedding_model,
             "VIA_OPENAI_RECOMMENDATION_MODEL": self.openai_recommendation_model,
@@ -170,7 +184,7 @@ class Settings:
 
     @classmethod
     def from_env(cls) -> Settings:
-        database_url = os.getenv("VIA_DATABASE_URL") or None
+        database_url = os.getenv("VIA_API_DATABASE_URL") or os.getenv("VIA_DATABASE_URL") or None
         default_backend = "postgresql" if database_url else "memory"
         farm_backend = os.getenv("VIA_FARM_MANAGEMENT_REPOSITORY") or default_backend
         environmental_backend = (
@@ -186,6 +200,14 @@ class Settings:
                 RepositoryBackend, evaluation_backend.casefold()
             ),
             database_url=database_url,
+            database_pool_size=_environment_integer("VIA_API_DATABASE_POOL_SIZE", 5),
+            database_max_overflow=_environment_integer("VIA_API_DATABASE_MAX_OVERFLOW", 0),
+            database_pool_timeout_seconds=_environment_integer(
+                "VIA_API_DATABASE_POOL_TIMEOUT_SECONDS", 30
+            ),
+            database_pool_recycle_seconds=_environment_integer(
+                "VIA_API_DATABASE_POOL_RECYCLE_SECONDS", 300
+            ),
             cors_allowed_origins=_environment_csv("VIA_CORS_ALLOWED_ORIGINS"),
             auth_access_token_ttl_seconds=_environment_integer(
                 "VIA_AUTH_ACCESS_TOKEN_TTL_SECONDS", 900
@@ -266,10 +288,28 @@ class WorkerSettings:
     """Settings for the PostgreSQL polling worker process."""
 
     database_url: str
+    database_pool_size: int = 2
+    database_max_overflow: int = 0
+    database_pool_timeout_seconds: int = 30
+    database_pool_recycle_seconds: int = 300
     cropsuite_root: Path | None = None
     cropsuite_python: Path | None = None
     cropsuite_workspace: Path | None = None
     artifacts_root: Path | None = None
+    scientific_artifact_backend: ScientificStorageBackend = "filesystem"
+    scientific_artifact_bucket: str | None = None
+    scientific_artifact_endpoint: str | None = None
+    scientific_artifact_region: str = "auto"
+    scientific_artifact_access_key_id: str | None = None
+    scientific_artifact_secret_access_key: str | None = None
+    scientific_source_backend: ScientificStorageBackend | None = None
+    scientific_source_dir: Path | None = None
+    scientific_source_cache_dir: Path | None = None
+    scientific_source_bucket: str | None = None
+    scientific_source_endpoint: str | None = None
+    scientific_source_region: str = "auto"
+    scientific_source_access_key_id: str | None = None
+    scientific_source_secret_access_key: str | None = None
     cropsuite_input_bindings: Path | None = None
     cropsuite_source_config: Path | None = None
     cropsuite_catalog: Path | None = None
@@ -279,7 +319,85 @@ class WorkerSettings:
 
     def __post_init__(self) -> None:
         if not self.database_url:
-            raise ValueError("VIA_DATABASE_URL is required for the worker.")
+            raise ValueError(
+                "VIA_WORKER_DATABASE_URL or VIA_DATABASE_URL is required for the worker."
+            )
+        for setting_name, value in (
+            ("VIA_WORKER_DATABASE_POOL_SIZE", self.database_pool_size),
+            (
+                "VIA_WORKER_DATABASE_POOL_TIMEOUT_SECONDS",
+                self.database_pool_timeout_seconds,
+            ),
+            (
+                "VIA_WORKER_DATABASE_POOL_RECYCLE_SECONDS",
+                self.database_pool_recycle_seconds,
+            ),
+        ):
+            if isinstance(value, bool) or not isinstance(value, int) or value < 1:
+                raise ValueError(f"{setting_name} must be a positive integer.")
+        if (
+            isinstance(self.database_max_overflow, bool)
+            or not isinstance(self.database_max_overflow, int)
+            or self.database_max_overflow < 0
+        ):
+            raise ValueError(
+                "VIA_WORKER_DATABASE_MAX_OVERFLOW must be a non-negative integer."
+            )
+        if self.scientific_source_backend not in {None, "filesystem", "s3"}:
+            raise ValueError(
+                "VIA_SCIENTIFIC_SOURCE_BACKEND must be 'filesystem' or 's3'."
+            )
+        if self.scientific_artifact_backend not in {"filesystem", "s3"}:
+            raise ValueError(
+                "VIA_SCIENTIFIC_ARTIFACT_BACKEND must be 'filesystem' or 's3'."
+            )
+        if self.scientific_source_backend == "filesystem":
+            _require_worker_values(
+                (
+                    ("VIA_SCIENTIFIC_SOURCE_DIR", self.scientific_source_dir),
+                    (
+                        "VIA_SCIENTIFIC_SOURCE_CACHE_DIR",
+                        self.scientific_source_cache_dir,
+                    ),
+                )
+            )
+        elif self.scientific_source_backend == "s3":
+            _require_worker_values(
+                (
+                    (
+                        "VIA_SCIENTIFIC_SOURCE_CACHE_DIR",
+                        self.scientific_source_cache_dir,
+                    ),
+                    ("VIA_SCIENTIFIC_SOURCE_BUCKET", self.scientific_source_bucket),
+                    ("VIA_SCIENTIFIC_SOURCE_ENDPOINT", self.scientific_source_endpoint),
+                    (
+                        "VIA_SCIENTIFIC_SOURCE_ACCESS_KEY_ID",
+                        self.scientific_source_access_key_id,
+                    ),
+                    (
+                        "VIA_SCIENTIFIC_SOURCE_SECRET_ACCESS_KEY",
+                        self.scientific_source_secret_access_key,
+                    ),
+                )
+            )
+        if self.scientific_artifact_backend == "s3":
+            _require_worker_values(
+                (
+                    ("VIA_SCIENTIFIC_ARTIFACT_BUCKET", self.scientific_artifact_bucket),
+                    (
+                        "VIA_SCIENTIFIC_ARTIFACT_ENDPOINT",
+                        self.scientific_artifact_endpoint,
+                    ),
+                    (
+                        "VIA_SCIENTIFIC_ARTIFACT_ACCESS_KEY_ID",
+                        self.scientific_artifact_access_key_id,
+                    ),
+                    (
+                        "VIA_SCIENTIFIC_ARTIFACT_SECRET_ACCESS_KEY",
+                        self.scientific_artifact_secret_access_key,
+                    ),
+                )
+            )
         if (
             isinstance(self.poll_interval_seconds, bool)
             or not isinstance(self.poll_interval_seconds, (int, float))
@@ -323,6 +441,7 @@ class WorkerSettings:
             cropsuite_root=self.cropsuite_root,
             workspace=self.cropsuite_workspace,
             artifacts_root=self.artifacts_root,
+            source_cache=self.scientific_source_cache_dir,
         )
         return (
             self.cropsuite_root,
@@ -335,11 +454,52 @@ class WorkerSettings:
     @classmethod
     def from_env(cls) -> WorkerSettings:
         return cls(
-            database_url=os.getenv("VIA_DATABASE_URL") or "",
+            database_url=(
+                os.getenv("VIA_WORKER_DATABASE_URL")
+                or os.getenv("VIA_DATABASE_URL")
+                or ""
+            ),
+            database_pool_size=_environment_integer("VIA_WORKER_DATABASE_POOL_SIZE", 2),
+            database_max_overflow=_environment_integer(
+                "VIA_WORKER_DATABASE_MAX_OVERFLOW", 0
+            ),
+            database_pool_timeout_seconds=_environment_integer(
+                "VIA_WORKER_DATABASE_POOL_TIMEOUT_SECONDS", 30
+            ),
+            database_pool_recycle_seconds=_environment_integer(
+                "VIA_WORKER_DATABASE_POOL_RECYCLE_SECONDS", 300
+            ),
             cropsuite_root=_optional_path("VIA_CROPSUITE_ROOT"),
             cropsuite_python=_optional_path("VIA_CROPSUITE_PYTHON"),
             cropsuite_workspace=_optional_path("VIA_CROPSUITE_WORKSPACE"),
             artifacts_root=_optional_path("VIA_ARTIFACTS_ROOT"),
+            scientific_artifact_backend=cast(
+                ScientificStorageBackend,
+                os.getenv("VIA_SCIENTIFIC_ARTIFACT_BACKEND", "filesystem").casefold(),
+            ),
+            scientific_artifact_bucket=os.getenv("VIA_SCIENTIFIC_ARTIFACT_BUCKET") or None,
+            scientific_artifact_endpoint=os.getenv("VIA_SCIENTIFIC_ARTIFACT_ENDPOINT") or None,
+            scientific_artifact_region=os.getenv("VIA_SCIENTIFIC_ARTIFACT_REGION", "auto"),
+            scientific_artifact_access_key_id=(
+                os.getenv("VIA_SCIENTIFIC_ARTIFACT_ACCESS_KEY_ID") or None
+            ),
+            scientific_artifact_secret_access_key=(
+                os.getenv("VIA_SCIENTIFIC_ARTIFACT_SECRET_ACCESS_KEY") or None
+            ),
+            scientific_source_backend=_optional_scientific_storage_backend(
+                "VIA_SCIENTIFIC_SOURCE_BACKEND"
+            ),
+            scientific_source_dir=_optional_path("VIA_SCIENTIFIC_SOURCE_DIR"),
+            scientific_source_cache_dir=_optional_path("VIA_SCIENTIFIC_SOURCE_CACHE_DIR"),
+            scientific_source_bucket=os.getenv("VIA_SCIENTIFIC_SOURCE_BUCKET") or None,
+            scientific_source_endpoint=os.getenv("VIA_SCIENTIFIC_SOURCE_ENDPOINT") or None,
+            scientific_source_region=os.getenv("VIA_SCIENTIFIC_SOURCE_REGION", "auto"),
+            scientific_source_access_key_id=(
+                os.getenv("VIA_SCIENTIFIC_SOURCE_ACCESS_KEY_ID") or None
+            ),
+            scientific_source_secret_access_key=(
+                os.getenv("VIA_SCIENTIFIC_SOURCE_SECRET_ACCESS_KEY") or None
+            ),
             cropsuite_input_bindings=_optional_path("VIA_CROPSUITE_INPUT_BINDINGS"),
             cropsuite_source_config=_optional_path("VIA_CROPSUITE_SOURCE_CONFIG"),
             cropsuite_catalog=_optional_path("VIA_CROPSUITE_CATALOG"),
@@ -354,10 +514,14 @@ def _validate_scientific_path_topology(
     cropsuite_root: Path,
     workspace: Path,
     artifacts_root: Path,
+    source_cache: Path | None = None,
 ) -> None:
     engine = cropsuite_root.resolve(strict=False)
     execution_workspace = workspace.resolve(strict=False)
     durable_artifacts = artifacts_root.resolve(strict=False)
+    scientific_source_cache = (
+        source_cache.resolve(strict=False) if source_cache is not None else None
+    )
 
     if _is_same_or_within(execution_workspace, engine):
         raise ValueError("VIA_CROPSUITE_WORKSPACE must be outside VIA_CROPSUITE_ROOT.")
@@ -371,6 +535,15 @@ def _validate_scientific_path_topology(
         raise ValueError(
             "VIA_ARTIFACTS_ROOT must not be inside VIA_CROPSUITE_WORKSPACE."
         )
+    if scientific_source_cache is not None:
+        if _is_same_or_within(scientific_source_cache, engine):
+            raise ValueError(
+                "VIA_SCIENTIFIC_SOURCE_CACHE_DIR must be outside VIA_CROPSUITE_ROOT."
+            )
+        if _is_same_or_within(scientific_source_cache, execution_workspace):
+            raise ValueError(
+                "VIA_SCIENTIFIC_SOURCE_CACHE_DIR must be outside VIA_CROPSUITE_WORKSPACE."
+            )
 
 
 def _is_same_or_within(path: Path, parent: Path) -> bool:
@@ -388,6 +561,19 @@ def _optional_path_alias(*names: str) -> Path | None:
         if value:
             return Path(value)
     return None
+
+
+def _optional_scientific_storage_backend(name: str) -> ScientificStorageBackend | None:
+    value = os.getenv(name)
+    if not value:
+        return None
+    return cast(ScientificStorageBackend, value.casefold())
+
+
+def _require_worker_values(values: tuple[tuple[str, object | None], ...]) -> None:
+    missing = [name for name, value in values if value is None or value == ""]
+    if missing:
+        raise ValueError("Worker storage configuration requires " + ", ".join(missing) + ".")
 
 
 def _environment_float(name: str, default: float) -> float:

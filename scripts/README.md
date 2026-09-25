@@ -6,6 +6,13 @@ Los scripts permanecen en una sola carpeta porque varios son referenciados direc
 
 ## Operación y despliegue
 
+### `staging_preflight.ps1`
+
+Preflight local seguro para la validación híbrida de staging. Informa presencia
+de CLIs, variables de autenticación y disponibilidad del engine de Docker sin
+imprimir valores secretos. El procedimiento completo está en
+`docs/operations/staging-validation.md`.
+
 ### `deploy_digitalocean.sh` / `deploy_digitalocean.ps1`
 
 Herramientas relacionadas con el despliegue de VIA en DigitalOcean.

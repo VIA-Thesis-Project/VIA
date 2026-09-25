@@ -157,7 +157,13 @@ def create_app(
         or settings.agroclimatic_evaluation_repository == "postgresql"
     ):
         assert settings.database_url is not None
-        engine, sessions = create_database(settings.database_url)
+        engine, sessions = create_database(
+            settings.database_url,
+            pool_size=settings.database_pool_size,
+            max_overflow=settings.database_max_overflow,
+            pool_timeout_seconds=settings.database_pool_timeout_seconds,
+            pool_recycle_seconds=settings.database_pool_recycle_seconds,
+        )
 
     if settings.farm_management_repository == "postgresql":
         assert engine is not None

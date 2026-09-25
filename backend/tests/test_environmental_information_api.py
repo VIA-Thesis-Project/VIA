@@ -2,14 +2,16 @@
 
 import asyncio
 from typing import Any
-from uuid import UUID, uuid4
+from uuid import uuid4
 
 from httpx import ASGITransport, AsyncClient, Response
 
 from via_backend.config import Settings
-from via_backend.contexts.identity_access.application.public import AuthenticatedPrincipal
 from via_backend.contexts.identity_access.domain.models import UserRole
 from via_backend.main import create_app
+
+ADMIN_EMAIL = "admin@example.com"
+ADMIN_PASSWORD = "CorrectHorseBatteryStaple1!"
 
 
 def _test_app():
@@ -19,15 +21,21 @@ def _test_app():
             environmental_information_repository="memory",
         )
     )
-    # These lifecycle tests exercise dataset behavior under an authenticated admin.
-    for route in app.routes:
-        dependant = getattr(route, "dependant", None)
-        for dependency in dependant.dependencies if dependant is not None else ():
-            if getattr(dependency.call, "__name__", "") == "resolve_principal":
-                app.dependency_overrides[dependency.call] = lambda: AuthenticatedPrincipal(
-                    UUID("11111111-1111-4111-8111-111111111111"), UserRole.ADMIN
-                )
+    app.state.identity_administration.create_user(
+        email=ADMIN_EMAIL,
+        role=UserRole.ADMIN,
+        password=ADMIN_PASSWORD,
+    )
     return app
+
+
+async def _authenticate_admin(client: AsyncClient) -> None:
+    response = await client.post(
+        "/api/v1/auth/login",
+        json={"email": ADMIN_EMAIL, "password": ADMIN_PASSWORD},
+    )
+    assert response.status_code == 200
+    client.headers["Authorization"] = f"Bearer {response.json()['access_token']}"
 
 
 def _dataset_body() -> dict[str, Any]:
@@ -61,6 +69,7 @@ def _version_body(identifier: str = "2026-09") -> dict[str, Any]:
 async def _request(method: str, path: str, **kwargs: Any) -> Response:
     transport = ASGITransport(app=_test_app())
     async with AsyncClient(transport=transport, base_url="http://test") as client:
+        await _authenticate_admin(client)
         return await client.request(method, path, **kwargs)
 
 
@@ -68,6 +77,7 @@ def test_dataset_and_version_lifecycle() -> None:
     async def scenario() -> None:
         transport = ASGITransport(app=_test_app())
         async with AsyncClient(transport=transport, base_url="http://test") as client:
+            await _authenticate_admin(client)
             dataset_response = await client.post("/datasets", json=_dataset_body())
             assert dataset_response.status_code == 201
             dataset = dataset_response.json()
@@ -99,6 +109,7 @@ def test_duplicate_version_identifier_returns_conflict() -> None:
     async def scenario() -> Response:
         transport = ASGITransport(app=_test_app())
         async with AsyncClient(transport=transport, base_url="http://test") as client:
+            await _authenticate_admin(client)
             dataset = (await client.post("/datasets", json=_dataset_body())).json()
             path = f"/datasets/{dataset['id']}/versions"
             assert (await client.post(path, json=_version_body())).status_code == 201
@@ -121,6 +132,7 @@ def test_invalid_extent_returns_validation_error() -> None:
     async def scenario() -> Response:
         transport = ASGITransport(app=_test_app())
         async with AsyncClient(transport=transport, base_url="http://test") as client:
+            await _authenticate_admin(client)
             dataset = (await client.post("/datasets", json=_dataset_body())).json()
             body = _version_body()
             body["extent"] = {

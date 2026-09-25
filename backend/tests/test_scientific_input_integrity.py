@@ -21,6 +21,7 @@ from via_backend.contexts.agroclimatic_evaluation.domain import (
 from via_backend.contexts.agroclimatic_evaluation.infrastructure import (
     ConfiguredEnvironmentalInputIntegrityVerifier,
     CropSuiteEnvironmentalInputBinding,
+    ScientificSourceObject,
     load_cropsuite_environmental_input_bindings,
 )
 
@@ -197,6 +198,47 @@ def test_binding_loader_accepts_explicit_schema(tmp_path: Path) -> None:
 
     assert load_cropsuite_environmental_input_bindings(path) == (
         _binding(source_sha256=(SOURCE_A, SOURCE_B)),
+    )
+
+
+def test_binding_loader_accepts_provider_neutral_source_objects(tmp_path: Path) -> None:
+    path = tmp_path / "bindings.json"
+    path.write_text(
+        json.dumps(
+            {
+                "bindings": [
+                    {
+                        "dataset_id": str(DATASET_ID),
+                        "dataset_version_id": str(DATASET_VERSION_ID),
+                        "storage_reference": "/mnt/via/sources",
+                        "checksum": "opaque:dataset-version-checksum",
+                        "source_sha256": [SOURCE_A],
+                        "sources": [
+                            {
+                                "object_key": "huaura/source.tif",
+                                "relative_path": "environment/source.tif",
+                                "sha256": SOURCE_A,
+                                "size_bytes": 123,
+                                "media_type": "image/tiff",
+                            }
+                        ],
+                    }
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    loaded = load_cropsuite_environmental_input_bindings(path)
+
+    assert loaded[0].sources == (
+        ScientificSourceObject(
+            object_key="huaura/source.tif",
+            relative_path="environment/source.tif",
+            sha256=SOURCE_A,
+            size_bytes=123,
+            media_type="image/tiff",
+        ),
     )
 
 

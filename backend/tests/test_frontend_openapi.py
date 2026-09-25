@@ -27,7 +27,7 @@ def _schema(monkeypatch: Any) -> dict[str, Any]:
     monkeypatch.setattr(
         app_module,
         "create_database",
-        lambda _: (_Engine(), _Sessions()),
+        lambda _url, **_kwargs: (_Engine(), _Sessions()),
     )
     app = app_module.create_app(
         Settings(
