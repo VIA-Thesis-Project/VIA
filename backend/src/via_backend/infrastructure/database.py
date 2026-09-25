@@ -1,6 +1,6 @@
 """Host-level SQLAlchemy engine and session construction."""
 
-from sqlalchemy import Engine, create_engine
+from sqlalchemy import Connection, Engine, create_engine, event
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import NullPool
 
@@ -13,6 +13,15 @@ NAMING_CONVENTION = {
 }
 
 SessionFactory = sessionmaker[Session]
+
+
+def _configure_float_round_trip(engine: Engine) -> None:
+    """Preserve PostgreSQL float8 values exactly across text-protocol round trips."""
+
+    def set_extra_float_digits(connection: Connection) -> None:
+        connection.exec_driver_sql("SET LOCAL extra_float_digits = 3")
+
+    event.listen(engine, "begin", set_extra_float_digits)
 
 
 def create_database(
@@ -31,6 +40,7 @@ def create_database(
             poolclass=NullPool,
             connect_args={"prepare_threshold": None},
         )
+        _configure_float_round_trip(engine)
         return engine, sessionmaker(bind=engine, expire_on_commit=False)
 
     engine_options: dict[str, object] = {"pool_pre_ping": True}
@@ -43,4 +53,5 @@ def create_database(
     if pool_recycle_seconds is not None:
         engine_options["pool_recycle"] = pool_recycle_seconds
     engine = create_engine(database_url, **engine_options)
+    _configure_float_round_trip(engine)
     return engine, sessionmaker(bind=engine, expire_on_commit=False)

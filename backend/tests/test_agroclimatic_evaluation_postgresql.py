@@ -141,7 +141,7 @@ def _snapshot_for_reference(
 
     extent_west = (-77.8, -77.79)[position]
     extent_south = (-12.7, -12.69)[position]
-    extent_east = (-76.2, -76.19)[position]
+    extent_east = (-76.53683333333333, -76.19)[position]
     extent_north = (-10.4, -10.39)[position]
 
     return EnvironmentalInputSnapshot(
