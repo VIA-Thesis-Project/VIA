@@ -1878,9 +1878,9 @@
     "semantic_hash": ""
   },
   "backend/src/via_backend/app.py": {
-    "mtime": 1790385348.7840052,
-    "seen": 1790385527.748929,
-    "ast_hash": "caad0286352bc3a1990ef17a34a48a6f",
+    "mtime": 1790441471.257154,
+    "seen": 1790441724.215268,
+    "ast_hash": "c23af3441c630830e95ea94a58e66f81",
     "semantic_hash": ""
   },
   "backend/tests/test_api_host.py": {
@@ -2178,9 +2178,9 @@
     "semantic_hash": ""
   },
   "backend/tests/test_frontend_openapi.py": {
-    "mtime": 1790385543.9606733,
-    "seen": 1790385595.3023517,
-    "ast_hash": "c36007d5f7719cebcce94db701b11e2d",
+    "mtime": 1790441627.1629212,
+    "seen": 1790441724.2154386,
+    "ast_hash": "9eb0128530bbb17b25236b6f09b52b52",
     "semantic_hash": ""
   },
   "docs/frontend/fixtures/evaluation-request.example.json": {
@@ -2202,15 +2202,15 @@
     "semantic_hash": ""
   },
   "docs/frontend/openapi.json": {
-    "mtime": 1790385442.0161588,
-    "seen": 1790385527.7491276,
-    "ast_hash": "9a1814f18337c2106a2fed03a48908bb",
+    "mtime": 1790441650.583815,
+    "seen": 1790441724.2154639,
+    "ast_hash": "d22515457d558e7e2b8446fa241851e0",
     "semantic_hash": ""
   },
   "scripts/generate_frontend_openapi.py": {
-    "mtime": 1789942069.1270387,
-    "seen": 1789942815.198535,
-    "ast_hash": "1beb529a7bbacd41de0837c337afb557",
+    "mtime": 1790441749.926015,
+    "seen": 1790441845.0124276,
+    "ast_hash": "3b3547a16f19008f9a06d825bde6beca",
     "semantic_hash": ""
   },
   "scripts/smoke_frontend_api.ps1": {
@@ -2394,9 +2394,9 @@
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/identity_access/interfaces/http.py": {
-    "mtime": 1790044094.0769997,
-    "seen": 1790044734.839854,
-    "ast_hash": "e973ba22f54829ea50da36766bc01833",
+    "mtime": 1790441471.256168,
+    "seen": 1790441724.2153854,
+    "ast_hash": "92d5bbce9a9de1e166f6880d8cbe622e",
     "semantic_hash": ""
   },
   "backend/src/via_backend/cost_protection.py": {
@@ -2424,9 +2424,9 @@
     "semantic_hash": ""
   },
   "backend/tests/test_authentication.py": {
-    "mtime": 1790019085.9390488,
-    "seen": 1790044734.8399055,
-    "ast_hash": "4c767f3069ef91510b1938f9a0387dfc",
+    "mtime": 1790441471.257154,
+    "seen": 1790441724.2154124,
+    "ast_hash": "e828a78ed39562922fea664aca4d4e9b",
     "semantic_hash": ""
   },
   "backend/tests/test_ia3_ownership.py": {
@@ -2502,9 +2502,9 @@
     "semantic_hash": ""
   },
   "docs/frontend/security-route-matrix.md": {
-    "mtime": 1790385348.8267922,
-    "seen": 1790385527.7492425,
-    "ast_hash": "6fb4dd75a1c0a2b490ebe94784904763",
+    "mtime": 1790441627.166165,
+    "seen": 1790441724.2155852,
+    "ast_hash": "736450cb4188b77df814f90b4d68965f",
     "semantic_hash": ""
   },
   "docs/operations/production-release.md": {

@@ -19,9 +19,11 @@ from ..application import (
     AuthenticationError,
     AuthenticationResult,
     AuthenticationService,
+    IdentityAdministrationService,
+    PasswordPolicyError,
 )
 from ..application.public import PrincipalResolver
-from ..domain import IdentityValidationError, UserRole, UserStatus
+from ..domain import IdentityConflictError, IdentityValidationError, UserRole, UserStatus
 
 AUTH_COOKIE_PATH = "/api/v1/auth"
 NO_STORE_HEADERS = {"Cache-Control": "no-store"}
@@ -40,6 +42,11 @@ class _RequestModel(BaseModel):
 
 
 class LoginBody(_RequestModel):
+    email: str
+    password: str
+
+
+class RegisterBody(_RequestModel):
     email: str
     password: str
 
@@ -85,12 +92,61 @@ def create_router(
     limiter: FixedWindowLimiter | None = None,
     login_limit: int = 5,
     refresh_limit: int = 10,
+    administration: IdentityAdministrationService | None = None,
+    register_limit: int | None = None,
 ) -> APIRouter:
     """Create Identity Access authentication routes."""
     router = APIRouter(prefix="/auth", tags=["identity-access"])
     resolve_principal = principal_resolver or create_principal_resolver(service)
 
     principal_dependency = Depends(resolve_principal)
+
+    if administration is not None:
+        @router.post(
+            "/register",
+            response_model=UserResponse,
+            status_code=status.HTTP_201_CREATED,
+            operation_id="auth_register",
+            responses={
+                409: {"description": "An account with this email already exists."},
+                422: {"description": "Invalid email or password."},
+                429: {"description": "Registration rate limit exceeded."},
+            },
+        )
+        def register(body: RegisterBody, response: Response, request: Request) -> UserResponse:
+            if limiter is not None:
+                host = request.client.host if request.client else "unknown"
+                email_hash = sha256(body.email.strip().casefold().encode()).hexdigest()
+                effective_register_limit = register_limit or login_limit
+                try:
+                    limiter.check("register_host", host, effective_register_limit)
+                    limiter.check("register_email", email_hash, effective_register_limit)
+                except RateLimitExceededError as error:
+                    raise HTTPException(
+                        status_code=429,
+                        detail="Too many requests.",
+                        headers={"Retry-After": str(error.retry_after), **NO_STORE_HEADERS},
+                    ) from error
+            try:
+                user = administration.create_user(
+                    email=body.email,
+                    role=UserRole.USER,
+                    password=body.password,
+                )
+            except (IdentityValidationError, PasswordPolicyError) as error:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                    detail=str(error),
+                    headers=NO_STORE_HEADERS,
+                ) from error
+            except IdentityConflictError as error:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="An account with this email already exists.",
+                    headers=NO_STORE_HEADERS,
+                ) from error
+            response.headers["Cache-Control"] = "no-store"
+            return UserResponse.model_validate(user)
 
     @router.post(
         "/login",

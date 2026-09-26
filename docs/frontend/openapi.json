@@ -1875,6 +1875,25 @@
         "title": "RecommendationStatus",
         "type": "string"
       },
+      "RegisterBody": {
+        "additionalProperties": false,
+        "properties": {
+          "email": {
+            "title": "Email",
+            "type": "string"
+          },
+          "password": {
+            "title": "Password",
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ],
+        "title": "RegisterBody",
+        "type": "object"
+      },
       "RequestEvaluationBody": {
         "additionalProperties": false,
         "properties": {
@@ -2637,6 +2656,46 @@
           }
         },
         "summary": "Refresh",
+        "tags": [
+          "identity-access"
+        ]
+      }
+    },
+    "/api/v1/auth/register": {
+      "post": {
+        "operationId": "auth_register",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "409": {
+            "description": "An account with this email already exists."
+          },
+          "422": {
+            "description": "Invalid email or password."
+          },
+          "429": {
+            "description": "Registration rate limit exceeded."
+          }
+        },
+        "summary": "Register",
         "tags": [
           "identity-access"
         ]

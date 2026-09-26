@@ -148,6 +148,7 @@ def test_all_live_functional_routes_publish_bearer_security(monkeypatch: Any) ->
     bearer = [{"BearerAuth": []}]
     public_operations = {
         ("/health", "get"),
+        ("/api/v1/auth/register", "post"),
         ("/api/v1/auth/login", "post"),
         ("/api/v1/auth/refresh", "post"),
         ("/api/v1/auth/logout", "post"),
@@ -166,6 +167,7 @@ def test_all_live_functional_routes_publish_bearer_security(monkeypatch: Any) ->
 def test_openapi_publishes_role_and_cost_failures(monkeypatch: Any) -> None:
     schema = _schema(monkeypatch)
     expected = {
+        ("/api/v1/auth/register", "post"): {"409", "422", "429"},
         ("/api/v1/auth/login", "post"): {"401", "429"},
         ("/api/v1/auth/refresh", "post"): {"401", "403", "429"},
         ("/api/v1/auth/logout", "post"): {"403"},

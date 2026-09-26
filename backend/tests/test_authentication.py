@@ -108,6 +108,7 @@ def _http_client() -> tuple[TestClient, _Harness]:
                 refresh_cookie_samesite="lax",
                 trusted_origins=(ORIGIN,),
             ),
+            administration=harness.admin,
         ),
         prefix="/api/v1",
     )
@@ -349,6 +350,58 @@ def test_http_login_me_refresh_and_logout_contract() -> None:
     ).status_code == 401
 
 
+def test_http_register_creates_normalized_active_user_and_login_works() -> None:
+    client, harness = _http_client()
+
+    registered = client.post(
+        "/api/v1/auth/register",
+        json={"email": " New.User@Example.COM ", "password": PASSWORD},
+    )
+
+    assert registered.status_code == 201
+    assert registered.headers["cache-control"] == "no-store"
+    assert registered.json()["email"] == "new.user@example.com"
+    assert registered.json()["status"] == "active"
+    assert registered.json()["role"] == "user"
+    created = harness.users.get_by_normalized_email("new.user@example.com")
+    assert created is not None
+    assert created.role is UserRole.USER
+
+    login = client.post(
+        "/api/v1/auth/login",
+        json={"email": "new.user@example.com", "password": PASSWORD},
+    )
+    assert login.status_code == 200
+    assert login.json()["user"]["id"] == registered.json()["id"]
+
+
+def test_http_register_rejects_duplicate_invalid_password_and_role_override() -> None:
+    client, _ = _http_client()
+
+    duplicate = client.post(
+        "/api/v1/auth/register",
+        json={"email": " USER@example.com ", "password": PASSWORD},
+    )
+    assert duplicate.status_code == 409
+    assert duplicate.json() == {"detail": "An account with this email already exists."}
+
+    weak_password = client.post(
+        "/api/v1/auth/register",
+        json={"email": "new@example.com", "password": "too-short"},
+    )
+    assert weak_password.status_code == 422
+
+    role_override = client.post(
+        "/api/v1/auth/register",
+        json={
+            "email": "admin-attempt@example.com",
+            "password": PASSWORD,
+            "role": "admin",
+        },
+    )
+    assert role_override.status_code == 422
+
+
 def test_http_login_failures_do_not_reveal_account_existence() -> None:
     client, _ = _http_client()
     wrong = client.post(
@@ -407,17 +460,19 @@ def test_auth_openapi_exposes_bearer_only_for_me() -> None:
         {"BearerAuth": []}
     ]
     for path, method in [
+        ("/api/v1/auth/register", "post"),
         ("/api/v1/auth/login", "post"),
         ("/api/v1/auth/refresh", "post"),
         ("/api/v1/auth/logout", "post"),
     ]:
         assert "security" not in schema["paths"][path][method]
     assert {
+        schema["paths"]["/api/v1/auth/register"]["post"]["operationId"],
         schema["paths"]["/api/v1/auth/login"]["post"]["operationId"],
         schema["paths"]["/api/v1/auth/refresh"]["post"]["operationId"],
         schema["paths"]["/api/v1/auth/logout"]["post"]["operationId"],
         schema["paths"]["/api/v1/auth/me"]["get"]["operationId"],
-    } == {"auth_login", "auth_refresh", "auth_logout", "auth_me"}
+    } == {"auth_register", "auth_login", "auth_refresh", "auth_logout", "auth_me"}
 
 
 def test_ia3_keeps_health_public_but_protects_owned_functional_routes() -> None:
@@ -430,5 +485,6 @@ def test_ia3_keeps_health_public_but_protects_owned_functional_routes() -> None:
     assert projects.headers["www-authenticate"] == "Bearer"
     assert evaluations.headers["www-authenticate"] == "Bearer"
     schema = cast(FastAPI, client.app).openapi()
-    assert "/api/v1/auth/register" not in schema["paths"]
+    assert "/api/v1/auth/register" in schema["paths"]
+    assert "security" not in schema["paths"]["/api/v1/auth/register"]["post"]
     assert "/register" not in schema["paths"]

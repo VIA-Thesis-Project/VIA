@@ -10,8 +10,8 @@ REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 BACKEND_SRC = REPOSITORY_ROOT / "backend" / "src"
 sys.path.insert(0, str(BACKEND_SRC))
 
-import via_backend.app as app_module  # noqa: E402
-from via_backend.config import Settings  # noqa: E402
+import via_backend.app as app_module
+from via_backend.config import Settings
 
 
 class _Engine:
@@ -24,7 +24,7 @@ class _Sessions:
 
 
 def main() -> None:
-    app_module.create_database = lambda _: (_Engine(), _Sessions())
+    app_module.create_database = lambda *_args, **_kwargs: (_Engine(), _Sessions())
     application = app_module.create_app(
         Settings(
             farm_management_repository="postgresql",

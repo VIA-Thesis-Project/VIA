@@ -5,6 +5,7 @@ This matrix describes the live non-production schema and the production runtime 
 | Route group | Operations | Authentication | Role/ownership | Cost protection |
 | --- | --- | --- | --- | --- |
 | `/health` | GET | public | none | none |
+| `/api/v1/auth/register` | POST | public credentials | creates ACTIVE USER only; role cannot be supplied by client | host + normalized-email rate limit; `429` + `Retry-After` |
 | `/api/v1/auth/login` | POST | public credentials | active user only | host + normalized-email rate limit; `429` + `Retry-After` |
 | `/api/v1/auth/refresh` | POST | refresh cookie | trusted browser `Origin`; rotation/reuse protection | host rate limit; `429` + `Retry-After` |
 | `/api/v1/auth/logout` | POST | refresh cookie optional | trusted browser `Origin` | none |

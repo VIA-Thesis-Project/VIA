@@ -255,10 +255,11 @@ def create_app(
         parcel_snapshots=_FarmAuthorizedParcelSnapshotProvider(farm_management),
     )
     application.state.settings = settings
-    application.state.identity_administration = IdentityAdministrationService(
+    identity_administration = IdentityAdministrationService(
         users=identity_users, sessions=auth_sessions,
         password_hasher=Argon2PasswordHasher(), clock=SystemClock(),
     )
+    application.state.identity_administration = identity_administration
     application.include_router(health_router)
     application.include_router(
         create_identity_access_router(
@@ -273,6 +274,8 @@ def create_app(
             limiter,
             settings.rate_login_per_minute,
             settings.rate_refresh_per_minute,
+            administration=identity_administration,
+            register_limit=settings.rate_login_per_minute,
         ),
         prefix="/api/v1",
     )
