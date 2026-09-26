@@ -20,7 +20,6 @@ from via_backend.contexts.identity_access.application.public import (
 )
 from via_backend.cost_protection import (
     FixedWindowLimiter,
-    QuotaExceededError,
     RateLimitExceededError,
 )
 
@@ -119,7 +118,7 @@ def create_router(
             403: {"description": "Administrator permission required for force regeneration."},
             404: {"description": "Owned evaluation or scenario was not found."},
             409: {"description": "Evaluation scenario is not final."},
-            429: {"description": "Recommendation rate or daily quota exceeded."},
+            429: {"description": "Recommendation rate limit exceeded."},
             503: {"description": "Recommendation provider is unavailable."},
         },
     )
@@ -148,12 +147,6 @@ def create_router(
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                 detail=str(exc),
-            ) from exc
-        except QuotaExceededError as exc:
-            raise HTTPException(
-                status_code=429,
-                detail="Daily quota exceeded.",
-                headers={"Retry-After": str(exc.retry_after)},
             ) from exc
 
     @router.get(

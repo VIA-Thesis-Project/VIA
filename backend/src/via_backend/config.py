@@ -59,9 +59,6 @@ class Settings:
     rate_dataset_coverage_per_minute: int = 20
     rate_knowledge_per_user_per_minute: int = 30
     rate_recommendations_per_user_per_minute: int = 5
-    max_active_evaluations_per_user: int = 2
-    daily_evaluation_quota_per_user: int = 20
-    daily_recommendation_quota_per_user: int = 10
 
     def __post_init__(self) -> None:
         selections = {
@@ -90,9 +87,6 @@ class Settings:
             "VIA_RATE_RECOMMENDATIONS_PER_USER_PER_MINUTE": (
                 self.rate_recommendations_per_user_per_minute
             ),
-            "VIA_MAX_ACTIVE_EVALUATIONS_PER_USER": self.max_active_evaluations_per_user,
-            "VIA_DAILY_EVALUATION_QUOTA_PER_USER": self.daily_evaluation_quota_per_user,
-            "VIA_DAILY_RECOMMENDATION_QUOTA_PER_USER": self.daily_recommendation_quota_per_user,
             "VIA_API_DATABASE_POOL_SIZE": self.database_pool_size,
             "VIA_API_DATABASE_POOL_TIMEOUT_SECONDS": self.database_pool_timeout_seconds,
             "VIA_API_DATABASE_POOL_RECYCLE_SECONDS": self.database_pool_recycle_seconds,
@@ -274,15 +268,6 @@ class Settings:
             ),
             rate_recommendations_per_user_per_minute=_environment_integer(
                 "VIA_RATE_RECOMMENDATIONS_PER_USER_PER_MINUTE", 5
-            ),
-            max_active_evaluations_per_user=_environment_integer(
-                "VIA_MAX_ACTIVE_EVALUATIONS_PER_USER", 2
-            ),
-            daily_evaluation_quota_per_user=_environment_integer(
-                "VIA_DAILY_EVALUATION_QUOTA_PER_USER", 20
-            ),
-            daily_recommendation_quota_per_user=_environment_integer(
-                "VIA_DAILY_RECOMMENDATION_QUOTA_PER_USER", 10
             ),
         )
 

@@ -172,7 +172,6 @@ def test_openapi_publishes_role_and_cost_failures(monkeypatch: Any) -> None:
         ("/datasets", "post"): {"403"},
         ("/datasets/{dataset_id}/versions", "post"): {"403"},
         ("/datasets/{dataset_id}/versions/{version_id}/coverage", "post"): {"429"},
-        ("/api/v1/evaluations", "post"): {"429"},
         (
             "/api/v1/decision-support/evaluations/{evaluation_id}/knowledge",
             "get",
@@ -185,6 +184,12 @@ def test_openapi_publishes_role_and_cost_failures(monkeypatch: Any) -> None:
 
     for (path, method), statuses in expected.items():
         assert statuses <= set(schema["paths"][path][method]["responses"]), (path, method)
+
+    assert "429" not in schema["paths"]["/api/v1/evaluations"]["post"]["responses"]
+    recommendation_responses = schema["paths"][
+        "/api/v1/decision-support/evaluations/{evaluation_id}/recommendations"
+    ]["post"]["responses"]
+    assert recommendation_responses["429"]["description"] == "Recommendation rate limit exceeded."
 
 
 def test_openapi_response_dtos_do_not_publish_storage_or_secret_fields(

@@ -14,12 +14,6 @@ class RateLimitExceededError(Exception):
         self.retry_after = retry_after
 
 
-class QuotaExceededError(Exception):
-    def __init__(self, retry_after: int) -> None:
-        super().__init__(f"Quota exceeded; retry after {retry_after} seconds.")
-        self.retry_after = retry_after
-
-
 class FixedWindowLimiter:
     """Atomic, process-local 60-second buckets with an injectable monotonic clock."""
 

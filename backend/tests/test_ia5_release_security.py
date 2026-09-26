@@ -1,4 +1,4 @@
-"""IA-5 release-only security, quota, and production-surface gates."""
+"""IA-5 release security, rate limits, and production-surface gates."""
 
 from __future__ import annotations
 
@@ -22,7 +22,7 @@ from via_backend.contexts.decision_support.application.knowledge_services import
 from via_backend.contexts.decision_support.interfaces.http import create_router
 from via_backend.contexts.identity_access.application.public import AuthenticatedPrincipal
 from via_backend.contexts.identity_access.domain import UserRole, UserStatus
-from via_backend.cost_protection import FixedWindowLimiter, QuotaExceededError
+from via_backend.cost_protection import FixedWindowLimiter
 
 PASSWORD = "CorrectHorseBatteryStaple1!"
 
@@ -103,10 +103,8 @@ def _inside_geometry() -> dict[str, Any]:
     return json.loads(json.dumps(mapping(parcel)))
 
 
-def test_evaluation_quota_returns_429_with_retry_after() -> None:
-    application = create_app(
-        Settings(max_active_evaluations_per_user=1, daily_evaluation_quota_per_user=1)
-    )
+def test_multiple_evaluation_requests_are_queued_for_same_owner() -> None:
+    application = create_app(Settings())
     application.state.identity_administration.create_user(
         email="user@example.com",
         role=UserRole.USER,
@@ -137,11 +135,10 @@ def test_evaluation_quota_returns_429_with_retry_after() -> None:
         ],
     }
 
-    assert client.post("/api/v1/evaluations", json=body, headers=headers).status_code == 201
-    limited = client.post("/api/v1/evaluations", json=body, headers=headers)
-
-    assert limited.status_code == 429
-    assert int(limited.headers["retry-after"]) > 0
+    responses = [client.post("/api/v1/evaluations", json=body, headers=headers) for _ in range(4)]
+    assert all(response.status_code == 201 for response in responses)
+    assert all(response.json()["status"] == "queued" for response in responses)
+    assert len({response.json()["id"] for response in responses}) == 4
 
 
 class _Owned:
@@ -152,13 +149,6 @@ class _Owned:
     def resolve_owned_evaluation(self, owner_user_id: UUID, evaluation_id: UUID) -> None:
         assert owner_user_id == self.owner_user_id
         assert evaluation_id == self.evaluation_id
-
-
-class _DailyQuotaService(_Service):
-    def generate(self, *args: Any, **kwargs: Any) -> Any:
-        if self.generate_calls:
-            raise QuotaExceededError(86_400)
-        return super().generate(*args, **kwargs)
 
 
 def _decision_support_client(
@@ -203,14 +193,13 @@ def test_knowledge_and_recommendation_rate_limits_return_429() -> None:
     assert int(recommendation_limited.headers["retry-after"]) > 0
 
 
-def test_recommendation_daily_quota_returns_429() -> None:
-    client, evaluation_id = _decision_support_client(_DailyQuotaService())
+def test_multiple_recommendation_generations_are_admitted() -> None:
+    service = _Service()
+    client, evaluation_id = _decision_support_client(service)
     path = f"/api/v1/decision-support/evaluations/{evaluation_id}/recommendations"
     body = {"crop_id": "maize", "water_regime": "rainfed"}
 
     assert client.post(path, json=body).status_code == 200
-    limited = client.post(path, json={**body, "force_regenerate": True})
-
-    assert limited.status_code == 429
-    assert limited.json() == {"detail": "Daily quota exceeded."}
-    assert limited.headers["retry-after"] == "86400"
+    for _ in range(3):
+        assert client.post(path, json={**body, "force_regenerate": True}).status_code == 200
+    assert service.generate_calls == 4

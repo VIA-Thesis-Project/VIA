@@ -17,7 +17,7 @@ Recommended frontend handling:
 | 404 | requested project, parcel, dataset, evaluation, or Decision Support context was not found | show not-found/state refresh; do not retry blindly |
 | 409 | current state conflicts with the requested action; Decision Support also uses this when context is not final | refresh state; for recommendations wait for final evaluation |
 | 422 | request validation/domain command is invalid | show field/action feedback; preserve server detail |
-| 429 | per-minute rate limit or daily/active quota was reached | honor `Retry-After`, prevent request storms, and show when retry is allowed |
+| 429 | per-minute rate limit was reached | honor `Retry-After`, prevent request storms, and show when retry is allowed |
 | 503 | scientific capability discovery, coverage service, or knowledge/recommendation provider is unavailable | show temporary-unavailable state and allow retry |
 
 FastAPI may return its structured validation error array under `detail` for schema validation failures. Client code should therefore accept `detail` as either a string or structured validation payload.

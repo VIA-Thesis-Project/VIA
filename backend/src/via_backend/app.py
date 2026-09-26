@@ -253,8 +253,6 @@ def create_app(
     agroclimatic_evaluation = AgroclimaticEvaluationService(
         evaluations=evaluations,
         parcel_snapshots=_FarmAuthorizedParcelSnapshotProvider(farm_management),
-        max_active_per_user=settings.max_active_evaluations_per_user,
-        daily_quota_per_user=settings.daily_evaluation_quota_per_user,
     )
     application.state.settings = settings
     application.state.identity_administration = IdentityAdministrationService(
@@ -349,7 +347,6 @@ def create_app(
                 model=settings.openai_recommendation_model,
             ),
             repository=PostgreSQLRecommendationRepository(sessions),
-            daily_quota=settings.daily_recommendation_quota_per_user,
         )
         application.include_router(
             create_decision_support_router(

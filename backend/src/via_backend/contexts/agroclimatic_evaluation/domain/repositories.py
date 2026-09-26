@@ -8,10 +8,7 @@ from .outcomes import CropOutcome
 
 
 class EvaluationRepository(Protocol):
-    def add(
-        self, evaluation: Evaluation, *, max_active: int | None = None,
-        daily_limit: int | None = None,
-    ) -> None: ...
+    def add(self, evaluation: Evaluation) -> None: ...
 
     def save(self, evaluation: Evaluation, *, expected_status: EvaluationStatus) -> None: ...
 

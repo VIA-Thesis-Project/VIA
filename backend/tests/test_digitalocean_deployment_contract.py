@@ -56,9 +56,6 @@ def test_digitalocean_compose_preserves_runtime_and_durability_contracts() -> No
         "VIA_RATE_DATASET_COVERAGE_PER_MINUTE",
         "VIA_RATE_KNOWLEDGE_PER_USER_PER_MINUTE",
         "VIA_RATE_RECOMMENDATIONS_PER_USER_PER_MINUTE",
-        "VIA_MAX_ACTIVE_EVALUATIONS_PER_USER",
-        "VIA_DAILY_EVALUATION_QUOTA_PER_USER",
-        "VIA_DAILY_RECOMMENDATION_QUOTA_PER_USER",
     ):
         assert f"{setting}: ${{{setting}:-" in api
     assert (
@@ -149,8 +146,6 @@ def test_provider_files_do_not_embed_secrets_or_raw_huaura_paths() -> None:
     assert "VIA_CORS_ALLOWED_ORIGINS=REPLACE_WITH_FRONTEND_HTTPS_ORIGIN" in runtime_example
     assert "VIA_AUTH_REFRESH_COOKIE_SECURE=true" in runtime_example
     assert "VIA_AUTH_REFRESH_COOKIE_SAMESITE=lax" in runtime_example
-    assert "VIA_DAILY_EVALUATION_QUOTA_PER_USER=20" in runtime_example
-    assert "VIA_DAILY_RECOMMENDATION_QUOTA_PER_USER=10" in runtime_example
     assert "VIA_CROPSUITE_SOURCE_CONFIG=/etc/via/huaura-runtime.ini" in runtime_example
     assert (
         "VIA_CROPSUITE_CATALOG=/opt/via/CropSuiteLite/plant_params/huaura_maize"

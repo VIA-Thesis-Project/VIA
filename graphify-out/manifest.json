@@ -720,9 +720,9 @@
     "semantic_hash": "f417bdcb4f71006284ab89e8ea3a5327"
   },
   "backend/pyproject.toml": {
-    "mtime": 1790034998.7729356,
-    "seen": 1790044734.8397105,
-    "ast_hash": "ed37186913c31062696a7e74628129f6",
+    "mtime": 1790311312.5081296,
+    "seen": 1790385527.748923,
+    "ast_hash": "f02d110d22b08ab7eeefb4b01ac37822",
     "semantic_hash": ""
   },
   "backend/src/via_backend/__init__.py": {
@@ -762,9 +762,9 @@
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/agroclimatic_evaluation/infrastructure/__init__.py": {
-    "mtime": 1789950114.4439304,
-    "seen": 1789950379.7456973,
-    "ast_hash": "38b4f4d4bc285d7dcfae8e7417afc7bf",
+    "mtime": 1790304212.823339,
+    "seen": 1790385527.7489746,
+    "ast_hash": "4ccb837c47d73aef4c0f169f424540b7",
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/agroclimatic_evaluation/interfaces/__init__.py": {
@@ -1032,9 +1032,9 @@
     "semantic_hash": ""
   },
   "backend/migrations/env.py": {
-    "mtime": 1789963851.79933,
-    "seen": 1790044734.8396819,
-    "ast_hash": "996104251bd952ce2892efcf221408b8",
+    "mtime": 1790304470.9530447,
+    "seen": 1790385527.7489011,
+    "ast_hash": "80522c1302549e7778d4ac57780451a8",
     "semantic_hash": ""
   },
   "backend/migrations/versions/20260912_0001_farm_management_persistence.py": {
@@ -1044,9 +1044,9 @@
     "semantic_hash": "147774db32a5f22008dac63554067cac"
   },
   "backend/src/via_backend/config.py": {
-    "mtime": 1790033031.383993,
-    "seen": 1790044734.8397198,
-    "ast_hash": "0610c3064a96f62aad38a1d4727e57b0",
+    "mtime": 1790385348.7789416,
+    "seen": 1790385527.7489297,
+    "ast_hash": "1c0b406651d61d98149b1c8572a42d0f",
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/farm_management/infrastructure/database.py": {
@@ -1068,9 +1068,9 @@
     "semantic_hash": ""
   },
   "backend/tests/test_config.py": {
-    "mtime": 1790034776.96966,
-    "seen": 1790044734.8399065,
-    "ast_hash": "8ed1c280b501307c9fa420e5c5b0f753",
+    "mtime": 1790360887.3215704,
+    "seen": 1790385527.7490838,
+    "ast_hash": "f5633d8636cb4839f729b4904929ad65",
     "semantic_hash": ""
   },
   "backend/tests/test_farm_management_postgresql.py": {
@@ -1224,15 +1224,15 @@
     "semantic_hash": ""
   },
   "backend/src/via_backend/infrastructure/database.py": {
-    "mtime": 1789221911.3606856,
-    "seen": 1789222623.7827468,
-    "ast_hash": "cb4dd6655d77b1b6cf4de039cf3f6201",
+    "mtime": 1790379709.4801629,
+    "seen": 1790385527.7490625,
+    "ast_hash": "a2e0ffdfb9e2ed76901fa904524bb7ee",
     "semantic_hash": ""
   },
   "backend/tests/test_environmental_information_api.py": {
-    "mtime": 1790026516.9096885,
-    "seen": 1790044734.8399224,
-    "ast_hash": "7eadec47baa7f03568188f32038490d6",
+    "mtime": 1790310824.8167863,
+    "seen": 1790385527.7490954,
+    "ast_hash": "ec9533594ba69f2d61d78a6fd42c7252",
     "semantic_hash": ""
   },
   "backend/tests/test_environmental_information_domain.py": {
@@ -1404,9 +1404,9 @@
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/agroclimatic_evaluation/application/service.py": {
-    "mtime": 1790026516.913685,
-    "seen": 1790044734.8397362,
-    "ast_hash": "df7f9b5d9f5b53d9c477701075bd5b2d",
+    "mtime": 1790385304.8459718,
+    "seen": 1790385527.7489426,
+    "ast_hash": "f2c44b43f7a15e3566c8615eb63277ae",
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/agroclimatic_evaluation/domain/errors.py": {
@@ -1422,9 +1422,9 @@
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/agroclimatic_evaluation/domain/repositories.py": {
-    "mtime": 1790025580.7689571,
-    "seen": 1790044734.839745,
-    "ast_hash": "748bba283d994021393d75ff0a1df082",
+    "mtime": 1790385304.8429737,
+    "seen": 1790385527.748949,
+    "ast_hash": "252ab0d29dc17ecd3243a413bd198635",
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/agroclimatic_evaluation/domain/snapshot.py": {
@@ -1446,21 +1446,21 @@
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/agroclimatic_evaluation/infrastructure/postgresql_repositories.py": {
-    "mtime": 1790026553.2727325,
-    "seen": 1790044734.8397555,
-    "ast_hash": "9ed4c2bc34bce477204e8f888fec28b7",
+    "mtime": 1790385304.8510077,
+    "seen": 1790385527.7489803,
+    "ast_hash": "40def725bd6570b626deac04d7889116",
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/agroclimatic_evaluation/infrastructure/repositories.py": {
-    "mtime": 1790026555.126766,
-    "seen": 1790044734.8397563,
-    "ast_hash": "2584cee80713bd9421498b5e46eacb37",
+    "mtime": 1790385446.3408673,
+    "seen": 1790385527.748981,
+    "ast_hash": "e1570352c69f630772fc08612956cf6b",
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/agroclimatic_evaluation/interfaces/http.py": {
-    "mtime": 1790044094.0800004,
-    "seen": 1790044734.8397617,
-    "ast_hash": "64da9c7eb5ec3347f0c325abb7e271ef",
+    "mtime": 1790385334.9760294,
+    "seen": 1790385527.748988,
+    "ast_hash": "bd33851b42b0c362312db25e021d28ce",
     "semantic_hash": ""
   },
   "backend/tests/test_agroclimatic_evaluation_api.py": {
@@ -1476,9 +1476,9 @@
     "semantic_hash": ""
   },
   "backend/tests/test_agroclimatic_evaluation_postgresql.py": {
-    "mtime": 1790019048.6179483,
-    "seen": 1790044734.8398945,
-    "ast_hash": "d560914bb12a96e556da328b54d3d356",
+    "mtime": 1790379886.3443975,
+    "seen": 1790385527.7490752,
+    "ast_hash": "e621c3faf01fc613c9dcbba40846ce41",
     "semantic_hash": ""
   },
   "backend/tests/test_agroclimatic_evaluation_repositories.py": {
@@ -1500,15 +1500,15 @@
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/agroclimatic_evaluation/infrastructure/cropsuite_adapter.py": {
-    "mtime": 1789861143.0844069,
-    "seen": 1789899838.8571439,
-    "ast_hash": "3f3509887a9da352092e15f17cefb8a3",
+    "mtime": 1790303659.7906687,
+    "seen": 1790385527.7489755,
+    "ast_hash": "cc22310e7f068dbbcfb18b7c63acc20c",
     "semantic_hash": ""
   },
   "backend/tests/test_cropsuite_adapter.py": {
-    "mtime": 1789861143.087415,
-    "seen": 1789899838.8572323,
-    "ast_hash": "be7b80429f6d98f91ed9f3bc10f9c8e6",
+    "mtime": 1790305234.2528758,
+    "seen": 1790385527.7490876,
+    "ast_hash": "23f115e2e73bcf6446f67656dd10ccf8",
     "semantic_hash": ""
   },
   "backend/tests/test_cropsuite_adapter_scientific.py": {
@@ -1566,9 +1566,9 @@
     "semantic_hash": ""
   },
   "backend/src/via_backend/worker.py": {
-    "mtime": 1789687394.8749547,
-    "seen": 1789689268.0467541,
-    "ast_hash": "c11e0da67d92576ac754bc6439d6548f",
+    "mtime": 1790305068.5057755,
+    "seen": 1790385527.7490706,
+    "ast_hash": "3933440af8a89ec577f08a6e6637a988",
     "semantic_hash": ""
   },
   "backend/tests/database_test_support.py": {
@@ -1620,9 +1620,9 @@
     "semantic_hash": ""
   },
   "backend/tests/test_agroclimatic_evaluation_queries.py": {
-    "mtime": 1790026311.8087707,
-    "seen": 1790044734.8398955,
-    "ast_hash": "5e16068bc5ba0c7443efb44ef499b076",
+    "mtime": 1790385379.520561,
+    "seen": 1790385527.749076,
+    "ast_hash": "b2a4c8c287a3b7aee4a1f7d139f400c0",
     "semantic_hash": ""
   },
   "graphify-out/memory/query_20260914_083720_72e8f1ac_continue_the_currently_uncommitted_agroclimatic_ev.md": {
@@ -1632,9 +1632,9 @@
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/agroclimatic_evaluation/infrastructure/scientific_artifact_store.py": {
-    "mtime": 1789415704.054624,
-    "seen": 1789423448.5480983,
-    "ast_hash": "f3cf380ca5a7297da90311cfb9e061f6",
+    "mtime": 1790305911.3976018,
+    "seen": 1790385527.7489834,
+    "ast_hash": "f11d62e543992709708dc4a0ca2eda07",
     "semantic_hash": ""
   },
   "backend/tests/test_scientific_artifact_store.py": {
@@ -1770,9 +1770,9 @@
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/decision_support/infrastructure/postgresql_repositories.py": {
-    "mtime": 1790287134.6210668,
-    "seen": 1790287241.9011188,
-    "ast_hash": "6225e0dc91c8e368498881bc5df5fc7c",
+    "mtime": 1790385334.9710212,
+    "seen": 1790385527.749006,
+    "ast_hash": "3549009cfcb2c3c7ac467108b8136010",
     "semantic_hash": ""
   },
   "backend/tests/test_decision_support_postgresql.py": {
@@ -1830,15 +1830,15 @@
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/agroclimatic_evaluation/infrastructure/scientific_input_integrity.py": {
-    "mtime": 1789597352.6964562,
-    "seen": 1789598018.6524363,
-    "ast_hash": "f9eca057b5dc64c1c18fb6ca2b0cadc7",
+    "mtime": 1790303597.8740518,
+    "seen": 1790385527.748984,
+    "ast_hash": "ddf21b920b410fc8facbaafeb6e50daa",
     "semantic_hash": ""
   },
   "backend/tests/test_scientific_input_integrity.py": {
-    "mtime": 1789597415.7072928,
-    "seen": 1789598018.6525207,
-    "ast_hash": "18d99c944989e9c7fb784dbefed939c7",
+    "mtime": 1790303709.1082911,
+    "seen": 1790385527.7491207,
+    "ast_hash": "e4f0a665e4e3c6958bbe25d11073bd94",
     "semantic_hash": ""
   },
   "backend/migrations/versions/20260916_0012_scientific_source_fingerprints.py": {
@@ -1854,9 +1854,9 @@
     "semantic_hash": ""
   },
   "docs/architecture/deployment-runtime.md": {
-    "mtime": 1790044409.885482,
-    "seen": 1790044734.8401213,
-    "ast_hash": "1dbc849a7bc81032e14d026fa751fc5f",
+    "mtime": 1790360887.3195632,
+    "seen": 1790385527.7492256,
+    "ast_hash": "b7b790c25b18c91638d3ad9e48507ffd",
     "semantic_hash": ""
   },
   "backend/scripts/verify_container_runtime.py": {
@@ -1872,21 +1872,21 @@
     "semantic_hash": ""
   },
   "backend/src/via_backend/api.py": {
-    "mtime": 1789610648.8128238,
-    "seen": 1789611235.890197,
-    "ast_hash": "83ba4e808ffe9934ed8f5d6258289941",
+    "mtime": 1790304495.66298,
+    "seen": 1790385527.748928,
+    "ast_hash": "6b32b7b27f93b397f4956099dc18c84b",
     "semantic_hash": ""
   },
   "backend/src/via_backend/app.py": {
-    "mtime": 1790034776.96662,
-    "seen": 1790044734.8397186,
-    "ast_hash": "2466c01694a9dabf6981d32b03dd4d8e",
+    "mtime": 1790385348.7840052,
+    "seen": 1790385527.748929,
+    "ast_hash": "caad0286352bc3a1990ef17a34a48a6f",
     "semantic_hash": ""
   },
   "backend/tests/test_api_host.py": {
-    "mtime": 1789610688.5210996,
-    "seen": 1789611235.8902876,
-    "ast_hash": "a1fdd61fdde90f4fed7f3fa22d6bb6ce",
+    "mtime": 1790304495.6655078,
+    "seen": 1790385527.7490807,
+    "ast_hash": "d0156e632c5374d3f71c7f5fb82b8c02",
     "semantic_hash": ""
   },
   ".github/workflows/b2-container-gate.yml": {
@@ -1896,9 +1896,9 @@
     "semantic_hash": ""
   },
   "backend/src/via_backend/migrate.py": {
-    "mtime": 1789611895.6342177,
-    "seen": 1789612340.2779996,
-    "ast_hash": "b2f9348a1da0f3609d00eababc9c0532",
+    "mtime": 1790304534.6175802,
+    "seen": 1790385527.7490683,
+    "ast_hash": "69e5294dddaee571ba528b4ee3189965",
     "semantic_hash": ""
   },
   "backend/tests/test_migration_host.py": {
@@ -1932,15 +1932,15 @@
     "semantic_hash": ""
   },
   "backend/tests/test_digitalocean_deployment_contract.py": {
-    "mtime": 1790034876.7442882,
-    "seen": 1790044734.8399212,
-    "ast_hash": "af8f1adc3dcd829e0d7a55fb32a2c3fb",
+    "mtime": 1790385379.552901,
+    "seen": 1790385527.7490947,
+    "ast_hash": "0baaf00ce0dafbbea3035c0bd3ea2030",
     "semantic_hash": ""
   },
   "backend/tests/test_resource_benchmark_contract.py": {
-    "mtime": 1789621859.7513797,
-    "seen": 1789635152.3592343,
-    "ast_hash": "d3aa634f92df0440a5f806c93a3a1a41",
+    "mtime": 1790305736.245692,
+    "seen": 1790385527.7491195,
+    "ast_hash": "317f351767aafd25bf7f91eade8303cb",
     "semantic_hash": ""
   },
   "scripts/backup_postgres.sh": {
@@ -1950,9 +1950,9 @@
     "semantic_hash": ""
   },
   "scripts/benchmark_production_runtime.sh": {
-    "mtime": 1789621844.2592196,
-    "seen": 1789635152.359241,
-    "ast_hash": "0dddd99db7559a0a8f2b5af77009fcc4",
+    "mtime": 1790305736.2426093,
+    "seen": 1790385527.7491317,
+    "ast_hash": "523e3d79bb80c93a7963b946cf94a839",
     "semantic_hash": ""
   },
   "scripts/deploy_digitalocean.ps1": {
@@ -1986,15 +1986,15 @@
     "semantic_hash": ""
   },
   "compose.benchmark.yaml": {
-    "mtime": 1789621787.4201622,
-    "seen": 1789635152.359302,
-    "ast_hash": "5a3bc785487245423d67cad1e9eae8d7",
+    "mtime": 1790305736.2399127,
+    "seen": 1790385527.7492027,
+    "ast_hash": "ec2dcaea61d7258884388e90651f4407",
     "semantic_hash": ""
   },
   "compose.digitalocean.yaml": {
-    "mtime": 1790034835.6735556,
-    "seen": 1790044734.8400931,
-    "ast_hash": "6f6d66181333b18d5c8b9ab769a04993",
+    "mtime": 1790385348.7890592,
+    "seen": 1790385527.7492042,
+    "ast_hash": "4f2ddba2d6672afaf5cc045e2ec21682",
     "semantic_hash": ""
   },
   "docs/scientific/huaura-fixture-recovery.md": {
@@ -2046,15 +2046,15 @@
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/decision_support/application/knowledge_ports.py": {
-    "mtime": 1790025839.7755487,
-    "seen": 1790044734.8397675,
-    "ast_hash": "019759d82fa5c5aedaf5d3af556cbf12",
+    "mtime": 1790385334.968132,
+    "seen": 1790385527.7489922,
+    "ast_hash": "285d67cc17c942f384c4d9ce9de93a84",
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py": {
-    "mtime": 1790287134.6210668,
-    "seen": 1790287241.901105,
-    "ast_hash": "334ce6a600698822b5ce1d0fb4c236b6",
+    "mtime": 1790385334.9700148,
+    "seen": 1790385527.748993,
+    "ast_hash": "07097a87c835109e182351293835148c",
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/decision_support/infrastructure/knowledge_manifest.py": {
@@ -2076,9 +2076,9 @@
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/decision_support/interfaces/http.py": {
-    "mtime": 1790044094.0820055,
-    "seen": 1790044734.8397877,
-    "ast_hash": "60e9ece3fc3c1490436003a22d326102",
+    "mtime": 1790385334.9750338,
+    "seen": 1790385527.749008,
+    "ast_hash": "3062523f4d3bf1963a37a9a7781a2863",
     "semantic_hash": ""
   },
   "backend/src/via_backend/knowledge.py": {
@@ -2088,9 +2088,9 @@
     "semantic_hash": ""
   },
   "backend/tests/test_agronomic_knowledge.py": {
-    "mtime": 1790287051.6725116,
-    "seen": 1790287241.9011936,
-    "ast_hash": "899ee8b717fa8c826c88d86086451ca4",
+    "mtime": 1790385379.5160067,
+    "seen": 1790385527.7490785,
+    "ast_hash": "3127a231c04f04e8b3d2812a802e85d9",
     "semantic_hash": ""
   },
   "backend/tests/test_agronomic_knowledge_http.py": {
@@ -2178,9 +2178,9 @@
     "semantic_hash": ""
   },
   "backend/tests/test_frontend_openapi.py": {
-    "mtime": 1790044120.4065273,
-    "seen": 1790044734.8399384,
-    "ast_hash": "72f6c5a52247ab38a8c46c67edaa6d67",
+    "mtime": 1790385543.9606733,
+    "seen": 1790385595.3023517,
+    "ast_hash": "c36007d5f7719cebcce94db701b11e2d",
     "semantic_hash": ""
   },
   "docs/frontend/fixtures/evaluation-request.example.json": {
@@ -2202,9 +2202,9 @@
     "semantic_hash": ""
   },
   "docs/frontend/openapi.json": {
-    "mtime": 1790287096.8845055,
-    "seen": 1790287241.9012418,
-    "ast_hash": "c2e2dda88d15c52fe2ea9387f31a7f5d",
+    "mtime": 1790385442.0161588,
+    "seen": 1790385527.7491276,
+    "ast_hash": "9a1814f18337c2106a2fed03a48908bb",
     "semantic_hash": ""
   },
   "scripts/generate_frontend_openapi.py": {
@@ -2250,9 +2250,9 @@
     "semantic_hash": ""
   },
   "docs/frontend/error-handling.md": {
-    "mtime": 1790044299.307927,
-    "seen": 1790044734.8401344,
-    "ast_hash": "6c7027c772827568058c85202753cb1e",
+    "mtime": 1790385348.8237915,
+    "seen": 1790385527.749237,
+    "ast_hash": "e1d02f58a6a87927dd998c19e5d8d1ab",
     "semantic_hash": ""
   },
   "docs/frontend/integration-flows.md": {
@@ -2400,9 +2400,9 @@
     "semantic_hash": ""
   },
   "backend/src/via_backend/cost_protection.py": {
-    "mtime": 1790028582.968325,
-    "seen": 1790044734.8398552,
-    "ast_hash": "cdb86fe69efdefa47517f790ed54da23",
+    "mtime": 1790385334.973031,
+    "seen": 1790385527.7490602,
+    "ast_hash": "53e74b2334798374b19b112b2559f7af",
     "semantic_hash": ""
   },
   "backend/src/via_backend/identity_admin.py": {
@@ -2442,15 +2442,15 @@
     "semantic_hash": ""
   },
   "backend/tests/test_ia4_postgresql.py": {
-    "mtime": 1790026203.7146058,
-    "seen": 1790044734.8399432,
-    "ast_hash": "52cc17c3906e859ec0604193d8629487",
+    "mtime": 1790385446.3418725,
+    "seen": 1790385527.7491093,
+    "ast_hash": "071d87f63449958e5a463a277b86609a",
     "semantic_hash": ""
   },
   "backend/tests/test_ia4_quota.py": {
-    "mtime": 1790026560.4408195,
-    "seen": 1790044734.8399441,
-    "ast_hash": "e4c1c17e8a8a1c42b3da65c0e25d7103",
+    "mtime": 1790385379.5069292,
+    "seen": 1790385527.7491097,
+    "ast_hash": "bf05595d4ada8525d986ad479d8e2524",
     "semantic_hash": ""
   },
   "backend/tests/test_ia5_huaura_aoi.py": {
@@ -2466,9 +2466,9 @@
     "semantic_hash": ""
   },
   "backend/tests/test_ia5_release_security.py": {
-    "mtime": 1790044179.303152,
-    "seen": 1790044734.839947,
-    "ast_hash": "fafe70722228a3eb4973391d013f0e3d",
+    "mtime": 1790385406.9889703,
+    "seen": 1790385527.7491124,
+    "ast_hash": "7a8d71d4b1bdb3a471c8a31953bd3e35",
     "semantic_hash": ""
   },
   "backend/tests/test_identity_access.py": {
@@ -2502,15 +2502,15 @@
     "semantic_hash": ""
   },
   "docs/frontend/security-route-matrix.md": {
-    "mtime": 1790044299.312926,
-    "seen": 1790044734.8401403,
-    "ast_hash": "e94e9cdf4984d6c6d405e197229fcd78",
+    "mtime": 1790385348.8267922,
+    "seen": 1790385527.7492425,
+    "ast_hash": "6fb4dd75a1c0a2b490ebe94784904763",
     "semantic_hash": ""
   },
   "docs/operations/production-release.md": {
-    "mtime": 1790044400.9951074,
-    "seen": 1790044734.8401446,
-    "ast_hash": "99c876d6ef4b3ba1eb2a56383f6c0aa6",
+    "mtime": 1790311638.5934646,
+    "seen": 1790385527.749245,
+    "ast_hash": "60e1b13f88d4bff5be780a901c40b358",
     "semantic_hash": ""
   },
   "CHANGELOG.md": {
@@ -2538,9 +2538,9 @@
     "semantic_hash": ""
   },
   "scripts/README.md": {
-    "mtime": 1790093355.9556797,
-    "seen": 1790095980.9250746,
-    "ast_hash": "7b8f663bafd5db6b473cdf7e362a874c",
+    "mtime": 1790311638.5904553,
+    "seen": 1790385527.7492678,
+    "ast_hash": "9bb1ddcd4888f967c20f3f000b40c902",
     "semantic_hash": ""
   },
   "docs/frontend/postman/VIA.postman_collection.json": {
@@ -2561,40 +2561,70 @@
     "ast_hash": "e6a5b5a75cfa3e01d5e4e20dfea97df7",
     "semantic_hash": ""
   },
-  "graphify-out/memory/query_20260923_201900_d72368ba_qu\u00e9_te_parece_el_proyecto_en_cuanto_a_software_hab.md": {
-    "mtime": 1790194740.709758,
-    "seen": 1790287241.9013731,
-    "ast_hash": "de4c8a22ee7386e15bf2fba8a7e40d3a",
+  "backend/src/via_backend/contexts/agroclimatic_evaluation/infrastructure/s3_compatible.py": {
+    "mtime": 1790303804.5909586,
+    "seen": 1790385527.748982,
+    "ast_hash": "3f3ba81967b4d0585fcbb00bc7ef3fa4",
     "semantic_hash": ""
   },
-  "graphify-out/memory/query_20260924_184532_beab7917_sabes_c\u00f3mo_est\u00e1_configurado_el_deployment.md": {
-    "mtime": 1790275532.7737627,
-    "seen": 1790287241.9013746,
-    "ast_hash": "e1abff073f3c453ba5fbec413d9e1410",
+  "backend/src/via_backend/contexts/agroclimatic_evaluation/infrastructure/scientific_source_store.py": {
+    "mtime": 1790303804.5949771,
+    "seen": 1790385527.748985,
+    "ast_hash": "709d292ac80207a202be5a35907490dd",
     "semantic_hash": ""
   },
-  "graphify-out/memory/query_20260924_185030_ea20827d_dame_componentes_y_relaciones_para_poder_dibujar_c.md": {
-    "mtime": 1790275830.1266303,
-    "seen": 1790287241.9013753,
-    "ast_hash": "da8ca3935d9e825d03e451b62041e323",
+  "backend/tests/test_database.py": {
+    "mtime": 1790360921.2498546,
+    "seen": 1790385527.7490907,
+    "ast_hash": "5e1b408bafedf824001e2f0b3b113641",
     "semantic_hash": ""
   },
-  "graphify-out/memory/query_20260924_190012_a808acdd_explain_tailscale_and_trusted_proxy_decision_for_t.md": {
-    "mtime": 1790276412.57534,
-    "seen": 1790287241.9013758,
-    "ast_hash": "9bba29fe6f4387afd627779b4ecf77c4",
+  "backend/tests/test_database_float_round_trip.py": {
+    "mtime": 1790380181.0308626,
+    "seen": 1790385527.7490914,
+    "ast_hash": "3bce4dd892e5b7eb7195b6e8752f0e9e",
     "semantic_hash": ""
   },
-  "graphify-out/memory/query_20260924_212052_77be94f2_does_via_worker_execute_simultaneous_evaluation_re.md": {
-    "mtime": 1790284852.000145,
-    "seen": 1790287241.9013765,
-    "ast_hash": "5e13ef9b4c48dba50cf30367af235c6d",
+  "backend/tests/test_hybrid_deployment_contract.py": {
+    "mtime": 1790360887.3225589,
+    "seen": 1790385527.7491066,
+    "ast_hash": "e36240f7fc35fe2e6fb1977dd31b7a1b",
     "semantic_hash": ""
   },
-  "graphify-out/memory/query_20260924_212430_ae12eee1_es_factible_arquitect\u00f3nicamente_con_m\u00e1s_de_100_pe.md": {
-    "mtime": 1790285070.2228272,
-    "seen": 1790287241.9013774,
-    "ast_hash": "f25bff88dd7c0f253f650386bba9dcb3",
+  "backend/tests/test_r2_scientific_storage.py": {
+    "mtime": 1790304279.411554,
+    "seen": 1790385527.7491188,
+    "ast_hash": "b38a50da5ef502b9a3afdf4a003e74db",
+    "semantic_hash": ""
+  },
+  "backend/tests/test_scientific_source_store.py": {
+    "mtime": 1790303698.8680787,
+    "seen": 1790385527.7491214,
+    "ast_hash": "ff613288e6287ef1a4df5bb28574784a",
+    "semantic_hash": ""
+  },
+  "scripts/staging_preflight.ps1": {
+    "mtime": 1790357164.1480153,
+    "seen": 1790385527.749163,
+    "ast_hash": "ca6b092ff7182fd93d81ee5bf635594d",
+    "semantic_hash": ""
+  },
+  "compose.digitalocean.worker.yaml": {
+    "mtime": 1790305736.2354095,
+    "seen": 1790385527.7492034,
+    "ast_hash": "6140d6f3704cee6618caf2bed4749bc3",
+    "semantic_hash": ""
+  },
+  "docs/adr/ADR-016-hybrid-managed-deployment.md": {
+    "mtime": 1790305372.4487998,
+    "seen": 1790385527.7492216,
+    "ast_hash": "ab2fbe5272ec09590d3fb5aa2e57aab9",
+    "semantic_hash": ""
+  },
+  "docs/operations/staging-validation.md": {
+    "mtime": 1790357164.118415,
+    "seen": 1790385527.7492456,
+    "ast_hash": "9bff8a4208b5e2fbbfccf66e2490432a",
     "semantic_hash": ""
   }
 }

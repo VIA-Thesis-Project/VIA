@@ -395,11 +395,11 @@ class _Generator:
 
 
 class _RecommendationRepository:
-    def reserve_generation(
+    def record_generation_attempt(
         self, owner_user_id: UUID, evaluation_id: UUID,
-        created_at: datetime, daily_limit: int,
+        created_at: datetime,
     ) -> None:
-        raise AssertionError("Quota reservation is not used in these tests.")
+        raise AssertionError("Generation ledger is not used in these tests.")
 
     def __init__(self) -> None:
         self.runs: list[RecommendationRun] = []

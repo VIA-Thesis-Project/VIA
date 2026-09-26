@@ -11,7 +11,6 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, ConfigDict, Field
 
 from via_backend.contexts.identity_access.application.public import AuthenticatedPrincipal
-from via_backend.cost_protection import QuotaExceededError
 
 from ..application.commands import (
     EnvironmentalInputReferenceInput,
@@ -286,7 +285,6 @@ def create_router(
             "Rainfed and irrigated are distinct scientific scenarios; irrigated does not "
             "confirm real water or irrigation-infrastructure availability."
         ),
-        responses={429: {"description": "Evaluation quota exceeded."}},
     )
     def request_evaluation(
         body: RequestEvaluationBody,
@@ -410,11 +408,6 @@ def create_router(
 def _execute(operation: Any, message: Any) -> Any:
     try:
         return operation(message)
-    except QuotaExceededError as error:
-        raise HTTPException(
-            status_code=429, detail="Evaluation quota exceeded.",
-            headers={"Retry-After": str(error.retry_after)},
-        ) from error
     except ResourceNotFoundError as error:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail=str(error)

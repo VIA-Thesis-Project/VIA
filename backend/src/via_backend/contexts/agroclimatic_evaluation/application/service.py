@@ -75,15 +75,11 @@ class AgroclimaticEvaluationService:
         *,
         new_id: Callable[[], UUID] = uuid4,
         clock: Callable[[], datetime] | None = None,
-        max_active_per_user: int | None = None,
-        daily_quota_per_user: int | None = None,
     ) -> None:
         self._evaluations = evaluations
         self._parcel_snapshots = parcel_snapshots
         self._new_id = new_id
         self._clock = clock or (lambda: datetime.now(UTC))
-        self._max_active_per_user = max_active_per_user
-        self._daily_quota_per_user = daily_quota_per_user
 
     def request_evaluation(self, command: RequestEvaluation) -> EvaluationResult:
         reference = command.parcel_reference
@@ -121,11 +117,7 @@ class AgroclimaticEvaluationService:
             raise InvalidCommandError(str(error)) from error
 
         try:
-            self._evaluations.add(
-                evaluation,
-                max_active=self._max_active_per_user,
-                daily_limit=self._daily_quota_per_user,
-            )
+            self._evaluations.add(evaluation)
         except EvaluationConflictError as error:
             raise ResourceConflictError(str(error)) from error
         return EvaluationResult.from_domain(evaluation)

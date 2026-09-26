@@ -2,15 +2,14 @@
 
 from __future__ import annotations
 
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
-from sqlalchemy import delete, func, or_, select, text, update
+from sqlalchemy import delete, func, or_, select, update
 from sqlalchemy.dialects.postgresql import insert as postgresql_insert
 from sqlalchemy.orm import Session
 from sqlalchemy.sql.elements import ColumnElement
 
-from via_backend.cost_protection import QuotaExceededError
 from via_backend.infrastructure.database import SessionFactory
 
 from ..application.errors import (
@@ -528,27 +527,10 @@ class PostgreSQLRecommendationRepository:
     def __init__(self, sessions: SessionFactory) -> None:
         self._sessions = sessions
 
-    def reserve_generation(
-        self, owner_user_id: UUID, evaluation_id: UUID,
-        created_at: datetime, daily_limit: int,
+    def record_generation_attempt(
+        self, owner_user_id: UUID, evaluation_id: UUID, created_at: datetime,
     ) -> None:
-        start = created_at.astimezone(UTC).replace(
-            hour=0, minute=0, second=0, microsecond=0
-        )
         with self._sessions.begin() as session:
-            key = int.from_bytes(owner_user_id.bytes[:8], "big", signed=True)
-            session.execute(text("SELECT pg_advisory_xact_lock(:key)"), {"key": key})
-            count = session.scalar(
-                select(func.count()).select_from(RecommendationGenerationAttemptRecord)
-                .where(
-                    RecommendationGenerationAttemptRecord.owner_user_id == owner_user_id,
-                    RecommendationGenerationAttemptRecord.created_at >= start,
-                    RecommendationGenerationAttemptRecord.created_at < start + timedelta(days=1),
-                )
-            )
-            if count is not None and count >= daily_limit:
-                retry = int((start + timedelta(days=1) - created_at).total_seconds())
-                raise QuotaExceededError(max(1, retry))
             session.add(RecommendationGenerationAttemptRecord(
                 id=uuid4(), owner_user_id=owner_user_id,
                 evaluation_id=evaluation_id, created_at=created_at,

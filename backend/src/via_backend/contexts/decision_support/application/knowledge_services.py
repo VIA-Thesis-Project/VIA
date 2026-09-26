@@ -813,13 +813,11 @@ class RecommendationApplicationService:
         generator: IRecommendationGenerator,
         repository: IRecommendationRepository,
         prompt_version: str = DEFAULT_PROMPT_VERSION,
-        daily_quota: int | None = None,
     ) -> None:
         self._retriever = retriever
         self._generator = generator
         self._repository = repository
         self._prompt_version = prompt_version
-        self._daily_quota = daily_quota
         self._generation_lock = RLock()
 
     def retrieve(
@@ -903,9 +901,9 @@ class RecommendationApplicationService:
 
             return run
 
-        if owner_user_id is not None and self._daily_quota is not None:
-            self._repository.reserve_generation(
-                owner_user_id, context.evaluation_id, created_at, self._daily_quota,
+        if owner_user_id is not None:
+            self._repository.record_generation_attempt(
+                owner_user_id, context.evaluation_id, created_at,
             )
 
         try:

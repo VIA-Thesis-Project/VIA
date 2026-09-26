@@ -1,10 +1,7 @@
 """In-memory Agroclimatic Evaluation repository adapter."""
 
-from datetime import UTC, timedelta
 from threading import RLock
 from uuid import UUID
-
-from via_backend.cost_protection import QuotaExceededError
 
 from ..domain.errors import EvaluationConflictError, InvalidEvaluationTransitionError
 from ..domain.models import Evaluation, EvaluationStatus
@@ -16,44 +13,8 @@ class InMemoryEvaluationRepository:
         self._evaluations: dict[UUID, Evaluation] = {}
         self._lock = RLock()
 
-    def add(
-        self,
-        evaluation: Evaluation,
-        *,
-        max_active: int | None = None,
-        daily_limit: int | None = None,
-    ) -> None:
+    def add(self, evaluation: Evaluation) -> None:
         with self._lock:
-            owner = evaluation.owner_user_id
-            if owner is not None:
-                owned = [item for item in self._evaluations.values() if item.owner_user_id == owner]
-                if (
-                    max_active is not None
-                    and sum(
-                        item.status
-                        in {
-                            EvaluationStatus.QUEUED,
-                            EvaluationStatus.PREPARING,
-                            EvaluationStatus.RUNNING,
-                            EvaluationStatus.SUMMARIZING,
-                        }
-                        for item in owned
-                    )
-                    >= max_active
-                ):
-                    raise QuotaExceededError(60)
-                start = evaluation.created_at.astimezone(UTC).replace(
-                    hour=0, minute=0, second=0, microsecond=0
-                )
-                if (
-                    daily_limit is not None
-                    and sum(start <= item.created_at < start + timedelta(days=1) for item in owned)
-                    >= daily_limit
-                ):
-                    raise QuotaExceededError(
-                        int((start + timedelta(days=1) - evaluation.created_at).total_seconds())
-                        or 1
-                    )
             if evaluation.id in self._evaluations:
                 raise EvaluationConflictError(f"Evaluation {evaluation.id} already exists.")
             self._evaluations[evaluation.id] = evaluation
