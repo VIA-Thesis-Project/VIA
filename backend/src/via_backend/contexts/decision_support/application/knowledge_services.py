@@ -53,7 +53,7 @@ from .knowledge_ports import (
 )
 
 DEFAULT_RETRIEVAL_VERSION = "hybrid-rrf-v4"
-DEFAULT_PROMPT_VERSION = "agronomic-recommendation-v2"
+DEFAULT_PROMPT_VERSION = "agronomic-recommendation-v3"
 _RRF_K = 60
 
 _LOW_VALUE_SECTION_TITLES = frozenset(
@@ -1004,6 +1004,7 @@ def _recommendation_citations(
             page_end=evidence_item.page_end,
             section=evidence_item.section,
             source_reference=evidence_item.source_reference,
+            source_id=evidence_item.source_id,
         )
         for evidence_id in dict.fromkeys(citation_ids)
         if (evidence_item := by_evidence_id.get(evidence_id)) is not None
@@ -1134,6 +1135,30 @@ def validate_recommendation(
             raise InvalidRecommendationError(
                 "A recommendation contains an unknown citation id."
             )
+
+    visible_text = " ".join(
+        (
+            recommendation.summary,
+            *recommendation.observations,
+            recommendation.scenario_interpretation,
+            *(
+                part
+                for item in recommendation.recommendations
+                for part in (item.text, item.rationale)
+            ),
+            *recommendation.uncertainties,
+        )
+    )
+    visible_ids = set(re.findall(r"\bSOURCE_\d+\b", visible_text))
+    visible_ids.update(
+        citation_id
+        for item in recommendation.recommendations
+        for citation_id in item.citation_ids
+    )
+    if visible_ids - allowed or set(recommendation.citation_ids) != visible_ids:
+        raise InvalidRecommendationError(
+            "Top-level citations must match visible claims and recommendation items."
+        )
 
 
 def recommendation_cache_key(
@@ -1963,6 +1988,7 @@ def _fuse_hits(
                     chunk.source_reference
                     or chunk.relative_path
                 ),
+                source_id=chunk.source_id,
                 lexical_rank=(
                     lexical_ranks.get(
                         chunk_id

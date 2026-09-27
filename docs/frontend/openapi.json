@@ -1252,6 +1252,17 @@
             ],
             "title": "Section"
           },
+          "source_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Id"
+          },
           "source_reference": {
             "title": "Source Reference",
             "type": "string"
@@ -1650,6 +1661,17 @@
               }
             ],
             "title": "Section"
+          },
+          "source_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Id"
           },
           "source_reference": {
             "title": "Source Reference",

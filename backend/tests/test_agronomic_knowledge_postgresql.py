@@ -300,6 +300,7 @@ def test_retrieval_and_recommendation_traces_persist_closed_citations(
                 section=None,
                 content=chunk.content,
                 source_reference="fao/fao-water.pdf",
+                source_id="fao-water",
                 lexical_rank=1,
                 vector_rank=1,
                 fused_score=1.0,
@@ -351,6 +352,7 @@ def test_retrieval_and_recommendation_traces_persist_closed_citations(
                 page_end=1,
                 section=None,
                 source_reference="fao/fao-water.pdf",
+                source_id="fao-water",
             ),
         ),
     )

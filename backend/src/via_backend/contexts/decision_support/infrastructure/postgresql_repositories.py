@@ -731,6 +731,7 @@ def _stored_chunk(
         content_sha256=chunk.content_sha256,
         crops=tuple(chunk.crops),
         factors=tuple(chunk.factors),
+        source_id=document.source_id,
     )
 
 
@@ -826,6 +827,7 @@ def _recommendation_citations_for_runs(
                     document.source_reference
                     or document.relative_path
                 ),
+                source_id=document.source_id,
             )
         )
 

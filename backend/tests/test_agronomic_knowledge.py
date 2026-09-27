@@ -6,9 +6,11 @@ import importlib.util
 import io
 import json
 import os
+from dataclasses import replace
 from datetime import UTC, datetime
 from pathlib import Path
 from types import SimpleNamespace
+from typing import Any, cast
 from uuid import UUID, uuid4
 
 import pytest
@@ -231,6 +233,7 @@ def _retrieved(context: RecommendationContext) -> RetrievedKnowledge:
                 section="Water",
                 content="Evidence text",
                 source_reference="fao/guidance.pdf",
+                source_id="fao-water",
                 lexical_rank=1,
                 vector_rank=1,
                 fused_score=1.0,
@@ -1213,6 +1216,9 @@ def test_recommendation_validates_citations_and_reuses_cache() -> None:
     assert first.citations[0].evidence_id == "SOURCE_1"
     assert first.citations[0].organization == evidence.evidence[0].organization
     assert first.citations[0].title == evidence.evidence[0].title
+    assert first.citations[0].source_id == "fao-water"
+    assert first.citations[0].page_start == 3
+    assert first.citations[0].page_end == 4
     assert second.run_id == first.run_id
     assert third.run_id != first.run_id
     assert generator.calls == 2
@@ -1254,6 +1260,65 @@ def test_recommendation_without_item_citation_is_rejected() -> None:
         repository=_RecommendationRepository(),
     )
     assert service.generate(context).status is RecommendationStatus.FAILED
+
+
+def test_unused_retrieved_source_cannot_be_presented_as_cited() -> None:
+    context = _context()
+    evidence = _retrieved(context)
+    extra = replace(evidence.evidence[0], evidence_id="SOURCE_2", chunk_id="chunk-b")
+    evidence = replace(evidence, evidence=(*evidence.evidence, extra))
+    invalid = replace(_recommendation(), citation_ids=("SOURCE_1", "SOURCE_2"))
+    service = RecommendationApplicationService(
+        retriever=_Retriever(evidence),
+        generator=_Generator(invalid),
+        repository=_RecommendationRepository(),
+    )
+    assert service.generate(context).status is RecommendationStatus.FAILED
+
+
+def test_generation_context_presents_exact_scientific_values_readably() -> None:
+    context = replace(
+        _context(),
+        water_regime="irrigated",
+        suitability_mean=59.00000000000001,
+        factors=(
+            RecommendationFactor(
+                factor_code="parameter_coarse_fragments",
+                label="coarse fragments",
+                display_label="Fragmentos gruesos",
+                affected_fraction=1.0,
+                dominant=True,
+            ),
+        ),
+    )
+    payload = openai_knowledge._generation_payload(context, _retrieved(context))
+    display = cast(dict[str, Any], payload["presentation_context"])
+    assert display["suitability_mean_display"] == "59/100"
+    assert "escenario con riego" in display["water_scenario"]
+    assert display["limiting_factors"][0]["label"] == "Fragmentos gruesos"
+    assert display["limiting_factors"][0]["affected_area_display"] == (
+        "100 % del área evaluada"
+    )
+    scientific = cast(dict[str, Any], payload["scientific_context"])
+    assert scientific["suitability_mean"] == 59.00000000000001
+
+
+def test_missing_evidence_does_not_generate_unsupported_action_or_dose() -> None:
+    context = _context()
+    evidence = replace(
+        _retrieved(context), retrieval_status=RetrievalStatus.INSUFFICIENT_EVIDENCE,
+        evidence=(),
+    )
+    generator = _Generator(_recommendation())
+    service = RecommendationApplicationService(
+        retriever=_Retriever(evidence), generator=generator,
+        repository=_RecommendationRepository(),
+    )
+    run = service.generate(context)
+    assert run.status is RecommendationStatus.INSUFFICIENT_EVIDENCE
+    assert run.recommendation is None
+    assert run.citations == ()
+    assert generator.calls == 0
 
 
 def test_openai_embedding_key_is_lazy() -> None:
@@ -1326,14 +1391,22 @@ def test_openai_responses_adapter_uses_strict_schema_and_no_tools(
     assert payload["scientific_context"]["limiting_factors"][0]["display_label"] == (
         "Precipitación"
     )
+    assert payload["presentation_context"]["suitability_mean_display"] == "0/100"
+    assert payload["presentation_context"]["water_scenario"] == "escenario de secano"
+    assert payload["presentation_context"]["limiting_factors"][0]["affected_area_display"] == (
+        "100 % del área evaluada"
+    )
+    instructions = str(captured["instructions"])
+    assert "Do not invent data, measurements, amendment doses, thresholds" in instructions
+    assert "no unused retrieved hits" in instructions
     instructions = str(captured["instructions"]).lower()
     assert "untrusted" in instructions
     assert "irrigation" in instructions
     assert "directly in spanish" in instructions
-    assert "do not translate factor_code" in instructions
+    assert "never expose field names, factor codes" in instructions
     assert "amendment doses" in instructions
     assert "quantitative prescription" in instructions
-    assert "evidence source ids exactly" in instructions
+    assert "preserve supplied source ids exactly" in instructions
 
 
 @pytest.mark.integration

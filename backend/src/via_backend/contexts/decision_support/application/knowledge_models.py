@@ -128,6 +128,7 @@ class StoredChunk:
     content_sha256: str
     crops: tuple[str, ...]
     factors: tuple[str, ...]
+    source_id: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -176,6 +177,7 @@ class EvidenceItem:
     lexical_rank: int | None
     vector_rank: int | None
     fused_score: float
+    source_id: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -220,6 +222,7 @@ class RecommendationCitation:
     page_end: int
     section: str | None
     source_reference: str
+    source_id: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
