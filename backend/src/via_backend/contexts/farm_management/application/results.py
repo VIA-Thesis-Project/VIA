@@ -35,6 +35,7 @@ class ParcelResult:
     name: str
     versions: tuple[ParcelVersionResult, ...]
     created_at: datetime
+    description: str | None = None
 
     @property
     def current_version(self) -> int:
@@ -46,6 +47,7 @@ class ParcelResult:
             id=parcel.id,
             project_id=parcel.project_id,
             name=parcel.name,
+            description=parcel.description,
             versions=tuple(
                 ParcelVersionResult(
                     number=version.number,
@@ -56,4 +58,3 @@ class ParcelResult:
             ),
             created_at=parcel.created_at,
         )
-

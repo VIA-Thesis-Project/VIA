@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime
 from uuid import UUID
 
@@ -45,9 +45,13 @@ class Parcel:
     name: str
     versions: tuple[ParcelVersion, ...]
     created_at: datetime
+    description: str | None = None
+    deleted_at: datetime | None = None
 
     def __post_init__(self) -> None:
         _validate_name(self.name, "Parcel")
+        if self.description is not None and len(self.description) > 2000:
+            raise DomainValidationError("Parcel description must be at most 2000 characters.")
         if not self.versions:
             raise DomainValidationError("A parcel must have an initial geometry version.")
         expected_numbers = tuple(range(1, len(self.versions) + 1))
@@ -64,13 +68,13 @@ class Parcel:
             geometry=geometry,
             created_at=created_at,
         )
-        return Parcel(
-            id=self.id,
-            project_id=self.project_id,
-            name=self.name,
-            versions=(*self.versions, version),
-            created_at=self.created_at,
-        )
+        return replace(self, versions=(*self.versions, version))
+
+    def update_metadata(self, *, name: str, description: str | None) -> Parcel:
+        return replace(self, name=name, description=description)
+
+    def soft_delete(self, deleted_at: datetime) -> Parcel:
+        return replace(self, deleted_at=deleted_at)
 
 
 def _validate_name(name: str, subject: str) -> None:

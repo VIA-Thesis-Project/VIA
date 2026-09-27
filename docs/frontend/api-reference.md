@@ -15,7 +15,10 @@ All paths below are relative to the configured backend origin. Operation IDs are
 | Parcels | POST | `/projects/{project_id}/parcels` | `create_parcel` | 201 |
 | Parcels | GET | `/projects/{project_id}/parcels` | `list_parcels` | 200 |
 | Parcels | GET | `/projects/{project_id}/parcels/{parcel_id}` | `get_parcel` | 200 |
+| Parcels | PATCH | `/projects/{project_id}/parcels/{parcel_id}` | `update_parcel_metadata` | 200 |
+| Parcels | DELETE | `/projects/{project_id}/parcels/{parcel_id}` | `delete_parcel` | 204 |
 | Parcels | POST | `/projects/{project_id}/parcels/{parcel_id}/versions` | `create_parcel_version` | 201 |
+
 | Datasets | GET | `/datasets` | `list_datasets` | 200 |
 | Datasets | POST | `/datasets` | `create_dataset` | 201 |
 | Datasets | GET | `/datasets/{dataset_id}` | `get_dataset` | 200 |
@@ -46,6 +49,13 @@ version and returns the effective snapshot. A stale reference returns `409`,
 invalid thresholds return `422`, and a USER writing returns `403`. The
 evaluation policy lookup returns `status: policy_not_recorded` and `policy: null`
 for legacy evaluations; it never substitutes the current default.
+
+`PATCH` changes only parcel `name` and/or `description`; it does not increment
+`current_version`. Geometry changes use `/versions` and append an immutable
+`ParcelVersion`. `DELETE` sets `deleted_at` without removing the parcel or its
+versions. Deleted parcels disappear from normal reads and cannot be selected
+for new evaluations. Evaluations already created retain their ParcelSnapshot
+and continue processing independently of the parcel's deletion.
 
 ## Capability discovery
 

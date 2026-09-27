@@ -1,13 +1,27 @@
 """End-to-end API tests for the Farm Management vertical slice."""
 
 import asyncio
+from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID, uuid4
 
+import pytest
 from fastapi import FastAPI, Header, HTTPException, status
 from httpx import ASGITransport, AsyncClient, Response
 
-from via_backend.contexts.farm_management.application import FarmManagementService
+from via_backend.contexts.agroclimatic_evaluation.domain import (
+    Evaluation,
+    EvaluationStatus,
+    ParcelSnapshot,
+    SnapshotGeometry,
+)
+from via_backend.contexts.agroclimatic_evaluation.infrastructure import (
+    InMemoryEvaluationRepository,
+)
+from via_backend.contexts.farm_management.application import (
+    AuthorizedParcelSnapshotNotFoundError,
+    FarmManagementService,
+)
 from via_backend.contexts.farm_management.infrastructure import (
     InMemoryParcelRepository,
     InMemoryProjectRepository,
@@ -34,6 +48,7 @@ def _test_app():
         parcels=InMemoryParcelRepository(),
         area_of_interest=_AllowAllAreaOfInterest(),
     )
+    app.state.farm_management = service
 
     def resolve_principal(
         authorization: str | None = Header(default=None),
@@ -63,6 +78,97 @@ def _polygon(longitude_offset: float = 0) -> dict[str, Any]:
             ]
         ],
     }
+
+
+def test_parcel_metadata_patch_and_soft_delete_preserve_versions() -> None:
+    async def scenario() -> None:
+        app = _test_app()
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            project = (
+                await client.post("/projects", json={"name": "Owned"}, headers=USER_A_HEADERS)
+            ).json()
+            path = f"/projects/{project['id']}/parcels"
+            created = (
+                await client.post(
+                    path,
+                    json={"name": "Original", "description": "First", "geometry": _polygon()},
+                    headers=USER_A_HEADERS,
+                )
+            ).json()
+            item = f"{path}/{created['id']}"
+            for body, expected_name, expected_description in (
+                ({"name": "Renamed"}, "Renamed", "First"),
+                ({"description": "Second"}, "Renamed", "Second"),
+                ({"name": "Both", "description": "Third"}, "Both", "Third"),
+            ):
+                response = await client.patch(item, json=body, headers=USER_A_HEADERS)
+                assert response.status_code == 200
+                assert response.json()["name"] == expected_name
+                assert response.json()["description"] == expected_description
+                assert response.json()["current_version"] == 1
+                assert response.json()["versions"] == created["versions"]
+            assert (
+                await client.patch(item, json={"name": "Foreign"}, headers=USER_B_HEADERS)
+            ).status_code == 404
+            assert (await client.delete(item, headers=USER_B_HEADERS)).status_code == 404
+            assert (
+                await client.patch(item, json={"name": " "}, headers=USER_A_HEADERS)
+            ).status_code == 422
+            assert (
+                await client.patch(item, json={"description": "x" * 2001}, headers=USER_A_HEADERS)
+            ).status_code == 422
+            assert (
+                await client.patch(item, json={"geometry": _polygon()}, headers=USER_A_HEADERS)
+            ).status_code == 422
+            snapshot = app.state.farm_management.resolve_authorized_parcel_snapshot(
+                owner_user_id=USER_A_ID,
+                project_id=UUID(project["id"]),
+                parcel_id=UUID(created["id"]),
+                parcel_version=1,
+            )
+            historical_evaluations = InMemoryEvaluationRepository()
+            historical = Evaluation(
+                id=uuid4(),
+                parcel_snapshot=ParcelSnapshot(
+                    project_id=snapshot.project_id,
+                    parcel_id=snapshot.parcel_id,
+                    parcel_version=snapshot.parcel_version,
+                    geometry=SnapshotGeometry.from_geojson({
+                        "type": snapshot.geometry.type,
+                        "coordinates": snapshot.geometry.coordinates,
+                    }),
+                    crs=snapshot.crs,
+                    captured_at=snapshot.captured_at,
+                ),
+                requested_crops=("maize",),
+                status=EvaluationStatus.QUEUED,
+                created_at=datetime.now(UTC),
+                owner_user_id=USER_A_ID,
+            )
+            historical_evaluations.add(historical)
+            assert (await client.delete(item, headers=USER_A_HEADERS)).status_code == 204
+            assert (await client.get(item, headers=USER_A_HEADERS)).status_code == 404
+            assert (await client.get(path, headers=USER_A_HEADERS)).json() == []
+            assert (
+                await client.patch(item, json={"name": "Again"}, headers=USER_A_HEADERS)
+            ).status_code == 404
+            assert (await client.delete(item, headers=USER_A_HEADERS)).status_code == 404
+            assert (
+                await client.post(
+                    f"{item}/versions", json={"geometry": _polygon(0.01)}, headers=USER_A_HEADERS
+                )
+            ).status_code == 404
+            assert snapshot.parcel_version == 1
+            assert historical_evaluations.get(historical.id) == historical
+            with pytest.raises(AuthorizedParcelSnapshotNotFoundError):
+                app.state.farm_management.resolve_authorized_parcel_snapshot(
+                    owner_user_id=USER_A_ID,
+                    project_id=UUID(project["id"]),
+                    parcel_id=UUID(created["id"]),
+                    parcel_version=1,
+                )
+
+    asyncio.run(scenario())
 
 
 async def _request(method: str, path: str, **kwargs: Any) -> Response:
@@ -185,9 +291,7 @@ def test_project_ownership_isolated_between_users() -> None:
 
             assert (await client.get("/projects", headers=USER_B_HEADERS)).json() == []
 
-            detail = await client.get(
-                f"/projects/{project['id']}", headers=USER_B_HEADERS
-            )
+            detail = await client.get(f"/projects/{project['id']}", headers=USER_B_HEADERS)
             assert detail.status_code == 404
 
             parcel = await client.post(
@@ -197,9 +301,7 @@ def test_project_ownership_isolated_between_users() -> None:
             )
             assert parcel.status_code == 404
 
-            owner_detail = await client.get(
-                f"/projects/{project['id']}", headers=USER_A_HEADERS
-            )
+            owner_detail = await client.get(f"/projects/{project['id']}", headers=USER_A_HEADERS)
             assert owner_detail.status_code == 200
 
     asyncio.run(scenario())
@@ -238,12 +340,14 @@ def test_nested_parcel_routes_enforce_project_owner_and_parent_identity() -> Non
                 )
             ).json()
 
-            assert [item["id"] for item in (
-                await client.get("/projects", headers=USER_A_HEADERS)
-            ).json()] == [project_a["id"]]
-            assert [item["id"] for item in (
-                await client.get("/projects", headers=USER_B_HEADERS)
-            ).json()] == [project_b["id"]]
+            assert [
+                item["id"]
+                for item in (await client.get("/projects", headers=USER_A_HEADERS)).json()
+            ] == [project_a["id"]]
+            assert [
+                item["id"]
+                for item in (await client.get("/projects", headers=USER_B_HEADERS)).json()
+            ] == [project_b["id"]]
 
             foreign_paths = (
                 f"/projects/{project_a['id']}/parcels",

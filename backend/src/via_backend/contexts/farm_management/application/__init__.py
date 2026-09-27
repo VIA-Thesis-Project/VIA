@@ -1,6 +1,12 @@
 """Farm Management application layer."""
 
-from .commands import CreateParcel, CreateProject, ReviseParcelGeometry
+from .commands import (
+    CreateParcel,
+    CreateProject,
+    DeleteParcel,
+    ReviseParcelGeometry,
+    UpdateParcelMetadata,
+)
 from .ports import ParcelAreaOfInterestValidator
 from .public import (
     AuthorizedParcelGeometry,
@@ -24,6 +30,7 @@ __all__ = [
     "AuthorizedParcelSnapshotResolver",
     "CreateParcel",
     "CreateProject",
+    "DeleteParcel",
     "FarmManagementService",
     "GetParcel",
     "GetProject",
@@ -37,4 +44,5 @@ __all__ = [
     "ResourceConflictError",
     "ResourceNotFoundError",
     "ReviseParcelGeometry",
+    "UpdateParcelMetadata",
 ]

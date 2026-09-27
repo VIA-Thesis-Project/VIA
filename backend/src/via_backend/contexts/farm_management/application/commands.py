@@ -20,6 +20,24 @@ class CreateParcel:
     owner_user_id: UUID
     name: str
     geometry: Mapping[str, Any]
+    description: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class UpdateParcelMetadata:
+    project_id: UUID
+    owner_user_id: UUID
+    parcel_id: UUID
+    name: str | None = None
+    description: str | None = None
+    update_description: bool = False
+
+
+@dataclass(frozen=True, slots=True)
+class DeleteParcel:
+    project_id: UUID
+    owner_user_id: UUID
+    parcel_id: UUID
 
 
 @dataclass(frozen=True, slots=True)

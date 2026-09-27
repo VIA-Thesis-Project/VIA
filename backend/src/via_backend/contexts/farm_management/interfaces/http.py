@@ -15,6 +15,7 @@ from via_backend.contexts.identity_access.application.public import Authenticate
 from ..application import (
     CreateParcel,
     CreateProject,
+    DeleteParcel,
     FarmManagementService,
     GetParcel,
     GetProject,
@@ -25,6 +26,7 @@ from ..application import (
     ResourceConflictError,
     ResourceNotFoundError,
     ReviseParcelGeometry,
+    UpdateParcelMetadata,
 )
 
 
@@ -44,6 +46,12 @@ class CreateProjectBody(_RequestModel):
 class CreateParcelBody(_RequestModel):
     name: str = Field(min_length=1, max_length=120)
     geometry: GeometryBody
+    description: str | None = Field(default=None, max_length=2000)
+
+
+class UpdateParcelMetadataBody(_RequestModel):
+    name: str | None = Field(default=None, min_length=1, max_length=120)
+    description: str | None = Field(default=None, max_length=2000)
 
 
 class ReviseParcelGeometryBody(_RequestModel):
@@ -72,6 +80,7 @@ class ParcelResponse(BaseModel):
     id: UUID
     project_id: UUID
     name: str
+    description: str | None
     current_version: int
     versions: list[ParcelVersionResponse]
     created_at: datetime
@@ -155,6 +164,7 @@ def create_router(
                 project_id=project_id,
                 owner_user_id=principal.user_id,
                 name=body.name,
+                description=body.description,
                 geometry=body.geometry.model_dump(),
             ),
         )
@@ -218,6 +228,49 @@ def create_router(
             ),
         )
         return _parcel_response(parcel)
+
+    @router.patch(
+        "/{project_id}/parcels/{parcel_id}",
+        response_model=ParcelResponse,
+        operation_id="update_parcel_metadata",
+    )
+    def update_parcel_metadata(
+        project_id: UUID,
+        parcel_id: UUID,
+        body: UpdateParcelMetadataBody,
+        principal: AuthenticatedPrincipal = principal_dependency,
+    ) -> ParcelResponse:
+        if not body.model_fields_set:
+            raise HTTPException(status_code=422, detail="Provide parcel metadata to update.")
+        if "name" in body.model_fields_set and body.name is None:
+            raise HTTPException(status_code=422, detail="Parcel name cannot be null.")
+        parcel = _execute(
+            service.update_parcel_metadata,
+            UpdateParcelMetadata(
+                project_id=project_id,
+                owner_user_id=principal.user_id,
+                parcel_id=parcel_id,
+                name=body.name,
+                description=body.description,
+                update_description="description" in body.model_fields_set,
+            ),
+        )
+        return _parcel_response(parcel)
+
+    @router.delete(
+        "/{project_id}/parcels/{parcel_id}",
+        status_code=status.HTTP_204_NO_CONTENT,
+        operation_id="delete_parcel",
+    )
+    def delete_parcel(
+        project_id: UUID,
+        parcel_id: UUID,
+        principal: AuthenticatedPrincipal = principal_dependency,
+    ) -> None:
+        _execute(
+            service.delete_parcel,
+            DeleteParcel(project_id, principal.user_id, parcel_id),
+        )
 
     return router
 

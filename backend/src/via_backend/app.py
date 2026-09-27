@@ -257,7 +257,7 @@ def create_app(
             CORSMiddleware,
             allow_origins=list(settings.cors_allowed_origins),
             allow_credentials=True,
-            allow_methods=["GET", "POST", "PUT", "OPTIONS"],
+            allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
             allow_headers=["Content-Type", "Authorization"],
         )
     farm_management = FarmManagementService(

@@ -6,7 +6,7 @@ from datetime import datetime
 from uuid import UUID
 
 from geoalchemy2 import Geometry
-from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Index, Integer, String
+from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.dialects.postgresql import UUID as PostgreSQLUUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -17,12 +17,8 @@ class ProjectRecord(Base):
     __tablename__ = "projects"
     __table_args__ = (Index("ix_projects_owner_user_id", "owner_user_id"),)
 
-    id: Mapped[UUID] = mapped_column(
-        PostgreSQLUUID(as_uuid=True), primary_key=True, nullable=False
-    )
-    owner_user_id: Mapped[UUID | None] = mapped_column(
-        PostgreSQLUUID(as_uuid=True), nullable=True
-    )
+    id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), primary_key=True, nullable=False)
+    owner_user_id: Mapped[UUID | None] = mapped_column(PostgreSQLUUID(as_uuid=True), nullable=True)
     name: Mapped[str] = mapped_column(String(120), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
@@ -34,9 +30,7 @@ class ParcelRecord(Base):
         Index("ix_parcels_project_id", "project_id"),
     )
 
-    id: Mapped[UUID] = mapped_column(
-        PostgreSQLUUID(as_uuid=True), primary_key=True, nullable=False
-    )
+    id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), primary_key=True, nullable=False)
     project_id: Mapped[UUID] = mapped_column(
         PostgreSQLUUID(as_uuid=True),
         ForeignKey(f"{FARM_MANAGEMENT_SCHEMA}.projects.id", ondelete="RESTRICT"),
@@ -45,6 +39,8 @@ class ParcelRecord(Base):
     name: Mapped[str] = mapped_column(String(120), nullable=False)
     current_version: Mapped[int] = mapped_column(Integer, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
 
 class ParcelVersionRecord(Base):

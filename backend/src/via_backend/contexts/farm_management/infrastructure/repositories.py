@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
 from threading import RLock
 from uuid import UUID
 
@@ -69,12 +70,13 @@ class InMemoryParcelRepository:
     def save(self, parcel: Parcel, *, expected_version: int) -> None:
         with self._lock:
             current = self._parcels.get(parcel.id)
-            if current is None:
-                raise ValueError(f"Parcel {parcel.id} does not exist.")
+            if current is None or current.deleted_at is not None:
+                raise ParcelVersionConflictError(f"Parcel {parcel.id} is unavailable.")
             if (
                 current.current_version.number != expected_version
                 or parcel.project_id != current.project_id
                 or parcel.name != current.name
+                or parcel.description != current.description
                 or parcel.created_at != current.created_at
                 or parcel.versions[:-1] != current.versions
                 or parcel.current_version.number != expected_version + 1
@@ -84,14 +86,41 @@ class InMemoryParcelRepository:
                 )
             self._parcels[parcel.id] = parcel
 
+    def update_metadata(
+        self, parcel: Parcel, *, expected_name: str, expected_description: str | None
+    ) -> None:
+        with self._lock:
+            current = self._parcels.get(parcel.id)
+            if (
+                current is None
+                or current.deleted_at is not None
+                or current.project_id != parcel.project_id
+                or current.name != expected_name
+                or current.description != expected_description
+            ):
+                raise ParcelVersionConflictError(
+                    f"Parcel {parcel.id} changed during metadata update."
+                )
+            self._parcels[parcel.id] = replace(
+                current, name=parcel.name, description=parcel.description
+            )
+
+    def soft_delete(self, parcel: Parcel) -> None:
+        with self._lock:
+            current = self._parcels.get(parcel.id)
+            if current is None or current.deleted_at is not None:
+                raise ParcelVersionConflictError(f"Parcel {parcel.id} is unavailable.")
+            self._parcels[parcel.id] = replace(current, deleted_at=parcel.deleted_at)
+
     def get(self, parcel_id: UUID) -> Parcel | None:
         with self._lock:
-            return self._parcels.get(parcel_id)
+            parcel = self._parcels.get(parcel_id)
+            return parcel if parcel is not None and parcel.deleted_at is None else None
 
     def get_for_project(self, project_id: UUID, parcel_id: UUID) -> Parcel | None:
         with self._lock:
             parcel = self._parcels.get(parcel_id)
-            if parcel is None or parcel.project_id != project_id:
+            if parcel is None or parcel.project_id != project_id or parcel.deleted_at is not None:
                 return None
             return parcel
 
@@ -102,7 +131,7 @@ class InMemoryParcelRepository:
                     (
                         parcel
                         for parcel in self._parcels.values()
-                        if parcel.project_id == project_id
+                        if parcel.project_id == project_id and parcel.deleted_at is None
                     ),
                     key=lambda item: (item.created_at, item.id),
                 )

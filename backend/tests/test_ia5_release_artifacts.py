@@ -70,4 +70,4 @@ def test_expected_alembic_head_includes_required_policy_binding_migration() -> N
         if parent.group(1):
             parents.add(parent.group(1))
 
-    assert revisions - parents == {"20260927_0018"}
+    assert revisions - parents == {"20260927_0019"}

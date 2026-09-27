@@ -84,6 +84,8 @@ class PostgreSQLParcelRepository:
                         id=parcel.id,
                         project_id=parcel.project_id,
                         name=parcel.name,
+                        description=parcel.description,
+                        deleted_at=parcel.deleted_at,
                         current_version=parcel.current_version.number,
                         created_at=parcel.created_at,
                     )
@@ -107,6 +109,8 @@ class PostgreSQLParcelRepository:
                         ParcelRecord.name == parcel.name,
                         ParcelRecord.created_at == parcel.created_at,
                         ParcelRecord.current_version == expected_version,
+                        ParcelRecord.description.is_not_distinct_from(parcel.description),
+                        ParcelRecord.deleted_at.is_(None),
                     )
                     .values(current_version=expected_version + 1)
                     .returning(ParcelRecord.id)
@@ -128,7 +132,45 @@ class PostgreSQLParcelRepository:
     def get(self, parcel_id: UUID) -> Parcel | None:
         with self._sessions() as session:
             record = session.get(ParcelRecord, parcel_id)
-            return _parcel_from_record(session, record) if record is not None else None
+            return (
+                _parcel_from_record(session, record)
+                if record is not None and record.deleted_at is None
+                else None
+            )
+
+    def update_metadata(
+        self, parcel: Parcel, *, expected_name: str, expected_description: str | None
+    ) -> None:
+        with self._sessions.begin() as session:
+            changed = session.execute(
+                update(ParcelRecord)
+                .where(
+                    ParcelRecord.id == parcel.id,
+                    ParcelRecord.project_id == parcel.project_id,
+                    ParcelRecord.name == expected_name,
+                    ParcelRecord.description.is_not_distinct_from(expected_description),
+                    ParcelRecord.deleted_at.is_(None),
+                )
+                .values(name=parcel.name, description=parcel.description)
+                .returning(ParcelRecord.id)
+            ).scalar_one_or_none()
+            if changed is None:
+                raise _conflict(parcel.id)
+
+    def soft_delete(self, parcel: Parcel) -> None:
+        with self._sessions.begin() as session:
+            changed = session.execute(
+                update(ParcelRecord)
+                .where(
+                    ParcelRecord.id == parcel.id,
+                    ParcelRecord.project_id == parcel.project_id,
+                    ParcelRecord.deleted_at.is_(None),
+                )
+                .values(deleted_at=parcel.deleted_at)
+                .returning(ParcelRecord.id)
+            ).scalar_one_or_none()
+            if changed is None:
+                raise _conflict(parcel.id)
 
     def get_for_project(self, project_id: UUID, parcel_id: UUID) -> Parcel | None:
         with self._sessions() as session:
@@ -136,6 +178,7 @@ class PostgreSQLParcelRepository:
                 select(ParcelRecord).where(
                     ParcelRecord.id == parcel_id,
                     ParcelRecord.project_id == project_id,
+                    ParcelRecord.deleted_at.is_(None),
                 )
             )
             return _parcel_from_record(session, record) if record is not None else None
@@ -144,7 +187,7 @@ class PostgreSQLParcelRepository:
         with self._sessions() as session:
             records = session.scalars(
                 select(ParcelRecord)
-                .where(ParcelRecord.project_id == project_id)
+                .where(ParcelRecord.project_id == project_id, ParcelRecord.deleted_at.is_(None))
                 .order_by(ParcelRecord.created_at, ParcelRecord.id)
             )
             return tuple(_parcel_from_record(session, record) for record in records)
@@ -169,6 +212,8 @@ def _parcel_from_record(session: Session, record: ParcelRecord) -> Parcel:
         id=record.id,
         project_id=record.project_id,
         name=record.name,
+        description=record.description,
+        deleted_at=record.deleted_at,
         versions=versions,
         created_at=record.created_at,
     )
@@ -248,8 +293,7 @@ def _as_multi_polygon_wkt(geometry: ParcelGeometry) -> str:
         rings = []
         for ring in polygon:
             positions = ", ".join(
-                f"{longitude:.17g} {latitude:.17g}"
-                for longitude, latitude in ring
+                f"{longitude:.17g} {latitude:.17g}" for longitude, latitude in ring
             )
             rings.append(f"({positions})")
         polygon_text.append(f"({', '.join(rings)})")

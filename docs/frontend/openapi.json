@@ -316,6 +316,18 @@
       "CreateParcelBody": {
         "additionalProperties": false,
         "properties": {
+          "description": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
           "geometry": {
             "$ref": "#/components/schemas/GeometryBody"
           },
@@ -1592,6 +1604,17 @@
             "title": "Current Version",
             "type": "integer"
           },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
           "id": {
             "format": "uuid",
             "title": "Id",
@@ -1618,6 +1641,7 @@
           "id",
           "project_id",
           "name",
+          "description",
           "current_version",
           "versions",
           "created_at"
@@ -2480,6 +2504,38 @@
           "zero_suitability_area_m2"
         ],
         "title": "SuitabilitySummaryResponse",
+        "type": "object"
+      },
+      "UpdateParcelMetadataBody": {
+        "additionalProperties": false,
+        "properties": {
+          "description": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "maxLength": 120,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          }
+        },
+        "title": "UpdateParcelMetadataBody",
         "type": "object"
       },
       "UpdateViabilityPolicyRequest": {
@@ -4237,6 +4293,55 @@
       }
     },
     "/projects/{project_id}/parcels/{parcel_id}": {
+      "delete": {
+        "operationId": "delete_parcel",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "parcel_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Parcel Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Delete Parcel",
+        "tags": [
+          "farm-management"
+        ]
+      },
       "get": {
         "description": "Read one parcel and its complete geometry-version history.",
         "operationId": "get_parcel",
@@ -4290,6 +4395,72 @@
           }
         ],
         "summary": "Get Parcel",
+        "tags": [
+          "farm-management"
+        ]
+      },
+      "patch": {
+        "operationId": "update_parcel_metadata",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "parcel_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Parcel Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateParcelMetadataBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ParcelResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Update Parcel Metadata",
         "tags": [
           "farm-management"
         ]

@@ -10,7 +10,13 @@ from ..domain.errors import DomainValidationError, ParcelVersionConflictError
 from ..domain.geometry import ParcelGeometry
 from ..domain.models import Parcel, ParcelVersion, Project
 from ..domain.repositories import ParcelRepository, ProjectRepository
-from .commands import CreateParcel, CreateProject, ReviseParcelGeometry
+from .commands import (
+    CreateParcel,
+    CreateProject,
+    DeleteParcel,
+    ReviseParcelGeometry,
+    UpdateParcelMetadata,
+)
 from .ports import ParcelAreaOfInterestValidator
 from .public import (
     AuthorizedParcelGeometry,
@@ -93,6 +99,9 @@ class FarmManagementService:
                     ),
                 ),
                 created_at=created_at,
+                description=command.description.strip() or None
+                if command.description is not None
+                else None,
             )
         except DomainValidationError as error:
             raise InvalidCommandError(str(error)) from error
@@ -108,9 +117,7 @@ class FarmManagementService:
 
     def get_parcel(self, query: GetParcel) -> ParcelResult:
         self._require_project(query.project_id, query.owner_user_id)
-        return ParcelResult.from_domain(
-            self._require_parcel(query.project_id, query.parcel_id)
-        )
+        return ParcelResult.from_domain(self._require_parcel(query.project_id, query.parcel_id))
 
     def revise_parcel_geometry(self, command: ReviseParcelGeometry) -> ParcelResult:
         self._require_project(command.project_id, command.owner_user_id)
@@ -118,18 +125,42 @@ class FarmManagementService:
         try:
             geometry = ParcelGeometry.from_geojson(command.geometry)
             self._area_of_interest.validate(geometry)
-            revised = parcel.revise_geometry(
-                geometry, self._clock()
+            revised = parcel.revise_geometry(geometry, self._clock())
+        except DomainValidationError as error:
+            raise InvalidCommandError(str(error)) from error
+        try:
+            self._parcels.save(revised, expected_version=parcel.current_version.number)
+        except ParcelVersionConflictError as error:
+            raise ResourceConflictError(str(error)) from error
+        return ParcelResult.from_domain(revised)
+
+    def update_parcel_metadata(self, command: UpdateParcelMetadata) -> ParcelResult:
+        self._require_project(command.project_id, command.owner_user_id)
+        parcel = self._require_parcel(command.project_id, command.parcel_id)
+        try:
+            updated = parcel.update_metadata(
+                name=command.name if command.name is not None else parcel.name,
+                description=(command.description.strip() or None)
+                if command.update_description and command.description is not None
+                else (None if command.update_description else parcel.description),
             )
         except DomainValidationError as error:
             raise InvalidCommandError(str(error)) from error
         try:
-            self._parcels.save(
-                revised, expected_version=parcel.current_version.number
+            self._parcels.update_metadata(
+                updated, expected_name=parcel.name, expected_description=parcel.description
             )
         except ParcelVersionConflictError as error:
             raise ResourceConflictError(str(error)) from error
-        return ParcelResult.from_domain(revised)
+        return ParcelResult.from_domain(self._require_parcel(command.project_id, command.parcel_id))
+
+    def delete_parcel(self, command: DeleteParcel) -> None:
+        self._require_project(command.project_id, command.owner_user_id)
+        parcel = self._require_parcel(command.project_id, command.parcel_id)
+        try:
+            self._parcels.soft_delete(parcel.soft_delete(self._clock()))
+        except ParcelVersionConflictError as error:
+            raise ResourceNotFoundError(f"Parcel {command.parcel_id} was not found.") from error
 
     def resolve_authorized_parcel_snapshot(
         self,

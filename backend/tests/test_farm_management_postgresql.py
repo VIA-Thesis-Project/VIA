@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 from collections.abc import Iterator
 from concurrent.futures import ThreadPoolExecutor
+from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from threading import Barrier
@@ -92,9 +93,7 @@ def _polygon(longitude: float = -77.6) -> ParcelGeometry:
 def _multi_polygon() -> ParcelGeometry:
     first = _polygon(-77.6).to_geojson()["coordinates"]
     second = _polygon(-77.4).to_geojson()["coordinates"]
-    return ParcelGeometry.from_geojson(
-        {"type": "MultiPolygon", "coordinates": [first, second]}
-    )
+    return ParcelGeometry.from_geojson({"type": "MultiPolygon", "coordinates": [first, second]})
 
 
 def _project(now: datetime) -> Project:
@@ -109,6 +108,49 @@ def _parcel(project_id: UUID, geometry: ParcelGeometry, now: datetime) -> Parcel
         versions=(ParcelVersion(number=1, geometry=geometry, created_at=now),),
         created_at=now,
     )
+
+
+def test_metadata_and_soft_delete_preserve_persisted_versions(
+    database: tuple[Engine, SessionFactory],
+) -> None:
+    engine, sessions = database
+    now = datetime(2026, 9, 27, tzinfo=UTC)
+    project = _project(now)
+    PostgreSQLProjectRepository(sessions).add(project)
+    parcel = _parcel(project.id, _polygon(), now)
+    repository = PostgreSQLParcelRepository(sessions)
+    repository.add(parcel)
+    renamed = replace(parcel, name="Renamed", description="New description")
+    repository.update_metadata(renamed, expected_name=parcel.name, expected_description=None)
+    saved = repository.get_for_project(project.id, parcel.id)
+    assert saved is not None
+    assert saved.name == "Renamed"
+    assert saved.description == "New description"
+    assert saved.versions == parcel.versions
+    repository.soft_delete(saved.soft_delete(now))
+    assert repository.get_for_project(project.id, parcel.id) is None
+    assert repository.list_for_project(project.id) == ()
+    with engine.connect() as connection:
+        assert (
+            connection.scalar(
+                text(
+                    "SELECT count(*) FROM farm_management.parcel_versions "
+                    "WHERE parcel_id = :parcel_id"
+                ),
+                {"parcel_id": parcel.id},
+            )
+            == 1
+        )
+        assert (
+            connection.scalar(
+                text(
+                    "SELECT deleted_at IS NOT NULL FROM farm_management.parcels "
+                    "WHERE id = :parcel_id"
+                ),
+                {"parcel_id": parcel.id},
+            )
+            is True
+        )
 
 
 def test_project_survives_a_new_repository_instance(
@@ -226,12 +268,8 @@ def test_revision_is_immutable_and_stale_save_conflicts(
     stale_reader = parcels.get(parcel.id)
     assert first_reader is not None and stale_reader is not None
 
-    first_revision = first_reader.revise_geometry(
-        _polygon(-77.5), now + timedelta(hours=1)
-    )
-    stale_revision = stale_reader.revise_geometry(
-        _polygon(-77.4), now + timedelta(hours=2)
-    )
+    first_revision = first_reader.revise_geometry(_polygon(-77.5), now + timedelta(hours=1))
+    stale_revision = stale_reader.revise_geometry(_polygon(-77.4), now + timedelta(hours=2))
     parcels.save(first_revision, expected_version=1)
 
     with pytest.raises(ParcelVersionConflictError):
@@ -298,8 +336,7 @@ def test_duplicate_parcel_version_number_is_rejected(
                     number=1,
                     geometry_type="Polygon",
                     geometry=WKTElement(
-                        "MULTIPOLYGON (((-77.6 -11.1, -77.5 -11.1, "
-                        "-77.5 -11.0, -77.6 -11.1)))",
+                        "MULTIPOLYGON (((-77.6 -11.1, -77.5 -11.1, -77.5 -11.0, -77.6 -11.1)))",
                         srid=4326,
                     ),
                     created_at=now,
