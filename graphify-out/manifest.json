@@ -840,9 +840,9 @@
     "semantic_hash": "c73ef4270f604086f6435ab50dcbaa5e"
   },
   "backend/src/via_backend/contexts/farm_management/application/__init__.py": {
-    "mtime": 1790032986.8020005,
-    "seen": 1790044734.8398156,
-    "ast_hash": "e72a670a9e9f77c63f4d120f1eb3c5a6",
+    "mtime": 1790534690.6316285,
+    "seen": 1790535724.0947933,
+    "ast_hash": "9180c56f79ae726dd53ad8c177ca1900",
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/farm_management/domain/__init__.py": {
@@ -948,9 +948,9 @@
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/farm_management/application/commands.py": {
-    "mtime": 1790016046.4607654,
-    "seen": 1790044734.8398168,
-    "ast_hash": "92d6c86834965ed8d56d54298730a689",
+    "mtime": 1790534430.7443686,
+    "seen": 1790535724.0947943,
+    "ast_hash": "072cfae9bc55f3f79dd9959ad1622666",
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/farm_management/application/queries.py": {
@@ -960,15 +960,15 @@
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/farm_management/application/results.py": {
-    "mtime": 1789190606.955088,
-    "seen": 1789197987.2865517,
-    "ast_hash": "d73f229f784dc2b6d84c82d26197ad52",
-    "semantic_hash": "d73f229f784dc2b6d84c82d26197ad52"
+    "mtime": 1790534430.747907,
+    "seen": 1790535724.0947974,
+    "ast_hash": "020b53ffa6707f274ec60a1635438293",
+    "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/farm_management/application/service.py": {
-    "mtime": 1790042571.7582712,
-    "seen": 1790044734.839822,
-    "ast_hash": "2717c1296ba07ba68cd185eba9ea8b3d",
+    "mtime": 1790534690.7314987,
+    "seen": 1790535724.094798,
+    "ast_hash": "4ccf2e7bab5718019cbe1a854357f676",
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/farm_management/domain/errors.py": {
@@ -978,39 +978,39 @@
     "semantic_hash": "4861896bd07e1da63fdf7cdb10edf1d8"
   },
   "backend/src/via_backend/contexts/farm_management/domain/geometry.py": {
-    "mtime": 1789246563.2705185,
-    "seen": 1789248030.6595643,
+    "mtime": 1790535256.6530967,
+    "seen": 1790535724.0948005,
     "ast_hash": "444b1b1a7b816738108581a1dab0a833",
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/farm_management/domain/models.py": {
-    "mtime": 1789963799.7575076,
-    "seen": 1790044734.8398263,
-    "ast_hash": "88aa39312656a048a773eea641ad54f0",
+    "mtime": 1790534430.743374,
+    "seen": 1790535724.0948012,
+    "ast_hash": "de9157923a7a2569426bbd29c4797224",
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/farm_management/domain/repositories.py": {
-    "mtime": 1790018361.573133,
-    "seen": 1790044734.8398275,
-    "ast_hash": "be76d9a422c1016c806022d7d6d821c7",
+    "mtime": 1790534690.7314987,
+    "seen": 1790535724.094802,
+    "ast_hash": "1e79c7b56962700f1486bcb1db0e6339",
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/farm_management/infrastructure/repositories.py": {
-    "mtime": 1790018361.5741346,
-    "seen": 1790044734.839834,
-    "ast_hash": "be8eff80478144a93fb42df4145b814d",
+    "mtime": 1790534690.7325,
+    "seen": 1790535724.0948064,
+    "ast_hash": "1bfa22ad6eef0dd19f1c1b73b9fd248b",
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/farm_management/interfaces/http.py": {
-    "mtime": 1790018361.5778244,
-    "seen": 1790044734.8398361,
-    "ast_hash": "5288b49336c4c4b489dbf9c77b78adf3",
+    "mtime": 1790535123.5714025,
+    "seen": 1790535724.094808,
+    "ast_hash": "d4195ee7ef119739e313888a129a7a39",
     "semantic_hash": ""
   },
   "backend/tests/test_farm_management_api.py": {
-    "mtime": 1790033135.3172834,
-    "seen": 1790044734.8399336,
-    "ast_hash": "3196dc10a6e4850b0376856904b08d93",
+    "mtime": 1790535173.2545645,
+    "seen": 1790535724.0948691,
+    "ast_hash": "9f7be7d9d404b391daff3f694ea1e193",
     "semantic_hash": ""
   },
   "backend/tests/test_farm_management_domain.py": {
@@ -1050,21 +1050,21 @@
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/farm_management/infrastructure/database.py": {
-    "mtime": 1789221911.3616862,
-    "seen": 1789222623.7827373,
+    "mtime": 1790535256.6540978,
+    "seen": 1790535724.0948043,
     "ast_hash": "352c155b47581a2724e68a88b21d5f9a",
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/farm_management/infrastructure/orm.py": {
-    "mtime": 1789963799.7575076,
-    "seen": 1790044734.8398318,
-    "ast_hash": "c9bb5b3b21c0f04654250ef08975ad0d",
+    "mtime": 1790534690.7325,
+    "seen": 1790535724.094805,
+    "ast_hash": "979461eb1e1c198262c82d4511150415",
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/farm_management/infrastructure/postgresql_repositories.py": {
-    "mtime": 1790018361.5741346,
-    "seen": 1790044734.8398328,
-    "ast_hash": "11412d5e51b844c3765a4023acff21d9",
+    "mtime": 1790535248.5517223,
+    "seen": 1790535724.0948057,
+    "ast_hash": "5fa9eb854033cc905fcca7f8e629fb63",
     "semantic_hash": ""
   },
   "backend/tests/test_config.py": {
@@ -1074,9 +1074,9 @@
     "semantic_hash": ""
   },
   "backend/tests/test_farm_management_postgresql.py": {
-    "mtime": 1790033166.0457394,
-    "seen": 1790044734.839936,
-    "ast_hash": "56fd0c83d8620d6a459607ed2c03e3d4",
+    "mtime": 1790534976.3192058,
+    "seen": 1790535724.0948708,
+    "ast_hash": "531a82b34f6f860a65582f7eaa289552",
     "semantic_hash": ""
   },
   "backend/compose.yaml": {
@@ -1878,9 +1878,9 @@
     "semantic_hash": ""
   },
   "backend/src/via_backend/app.py": {
-    "mtime": 1790522582.4057195,
-    "seen": 1790524813.4829037,
-    "ast_hash": "b0f772a32d766ccb78c0c3ea267e26ce",
+    "mtime": 1790534486.2004933,
+    "seen": 1790535724.0947146,
+    "ast_hash": "1237d603ba6233741dba10fb474fefd2",
     "semantic_hash": ""
   },
   "backend/tests/test_api_host.py": {
@@ -2202,9 +2202,9 @@
     "semantic_hash": ""
   },
   "docs/frontend/openapi.json": {
-    "mtime": 1790522622.028246,
-    "seen": 1790524813.483115,
-    "ast_hash": "ece9b831a71bc36a1436d19ab1913a16",
+    "mtime": 1790534830.8435178,
+    "seen": 1790535724.0948968,
+    "ast_hash": "e833ecb413e75a212212aa317ef9ffd6",
     "semantic_hash": ""
   },
   "scripts/generate_frontend_openapi.py": {
@@ -2232,9 +2232,9 @@
     "semantic_hash": ""
   },
   "docs/frontend/api-reference.md": {
-    "mtime": 1790523135.3955636,
-    "seen": 1790524813.4832304,
-    "ast_hash": "008be7d58b8261553b796b36b7373644",
+    "mtime": 1790534820.9028654,
+    "seen": 1790535724.0949974,
+    "ast_hash": "120230e286961322920812bef32372cc",
     "semantic_hash": ""
   },
   "docs/frontend/async-evaluations.md": {
@@ -2292,9 +2292,9 @@
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/farm_management/application/ports.py": {
-    "mtime": 1790042437.0652528,
-    "seen": 1790044734.839818,
-    "ast_hash": "e17261ee2bcc9901add5e4d1e48cc2df",
+    "mtime": 1790535376.3659277,
+    "seen": 1790535724.094795,
+    "ast_hash": "6ea03e06eb8f3f02cb33b4ecf6282d8f",
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/farm_management/application/public.py": {
@@ -2304,9 +2304,9 @@
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/farm_management/infrastructure/aoi.py": {
-    "mtime": 1790042571.7607715,
-    "seen": 1790044734.8398292,
-    "ast_hash": "ee4388aa997299f18356608e0d8f79fd",
+    "mtime": 1790535256.6530967,
+    "seen": 1790535724.0948036,
+    "ast_hash": "8815c7cb0aa0428fdbc8341a52c36559",
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/identity_access/application/errors.py": {
@@ -2460,9 +2460,9 @@
     "semantic_hash": ""
   },
   "backend/tests/test_ia5_release_artifacts.py": {
-    "mtime": 1790523240.7587998,
-    "seen": 1790524813.483096,
-    "ast_hash": "354b72d514ed16ea7bfe0ed681273538",
+    "mtime": 1790534681.4206376,
+    "seen": 1790535724.0948787,
+    "ast_hash": "1634fd32651735104efdd24dcb2694ed",
     "semantic_hash": ""
   },
   "backend/tests/test_ia5_release_security.py": {
@@ -2502,9 +2502,9 @@
     "semantic_hash": ""
   },
   "docs/frontend/security-route-matrix.md": {
-    "mtime": 1790522647.2760925,
-    "seen": 1790524813.4832397,
-    "ast_hash": "d06faa0429644400be0d30b702d354c5",
+    "mtime": 1790534804.3464508,
+    "seen": 1790535724.0950058,
+    "ast_hash": "c96f45ba944d16345a09dd4e8dd650ac",
     "semantic_hash": ""
   },
   "docs/operations/production-release.md": {
@@ -2658,15 +2658,27 @@
     "semantic_hash": ""
   },
   "backend/tests/test_viability_policy_migration.py": {
-    "mtime": 1790522729.4903858,
-    "seen": 1790524813.4831083,
-    "ast_hash": "36d4a57b279a095021553bb141bd211a",
+    "mtime": 1790534681.4206376,
+    "seen": 1790535724.094891,
+    "ast_hash": "63e8801496e80b8fa4cc4cb23f0b640f",
     "semantic_hash": ""
   },
   "docs/architecture/decision-support-viability-policy.md": {
     "mtime": 1790522647.2770941,
     "seen": 1790524813.4832222,
     "ast_hash": "0e90562e24fb493f0012551a8280a0ec",
+    "semantic_hash": ""
+  },
+  "backend/migrations/versions/20260927_0019_parcel_metadata_soft_delete.py": {
+    "mtime": 1790534690.7314987,
+    "seen": 1790535724.0947068,
+    "ast_hash": "ecc7bf3902b105238b8b898a1b382ecb",
+    "semantic_hash": ""
+  },
+  "backend/tests/test_parcel_metadata_migration.py": {
+    "mtime": 1790534770.714731,
+    "seen": 1790535724.0948853,
+    "ast_hash": "7aaa7543c5b2abc3b1e52dc58d1e6675",
     "semantic_hash": ""
   }
 }
