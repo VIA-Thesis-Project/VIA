@@ -72,6 +72,24 @@ Se usan las celdas que intersectan la parcela, incluso cuando el polígono es m�
 pequeño que una celda y no contiene su centro. Las áreas se calculan mediante
 intersecciones y la proyección de áreas equivalentes EPSG:6933.
 
+`parcel_area_m2` sigue representando toda la parcela. Se calcula como la suma
+estable de las áreas de intersección parcela-celda y el área de la porción de
+parcela exterior a la grilla, proyectando cada pieza a EPSG:6933. Esta partición
+conserva los vértices introducidos por las intersecciones también en el
+denominador. `parcel_grid_support_area_m2`, en el reporte de comparación, es la
+suma de los pesos de todas las celdas de la grilla; no incluye la porción exterior.
+`common_valid_area_m2` suma el subconjunto de esos mismos pesos con datos válidos
+comunes. `common_coverage_fraction` divide esa área común por `parcel_area_m2`,
+de modo que una parcela parcialmente fuera de la grilla no puede tener cobertura
+completa solo por sus celdas presentes. Los pesos individuales y el método de
+media ponderada no cambian.
+
+Antes de esta corrección, el área total se calculaba proyectando el polígono
+original sin la partición. En bordes diagonales podía diferir ligeramente de la
+suma de piezas y producir un área común mayor que el total. Los resultados
+históricos conservan sus valores y su interpretación de cobertura sobre toda la
+parcela; el cálculo nuevo no reinterpreta ni migra esos registros.
+
 Por cultivo, clima y suelo se informa media ponderada por superficie válida,
 mínimo, máximo, número de celdas válidas, superficie válida, fracción de cobertura
 y superficie con aptitud cero. La escala de aptitud es **0 a 100**; la fracción de

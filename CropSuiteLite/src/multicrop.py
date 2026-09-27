@@ -4,20 +4,21 @@ The scientific engine evaluates its existing environmental grid. Parcel summarie
 intersect that grid without resampling or pretending to increase its resolution.
 """
 import configparser
-from datetime import datetime, timezone
 import hashlib
 import json
-from pathlib import Path
+import math
 import re
 import shutil
 import subprocess
 import sys
 import tempfile
 import time
+from datetime import datetime, timezone
+from pathlib import Path
 
 import numpy as np
-from pyproj import CRS, Transformer
 import rasterio
+from pyproj import CRS, Transformer
 from rasterio.windows import Window
 from shapely.geometry import Polygon, mapping, shape
 from shapely.ops import transform
@@ -109,10 +110,17 @@ def validate_parcel(parcel, boundary):
 
 
 def cell_areas(geometry, shape_, affine, crs):
-    """Intersection areas in the WGS84 equal-area projection EPSG:6933."""
-    if CRS.from_user_input(crs).to_epsg() != 4326 or affine.b != 0 or affine.d != 0:
+    """Partition the whole parcel into grid pieces and the unsupported exterior.
+
+    Project every piece separately so the full-parcel denominator uses the same
+    boundary vertices and area operation as the scientific cell weights.
+    """
+    if (CRS.from_user_input(crs).to_epsg() != 4326 or affine.b != 0 or affine.d != 0
+            or not all(math.isfinite(value) for value in affine[:6])
+            or affine.a <= 0 or affine.e >= 0):
         raise ValueError('Expected the aligned north-up EPSG:4326 Huaura grid.')
-    parcel_area = transform(AREA_PROJECT, geometry).area
+    if shape_[0] <= 0 or shape_[1] <= 0:
+        raise ValueError('The scientific grid must have positive dimensions.')
     areas = np.zeros(shape_, dtype=np.float64)
     for row in range(shape_[0]):
         for col in range(shape_[1]):
@@ -120,20 +128,34 @@ def cell_areas(geometry, shape_, affine, crs):
                             affine * (col + 1, row + 1), affine * (col, row + 1)])
             intersection = geometry.intersection(cell)
             if not intersection.is_empty:
-                areas[row, col] = transform(AREA_PROJECT, intersection).area
-    return areas, parcel_area
+                area = transform(AREA_PROJECT, intersection).area
+                if not math.isfinite(area) or area < 0:
+                    raise ValueError('Parcel-cell area must be finite and nonnegative.')
+                areas[row, col] = area
+    grid_support_area = math.fsum(areas.flat)
+    footprint = Polygon([affine * (0, 0), affine * (shape_[1], 0),
+                         affine * (shape_[1], shape_[0]), affine * (0, shape_[0])])
+    exterior_area = transform(AREA_PROJECT, geometry.difference(footprint)).area
+    if not math.isfinite(exterior_area) or exterior_area < 0:
+        raise ValueError('Unsupported parcel area must be finite and nonnegative.')
+    parcel_area = math.fsum((grid_support_area, exterior_area))
+    if not math.isfinite(parcel_area) or parcel_area <= 0:
+        raise ValueError('Parcel area must be positive and finite.')
+    return areas, parcel_area, grid_support_area
 
 
 def score_summary(data, areas, parcel_area):
     values = np.asarray(data.data, dtype=float)
     valid = (~np.ma.getmaskarray(data) & np.isfinite(values)
              & (values >= 0) & (values <= 100) & (areas > 0))
-    area = float(areas[valid].sum())
+    area = math.fsum(areas[valid].flat)
+    if area > parcel_area:
+        raise ValueError('Valid cell area cannot exceed parcel area.')
     return {'mean': float(np.average(values[valid], weights=areas[valid])) if area else None,
             'minimum': float(values[valid].min()) if area else None,
             'maximum': float(values[valid].max()) if area else None,
             'valid_cells': int(valid.sum()), 'valid_area_m2': area,
-            'coverage_fraction': min(area / parcel_area, 1.0),
+            'coverage_fraction': area / parcel_area,
             'zero_suitability_area_m2': float(areas[valid & (values == 0)].sum())}, valid
 
 
@@ -141,11 +163,18 @@ def compare_crops(arrays, areas, parcel_area):
     """Rank only on identical valid support; no-data crops receive no rank."""
     if not arrays:
         return {'status': 'no_successful_crops', 'ranking': [], 'excluded_without_coverage': []}
+    grid_support_area = math.fsum(areas.flat)
+    if (not math.isfinite(grid_support_area) or grid_support_area < 0
+            or np.any(~np.isfinite(areas)) or np.any(areas < 0)
+            or grid_support_area > parcel_area):
+        raise ValueError('Grid support area is invalid or exceeds parcel area.')
     valid = {key: score_summary(data, areas, parcel_area)[1] for key, data in arrays.items()}
     usable = [key for key, mask in valid.items() if mask.any()]
     excluded = [key for key in arrays if key not in usable]
     common = np.logical_and.reduce([valid[key] for key in usable]) if usable else np.zeros(areas.shape, dtype=bool)
-    common_area = float(areas[common].sum())
+    common_area = math.fsum(areas[common].flat)
+    if common_area > grid_support_area:
+        raise ValueError('Common valid area cannot exceed grid support area.')
     ranking = []
     if common_area:
         ranking = [{'crop_id': key, 'mean': float(np.average(arrays[key].data[common], weights=areas[common]))}
@@ -161,7 +190,8 @@ def compare_crops(arrays, areas, parcel_area):
     return {'status': 'comparable' if common_area else 'no_common_coverage',
             'method': 'area_weighted_mean_on_common_valid_cells',
             'area_crs': 'EPSG:6933', 'common_valid_area_m2': common_area,
-            'common_coverage_fraction': min(common_area / parcel_area, 1.0),
+            'parcel_grid_support_area_m2': grid_support_area,
+            'common_coverage_fraction': common_area / parcel_area,
             'ranking': ranking, 'excluded_without_coverage': excluded}
 
 
@@ -211,7 +241,7 @@ def summarize_outputs(output_folder, geometry, target):
             signature = (src.shape, src.transform, src.crs)
             if template is None:
                 template = signature
-                areas, parcel_area = cell_areas(geometry, src.shape, src.transform, src.crs)
+                areas, parcel_area, _grid_support_area = cell_areas(geometry, src.shape, src.transform, src.crs)
                 if not np.any(areas > 0):
                     raise ValueError('The parcel does not intersect the output grid.')
             elif signature != template:

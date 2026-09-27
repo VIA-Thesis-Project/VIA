@@ -16,6 +16,14 @@ Treat one parcel plus a unique non-empty list of crop identifiers as one multicr
 
 Consumers must inspect both request and per-crop outcomes. Nodata is excluded, while a valid zero participates in summaries and ranking. No common coverage means no ranking. A higher rank is not proof of profitability or agronomic validation.
 
+Coverage continues to mean common valid area divided by the area of the whole
+parcel. The scientific grid support is the sum of all parcel-cell intersection
+weights. The whole-parcel area uses the same projected partition plus any parcel
+area outside the grid, keeping partial grid coverage below one. Individual cell
+weights and weighted suitability means are unchanged. Earlier persisted results
+retain their recorded area and coverage values; the method identifier still
+describes the unchanged common-cell ranking rule.
+
 ## Current implementation status
 
 Implemented in [`CropSuiteLite/src/multicrop.py`](../../CropSuiteLite/src/multicrop.py), exposed through [`CropSuiteLite/evaluate.py`](../../CropSuiteLite/evaluate.py), and tested in [`CropSuiteLite/tests/test_multicrop.py`](../../CropSuiteLite/tests/test_multicrop.py). The real engine flow was technically checked with maize, potato, and rice; this does not validate every catalog entry or establish field agronomy.

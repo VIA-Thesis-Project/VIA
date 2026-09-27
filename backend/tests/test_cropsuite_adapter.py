@@ -850,7 +850,7 @@ def load_geometry(path):
 def cell_areas(geometry, shape, transform, crs):
     del geometry, transform, crs
     assert tuple(shape) == tuple(AREAS.shape)
-    return AREAS.copy(), float(AREAS.sum())
+    return AREAS.copy(), float(AREAS.sum()), float(AREAS.sum())
 
 
 def _write_raster(path, data):

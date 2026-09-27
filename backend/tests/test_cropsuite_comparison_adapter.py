@@ -254,6 +254,54 @@ def test_adapter_normalizes_real_common_support_float_overshoot(
     assert result.common_support.common_coverage_fraction == 1.0
 
 
+def test_adapter_accepts_explicit_grid_support_below_whole_parcel(
+    tmp_path: Path,
+) -> None:
+    store = FilesystemScientificArtifactStore(tmp_path / "artifacts")
+    report = _report()
+    report["parcel_grid_support_area_m2"] = 90.0
+    adapter = CropSuiteComparisonAdapter(
+        engine_root=tmp_path / "engine",
+        workspace_root=tmp_path / "workspace",
+        artifact_store=store,
+        runner=StubComparisonRunner(report),
+    )
+
+    result = adapter.compare(_request(tmp_path, store))
+
+    assert result.common_support.parcel_area_m2 == 100.0
+    assert result.common_support.common_valid_area_m2 == 80.0
+    assert result.common_support.common_coverage_fraction == 0.8
+
+
+@pytest.mark.parametrize(
+    ("support", "common_area", "message"),
+    [
+        (101.0, 80.0, "Grid support area cannot exceed parcel area"),
+        (70.0, 80.0, "Common valid area cannot exceed grid support area"),
+    ],
+)
+def test_adapter_rejects_invalid_explicit_grid_support(
+    tmp_path: Path,
+    support: float,
+    common_area: float,
+    message: str,
+) -> None:
+    store = FilesystemScientificArtifactStore(tmp_path / "artifacts")
+    report = _report()
+    report["parcel_grid_support_area_m2"] = support
+    report["common_valid_area_m2"] = common_area
+    adapter = CropSuiteComparisonAdapter(
+        engine_root=tmp_path / "engine",
+        workspace_root=tmp_path / "workspace",
+        artifact_store=store,
+        runner=StubComparisonRunner(report),
+    )
+
+    with pytest.raises(InvalidComparisonOutputError, match=message):
+        adapter.compare(_request(tmp_path, store))
+
+
 def test_no_common_coverage_remains_distinct(
     tmp_path: Path,
 ) -> None:

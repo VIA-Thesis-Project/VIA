@@ -217,7 +217,7 @@ if collect_artifact_metadata:
                     }, None
             values = dataset.read(1).astype("float64", copy=False)
             parcel_geometry = load_geometry(parcel_path)
-            areas, _parcel_area = cell_areas(
+            areas, _parcel_area, _grid_support_area = cell_areas(
                 parcel_geometry,
                 dataset.shape,
                 dataset.transform,

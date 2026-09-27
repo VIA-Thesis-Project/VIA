@@ -1,15 +1,15 @@
 import configparser
 import json
-from pathlib import Path
 import tempfile
 import unittest
+from pathlib import Path
 from unittest.mock import patch
 
 import numpy as np
 import rasterio
 from rasterio.transform import from_origin
-from shapely.geometry import box, mapping
-
+from shapely.geometry import Polygon, box, mapping
+from shapely.ops import transform as geometry_transform
 from src import multicrop as mc
 
 
@@ -26,16 +26,64 @@ class MulticropTest(unittest.TestCase):
     def test_subpixel_polygon_holes_and_outside_boundary(self):
         affine = from_origin(-77.5, -11, .04, .04)
         parcel = box(-77.499, -11.009, -77.491, -11.001)
-        weights, area = mc.cell_areas(parcel, (2, 2), affine, 'EPSG:4326')
+        weights, area, support = mc.cell_areas(parcel, (2, 2), affine, 'EPSG:4326')
         self.assertEqual(np.count_nonzero(weights), 1)
         self.assertAlmostEqual(weights.sum() / area, 1)
+        self.assertAlmostEqual(support, area)
         hole = box(-77.497, -11.007, -77.493, -11.003)
-        weights_hole, area_hole = mc.cell_areas(parcel.difference(hole), (2, 2), affine, 'EPSG:4326')
+        weights_hole, area_hole, support_hole = mc.cell_areas(parcel.difference(hole), (2, 2), affine, 'EPSG:4326')
         self.assertLess(area_hole, area)
         self.assertAlmostEqual(weights_hole.sum() / area_hole, 1)
+        self.assertAlmostEqual(support_hole, area_hole)
         mc.validate_parcel(parcel, box(-78, -12, -77, -10))
         with self.assertRaises(ValueError):
             mc.validate_parcel(parcel, box(-76, -12, -75, -10))
+
+    def test_diagonal_parcel_uses_one_partition_for_full_area_and_common_support(self):
+        parcel = Polygon([(-77.5017, -11.0037), (-77.5071, -10.9939),
+                          (-77.5016, -10.996)])
+        affine = from_origin(-77.51, -10.99, .0041667, .0041667)
+        areas, parcel_area, grid_support = mc.cell_areas(parcel, (5, 5), affine, 'EPSG:4326')
+        old_parcel_area = geometry_transform(mc.AREA_PROJECT, parcel).area
+        self.assertGreater(grid_support - old_parcel_area, 1.0)
+        self.assertEqual(parcel_area, grid_support)
+        self.assertAlmostEqual(grid_support, sum(areas.flat))
+
+        values = np.arange(25, dtype=float).reshape(5, 5)
+        crop = np.ma.array(values, mask=np.zeros((5, 5), dtype=bool))
+        result = mc.compare_crops({'maize': crop}, areas, parcel_area)
+        self.assertEqual(result['common_valid_area_m2'], grid_support)
+        self.assertEqual(result['parcel_grid_support_area_m2'], grid_support)
+        self.assertEqual(result['common_coverage_fraction'], 1.0)
+        self.assertAlmostEqual(result['ranking'][0]['mean'],
+                               np.average(values[areas > 0], weights=areas[areas > 0]))
+
+    def test_partial_grid_and_nodata_keep_whole_parcel_denominator(self):
+        parcel = Polygon([(-77.5017, -11.0037), (-77.5071, -10.9939),
+                          (-77.5016, -10.996)])
+        affine = from_origin(-77.51, -10.99, .0041667, .0041667)
+        areas, parcel_area, grid_support = mc.cell_areas(parcel, (2, 2), affine, 'EPSG:4326')
+        self.assertGreater(parcel_area, grid_support)
+        crop = np.ma.array(np.full((2, 2), 60.0), mask=np.zeros((2, 2), dtype=bool))
+        full_valid = mc.compare_crops({'maize': crop}, areas, parcel_area)
+        self.assertEqual(full_valid['common_valid_area_m2'], grid_support)
+        self.assertEqual(full_valid['common_coverage_fraction'], grid_support / parcel_area)
+        self.assertLess(full_valid['common_coverage_fraction'], 1.0)
+
+        crop.mask[1, 1] = True
+        partial_valid = mc.compare_crops({'maize': crop}, areas, parcel_area)
+        self.assertLess(partial_valid['common_valid_area_m2'], grid_support)
+        self.assertEqual(partial_valid['common_coverage_fraction'],
+                         partial_valid['common_valid_area_m2'] / parcel_area)
+        self.assertEqual(partial_valid['ranking'][0]['mean'], 60.0)
+
+    def test_degenerate_grid_and_real_support_excess_are_rejected(self):
+        parcel = box(-77.5, -11.01, -77.49, -11.0)
+        with self.assertRaisesRegex(ValueError, 'aligned north-up'):
+            mc.cell_areas(parcel, (2, 2), from_origin(-77.5, -11, 0, .01), 'EPSG:4326')
+        crop = np.ma.array([[50.0, 50.0]], mask=[[False, False]])
+        with self.assertRaisesRegex(ValueError, 'exceeds parcel area'):
+            mc.compare_crops({'maize': crop}, np.array([[6.0, 6.0]]), 10.0)
 
     def test_zero_is_valid_and_ranking_uses_common_support_with_ties(self):
         weights = np.array([[1., 3., 6.]])

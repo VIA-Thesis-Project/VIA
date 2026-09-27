@@ -134,7 +134,7 @@ for entry in payload["crops"]:
 
         if template is None:
             template = signature
-            areas, measured_parcel_area = cell_areas(
+            areas, measured_parcel_area, grid_support_area = cell_areas(
                 parcel,
                 dataset.shape,
                 dataset.transform,
@@ -166,6 +166,8 @@ comparison["eligible_crops"] = [
     if crop_id not in excluded_set
 ]
 comparison["parcel_area_m2"] = parcel_area
+if areas is not None:
+    comparison["parcel_grid_support_area_m2"] = grid_support_area
 
 result_path.write_text(
     json.dumps(
@@ -430,6 +432,18 @@ def _map_comparison_report(
         report,
         "common_coverage_fraction",
     )
+    if "parcel_grid_support_area_m2" in report:
+        grid_support_area = _nonnegative_number(
+            report, "parcel_grid_support_area_m2"
+        )
+        if grid_support_area > parcel_area:
+            raise InvalidComparisonOutputError(
+                "Grid support area cannot exceed parcel area."
+            )
+        if common_area > grid_support_area:
+            raise InvalidComparisonOutputError(
+                "Common valid area cannot exceed grid support area."
+            )
 
     try:
         common_area, coverage = normalize_common_support_measurements(

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import sys
 from datetime import UTC, datetime
 from pathlib import Path
 from uuid import uuid4
@@ -13,6 +14,9 @@ from via_backend.contexts.agroclimatic_evaluation.application import (
     CommonSupportStatus,
     CropComparisonInput,
     CropComparisonRequest,
+    ScientificArtifactDescriptor,
+    ScientificArtifactGrid,
+    ScientificArtifactRole,
 )
 from via_backend.contexts.agroclimatic_evaluation.application.ports import (
     CropExecutionStatus,
@@ -31,6 +35,73 @@ from via_backend.contexts.agroclimatic_evaluation.infrastructure import (
 from via_backend.contexts.agroclimatic_evaluation.infrastructure.scientific_artifact_store import (
     FilesystemScientificArtifactStore,
 )
+
+
+@pytest.mark.parametrize("grid_size", [2, 5])
+def test_real_comparison_bridge_handles_diagonal_parcel(
+    tmp_path: Path, grid_size: int,
+) -> None:
+    numpy = pytest.importorskip("numpy")
+    rasterio = pytest.importorskip("rasterio")
+    from rasterio.transform import from_origin
+
+    engine_root = Path(__file__).resolve().parents[2] / "CropSuiteLite"
+    affine = from_origin(-77.51, -10.99, 0.0041667, 0.0041667)
+    source = tmp_path / "maize.tif"
+    with rasterio.open(
+        source, "w", driver="GTiff", width=grid_size, height=grid_size, count=1,
+        dtype="int16", nodata=-1, crs="EPSG:4326", transform=affine,
+    ) as dataset:
+        dataset.write(numpy.full((grid_size, grid_size), 60, dtype="int16"), 1)
+
+    store = FilesystemScientificArtifactStore(tmp_path / "artifacts")
+    published = store.publish(source, "evaluations/diagonal/maize.tif")
+    artifact = ScientificArtifactDescriptor(
+        role=ScientificArtifactRole.CROP_SUITABILITY,
+        storage_reference=published.storage_reference,
+        sha256=published.sha256,
+        media_type="image/tiff",
+        size_bytes=published.size_bytes,
+        grid=ScientificArtifactGrid(
+            crs="EPSG:4326", width=grid_size, height=grid_size,
+            transform=(affine.a, affine.b, affine.c, affine.d, affine.e, affine.f),
+            nodata=-1.0,
+        ),
+    )
+    geometry = SnapshotGeometry.from_geojson({
+        "type": "Polygon",
+        "coordinates": [[
+            [-77.5017, -11.0037], [-77.5071, -10.9939],
+            [-77.5016, -10.996], [-77.5017, -11.0037],
+        ]],
+    })
+    snapshot = ParcelSnapshot(
+        project_id=uuid4(), parcel_id=uuid4(), parcel_version=1,
+        geometry=geometry, crs="EPSG:4326", captured_at=datetime.now(UTC),
+    )
+    adapter = CropSuiteComparisonAdapter(
+        engine_root=engine_root,
+        workspace_root=tmp_path / "workspace",
+        python_executable=Path(sys.executable),
+        artifact_store=store,
+    )
+
+    result = adapter.compare(CropComparisonRequest(
+        evaluation_id=uuid4(), parcel_snapshot=snapshot,
+        crops=(CropComparisonInput(crop_id="maize", artifact=artifact),),
+    ))
+
+    support = result.common_support
+    if grid_size == 5:
+        assert support.parcel_area_m2 == pytest.approx(257251.5938695526)
+        assert support.common_valid_area_m2 == support.parcel_area_m2
+        assert support.common_coverage_fraction == 1.0
+    else:
+        assert 0 < support.common_valid_area_m2 < support.parcel_area_m2
+        assert support.common_coverage_fraction == pytest.approx(
+            support.common_valid_area_m2 / support.parcel_area_m2
+        )
+    assert result.comparable_crops[0].mean == 60.0
 
 
 @pytest.mark.scientific
