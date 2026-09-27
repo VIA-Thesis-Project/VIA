@@ -23,6 +23,21 @@ from via_backend.contexts.identity_access.application.public import Authenticate
 from via_backend.contexts.identity_access.domain import UserRole
 
 AUTH_HEADERS = {"Authorization": "Bearer test-user"}
+HUAURA_CATALOG = (
+    Path(__file__).resolve().parents[2]
+    / "CropSuiteLite"
+    / "plant_params"
+    / "huaura_supported"
+)
+HUAURA_CROP_IDS = {
+    "maize",
+    "sugarcane",
+    "avocado",
+    "asparagus",
+    "mango",
+    "citrus",
+    "strawberry",
+}
 
 
 def _app(settings: Settings) -> FastAPI:
@@ -104,6 +119,47 @@ def _bindings(tmp_path: Path) -> Path:
     )
 
     return path
+
+
+def test_huaura_catalog_contains_only_supported_readable_parameter_files() -> None:
+    files = list(HUAURA_CATALOG.iterdir())
+    assert len(files) == 7
+    assert {path.name for path in files} == {
+        f"{crop_id}.inf" for crop_id in HUAURA_CROP_IDS
+    }
+
+    available = HUAURA_CATALOG.parent / "available"
+    validated_maize = HUAURA_CATALOG.parent / "huaura_maize" / "maize.inf"
+    for path in files:
+        source = validated_maize if path.stem == "maize" else available / path.name
+        assert path.read_bytes() == source.read_bytes()
+        assert path.read_text(encoding="utf-8").strip()
+
+    entries = FilesystemCropCapabilityCatalog(HUAURA_CATALOG).list_crops()
+    assert len(entries) == 7
+    assert {entry.crop_id for entry in entries} == HUAURA_CROP_IDS
+    assert {entry.display_name for entry in entries} == HUAURA_CROP_IDS
+    assert "strawberries" not in {entry.crop_id for entry in entries}
+    assert "alfalfa" not in {entry.crop_id for entry in entries}
+
+
+def test_huaura_catalog_is_published_by_evaluation_capabilities(tmp_path: Path) -> None:
+    response = _client(
+        Settings(
+            cropsuite_catalog=HUAURA_CATALOG,
+            cropsuite_input_bindings=_bindings(tmp_path),
+        )
+    ).get("/api/v1/evaluation-capabilities")
+
+    assert response.status_code == 200
+    crops = response.json()["crops"]
+    assert len(crops) == 7
+    assert {crop["crop_id"] for crop in crops} == HUAURA_CROP_IDS
+    assert "strawberry" in {crop["crop_id"] for crop in crops}
+    assert "strawberries" not in {crop["crop_id"] for crop in crops}
+    assert "alfalfa" not in {crop["crop_id"] for crop in crops}
+    assert all(crop["water_regimes"] == ["rainfed", "irrigated"] for crop in crops)
+    assert all(crop["display_name"] == crop["crop_id"] for crop in crops)
 
 
 def test_capabilities_publish_configured_crops_scenarios_and_bindings(

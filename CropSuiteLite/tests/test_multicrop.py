@@ -14,6 +14,21 @@ from src import multicrop as mc
 
 
 class MulticropTest(unittest.TestCase):
+    def test_huaura_supported_catalog_is_selectable(self):
+        catalog = mc.ROOT / 'plant_params/huaura_supported'
+        expected = {'maize', 'sugarcane', 'avocado', 'asparagus',
+                    'mango', 'citrus', 'strawberry'}
+        entries = mc.list_crops(catalog)
+        self.assertEqual(len(entries), 7)
+        self.assertEqual({entry['id'] for entry in entries}, expected)
+        self.assertEqual({entry['engine_name'] for entry in entries}, expected)
+        self.assertEqual([entry['id'] for entry in mc.select_crops(['strawberry'], catalog)],
+                         ['strawberry'])
+        with self.assertRaises(ValueError):
+            mc.select_crops(['strawberries'], catalog)
+        with self.assertRaises(ValueError):
+            mc.select_crops(['alfalfa'], catalog)
+
     def test_complete_catalog_and_invalid_selections(self):
         entries = mc.list_crops()
         self.assertEqual(len(entries), 79)

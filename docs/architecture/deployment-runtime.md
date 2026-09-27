@@ -437,7 +437,7 @@ encoded password copy is needed. A long random hex secret satisfies that
 constraint. `VIA_IMAGE` is supplied per release instead of being stored in the
 runtime secret file. The Huaura runtime example sets
 `VIA_CROPSUITE_SOURCE_CONFIG=/etc/via/huaura-runtime.ini` and
-`VIA_CROPSUITE_CATALOG=/opt/via/CropSuiteLite/plant_params/huaura_maize`. The
+`VIA_CROPSUITE_CATALOG=/opt/via/CropSuiteLite/plant_params/huaura_supported`. The
 external `huaura-runtime.ini` sets
 `texture_classes=/opt/via/CropSuiteLite/data/usda_texture_classification.dat`;
 that path does not belong in `runtime.env`. The initial 1 vCPU Droplet sets
@@ -747,8 +747,14 @@ the artifact path on deployment-owned durable storage.
 `VIA_CROPSUITE_INPUT_BINDINGS` defaults structurally to
 `/etc/via/input-bindings.json`; the bindings file, the 39 dynamic environmental
 rasters, and the source-config file remain deployment-provided read-only inputs.
-The validated Huaura maize catalog is image-owned at
-`/opt/via/CropSuiteLite/plant_params/huaura_maize`. The only permitted `data/`
+The Huaura supported crop catalog is image-owned at
+`/opt/via/CropSuiteLite/plant_params/huaura_supported`. Its `maize.inf` is copied
+from the historically validated `plant_params/huaura_maize/maize.inf`; the
+original remains in the image. The catalog contains exactly `maize`,
+`sugarcane`, `avocado`, `asparagus`, `mango`, `citrus`, and `strawberry`.
+The other six `.inf` files are copied without changes from
+`plant_params/available/`; their presence in the catalog is not evidence of
+scientific validation in Huaura. The only permitted `data/`
 assets in the image are the tracked static Huaura scope boundary at
 `/opt/via/data/huaura/boundary/huaura_province.geojson` and the tracked static
 USDA texture classification at

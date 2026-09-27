@@ -148,7 +148,7 @@ def test_provider_files_do_not_embed_secrets_or_raw_huaura_paths() -> None:
     assert "VIA_AUTH_REFRESH_COOKIE_SAMESITE=lax" in runtime_example
     assert "VIA_CROPSUITE_SOURCE_CONFIG=/etc/via/huaura-runtime.ini" in runtime_example
     assert (
-        "VIA_CROPSUITE_CATALOG=/opt/via/CropSuiteLite/plant_params/huaura_maize"
+        "VIA_CROPSUITE_CATALOG=/opt/via/CropSuiteLite/plant_params/huaura_supported"
         in runtime_example
     )
     assert "VIA_CROPSUITE_MAX_WORKERS=1" in runtime_example

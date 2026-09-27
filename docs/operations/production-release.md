@@ -81,7 +81,7 @@ backup of R2.
 3. Provide the reviewed small binding manifest at
    `/etc/via/input-bindings.json` to the API as configuration. The crop catalog
    is already shipped in the image at
-   `/opt/via/CropSuiteLite/plant_params/huaura_maize`. Do not mount raw R2
+   `/opt/via/CropSuiteLite/plant_params/huaura_supported`. Do not mount raw R2
    rasters or `/mnt/via/sources` into Cloud Run. Normal knowledge serving also
    does not require the original knowledge PDFs.
 

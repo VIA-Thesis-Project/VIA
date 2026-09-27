@@ -36,7 +36,9 @@ All paths below are relative to the configured backend origin. Operation IDs are
 
 ## Capability discovery
 
-`GET /api/v1/evaluation-capabilities` returns the deployment-selected crop catalog and currently enforceable input constraints. The successful contract is:
+`GET /api/v1/evaluation-capabilities` returns the deployment-selected crop catalog and currently enforceable input constraints. `crop_id` is the stable selection identifier. `display_name` currently comes
+from the CropSuite `.inf` engine name; clients that need localized labels should
+map them by `crop_id` in the UI. The successful contract is:
 
 ```json
 {

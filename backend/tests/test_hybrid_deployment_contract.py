@@ -53,7 +53,7 @@ def test_cloud_run_examples_separate_api_and_migration_database_endpoints() -> N
     assert "VIA_MIGRATION_DATABASE_URL=" not in api
     assert "VIA_CROPSUITE_INPUT_BINDINGS=/etc/via/input-bindings.json" in api
     assert (
-        "VIA_CROPSUITE_CATALOG=/opt/via/CropSuiteLite/plant_params/huaura_maize"
+        "VIA_CROPSUITE_CATALOG=/opt/via/CropSuiteLite/plant_params/huaura_supported"
         in api
     )
 
