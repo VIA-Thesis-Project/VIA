@@ -114,10 +114,10 @@
     "semantic_hash": "40e78c23757ff38d0cb3f9403fa670c8"
   },
   "CropSuiteLite/src/multicrop.py": {
-    "mtime": 1789084903.97203,
-    "seen": 1789107953.468048,
-    "ast_hash": "782f1be597bbe5060cace0bc29962c42",
-    "semantic_hash": "782f1be597bbe5060cace0bc29962c42"
+    "mtime": 1790472150.1228392,
+    "seen": 1790472212.9834716,
+    "ast_hash": "69e866ab208210b692c249485658ec3b",
+    "semantic_hash": ""
   },
   "CropSuiteLite/src/nc_tools.py": {
     "mtime": 1788218836.800641,
@@ -156,10 +156,10 @@
     "semantic_hash": "02ac5194ac1c7f2d811d35a7a08b9e7f"
   },
   "CropSuiteLite/tests/test_multicrop.py": {
-    "mtime": 1789084931.6718776,
-    "seen": 1789107953.4680524,
-    "ast_hash": "0e7c8e7198e6f63791999567ffa41d7f",
-    "semantic_hash": "0e7c8e7198e6f63791999567ffa41d7f"
+    "mtime": 1790472150.1238403,
+    "seen": 1790472212.9834788,
+    "ast_hash": "3eabb3544aaa037caa64376152ba9d5d",
+    "semantic_hash": ""
   },
   "CropSuiteLite/tests/test_precipitation_coast.py": {
     "mtime": 1788992107.627461,
@@ -516,10 +516,10 @@
     "semantic_hash": "70d62319af2436532412530083b005fc"
   },
   "CropSuiteLite/docs/multicrop_evaluation.md": {
-    "mtime": 1789087641.8576217,
-    "seen": 1789135460.86578,
-    "ast_hash": "a58bf4d25e6da3b6a274d8ec621f0af7",
-    "semantic_hash": "a58bf4d25e6da3b6a274d8ec621f0af7"
+    "mtime": 1790472102.1779964,
+    "seen": 1790472212.9837508,
+    "ast_hash": "ade3b3f9902bfd6150a2ac16e72dc019",
+    "semantic_hash": ""
   },
   "CropSuiteLite/mkdocs.yml": {
     "mtime": 1788218836.6421375,
@@ -660,10 +660,10 @@
     "semantic_hash": "ea05fe548304ac41ccac523d06c41af0"
   },
   "docs/adr/ADR-009-multicrop-evaluation.md": {
-    "mtime": 1789108860.9954605,
-    "seen": 1789135460.8657956,
-    "ast_hash": "c0b542513cd05ba67885d1612c575e06",
-    "semantic_hash": "c0b542513cd05ba67885d1612c575e06"
+    "mtime": 1790472102.1789968,
+    "seen": 1790472212.9837763,
+    "ast_hash": "a7f21320c69090ffeeeb75fcb3797fc7",
+    "semantic_hash": ""
   },
   "docs/architecture/backend-structure.md": {
     "mtime": 1789155413.9857175,
@@ -1500,15 +1500,15 @@
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/agroclimatic_evaluation/infrastructure/cropsuite_adapter.py": {
-    "mtime": 1790303659.7906687,
-    "seen": 1790385527.7489755,
-    "ast_hash": "cc22310e7f068dbbcfb18b7c63acc20c",
+    "mtime": 1790471985.3750978,
+    "seen": 1790472212.983534,
+    "ast_hash": "219f75a8554ecb09ba474f9c0d15d924",
     "semantic_hash": ""
   },
   "backend/tests/test_cropsuite_adapter.py": {
-    "mtime": 1790305234.2528758,
-    "seen": 1790385527.7490876,
-    "ast_hash": "23f115e2e73bcf6446f67656dd10ccf8",
+    "mtime": 1790471985.3760972,
+    "seen": 1790472212.9836476,
+    "ast_hash": "83dac750be83714600b8d2d92281f682",
     "semantic_hash": ""
   },
   "backend/tests/test_cropsuite_adapter_scientific.py": {
@@ -1662,9 +1662,9 @@
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/agroclimatic_evaluation/infrastructure/cropsuite_comparison_adapter.py": {
-    "mtime": 1789669297.575996,
-    "seen": 1789675924.8184712,
-    "ast_hash": "52882e13fa02e9000a4870d59786c13d",
+    "mtime": 1790471985.3740952,
+    "seen": 1790472212.9835358,
+    "ast_hash": "a83c511bb35e115198fdf2d9f89c4129",
     "semantic_hash": ""
   },
   "backend/tests/test_crop_comparison_contracts.py": {
@@ -1674,15 +1674,15 @@
     "semantic_hash": ""
   },
   "backend/tests/test_cropsuite_comparison_adapter.py": {
-    "mtime": 1789675664.0846546,
-    "seen": 1789675924.8185477,
-    "ast_hash": "69db33ab58135f1754c3155cdb893242",
+    "mtime": 1790472024.3318408,
+    "seen": 1790472212.983649,
+    "ast_hash": "d9b4bbe91b9b0bd080582448fa6a9ef8",
     "semantic_hash": ""
   },
   "backend/tests/test_cropsuite_comparison_adapter_scientific.py": {
-    "mtime": 1789592798.1014283,
-    "seen": 1789596300.1663353,
-    "ast_hash": "0677e9aaffd61bc96e66308abbe2cf14",
+    "mtime": 1790472135.9922893,
+    "seen": 1790472212.9836495,
+    "ast_hash": "a766e8ab5a8091cdf32ca2e99327f08a",
     "semantic_hash": ""
   },
   "backend/migrations/versions/20260914_0008_persist_comparable_crop_results.py": {
