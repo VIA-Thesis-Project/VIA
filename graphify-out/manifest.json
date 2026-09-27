@@ -156,9 +156,9 @@
     "semantic_hash": "02ac5194ac1c7f2d811d35a7a08b9e7f"
   },
   "CropSuiteLite/tests/test_multicrop.py": {
-    "mtime": 1790472150.1238403,
-    "seen": 1790472212.9834788,
-    "ast_hash": "3eabb3544aaa037caa64376152ba9d5d",
+    "mtime": 1790476345.0396383,
+    "seen": 1790524813.482869,
+    "ast_hash": "48278be6879a68682f0ca9133a9af04f",
     "semantic_hash": ""
   },
   "CropSuiteLite/tests/test_precipitation_coast.py": {
@@ -672,9 +672,9 @@
     "semantic_hash": "f416116f68891b3c45bc29c31c8cef62"
   },
   "docs/architecture/bounded-contexts.md": {
-    "mtime": 1789358026.172949,
-    "seen": 1789395691.2147899,
-    "ast_hash": "3bd6ad7d96d63a819f7a9ccf68da7a35",
+    "mtime": 1790523320.4792304,
+    "seen": 1790524813.4832206,
+    "ast_hash": "6db1fb8f293e9452c675dd860a32ecab",
     "semantic_hash": ""
   },
   "docs/architecture/cropsuite-integration.md": {
@@ -684,9 +684,9 @@
     "semantic_hash": ""
   },
   "docs/architecture/evaluation-flow.md": {
-    "mtime": 1789600857.9728336,
-    "seen": 1789604883.4634051,
-    "ast_hash": "c190f8d3fc094be0fcf3207ff6540f2a",
+    "mtime": 1790523320.4812305,
+    "seen": 1790524813.4832258,
+    "ast_hash": "bda4fac2f46897f510197b7836396c73",
     "semantic_hash": ""
   },
   "docs/architecture/overview.md": {
@@ -1404,9 +1404,9 @@
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/agroclimatic_evaluation/application/service.py": {
-    "mtime": 1790385304.8459718,
-    "seen": 1790385527.7489426,
-    "ast_hash": "f2c44b43f7a15e3566c8615eb63277ae",
+    "mtime": 1790522490.142136,
+    "seen": 1790524813.4829226,
+    "ast_hash": "6615bd5f059476febce3085b3b105dad",
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/agroclimatic_evaluation/domain/errors.py": {
@@ -1764,21 +1764,21 @@
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/decision_support/infrastructure/orm.py": {
-    "mtime": 1790025687.621936,
-    "seen": 1790044734.8397834,
-    "ast_hash": "4391a70a5604b3da727954c8c76772cb",
+    "mtime": 1790522777.2892022,
+    "seen": 1790524813.4829683,
+    "ast_hash": "089e9c10f5b5cf9200e4550ae6319558",
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/decision_support/infrastructure/postgresql_repositories.py": {
-    "mtime": 1790467711.3467746,
-    "seen": 1790467907.967793,
-    "ast_hash": "8c312d7f73e9d3cf4030ae84443593d7",
+    "mtime": 1790523381.1152892,
+    "seen": 1790524813.4829705,
+    "ast_hash": "58643e9f313a69eef97fca2ae74cd839",
     "semantic_hash": ""
   },
   "backend/tests/test_decision_support_postgresql.py": {
-    "mtime": 1789583418.3217309,
-    "seen": 1789584509.6195052,
-    "ast_hash": "40bfd7b7f60649c3faa51fdbd2fe3504",
+    "mtime": 1790523381.118291,
+    "seen": 1790524813.4830735,
+    "ast_hash": "5cdaed9e19222b50880ed400afe1b1c3",
     "semantic_hash": ""
   },
   "backend/migrations/versions/20260916_0010_default_viability_policy_pointer.py": {
@@ -1788,9 +1788,9 @@
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/decision_support/application/errors.py": {
-    "mtime": 1789583343.6515455,
-    "seen": 1789584509.6194391,
-    "ast_hash": "9256bed9c82816c66ba5117ef5ba4666",
+    "mtime": 1790523381.112871,
+    "seen": 1790524813.482951,
+    "ast_hash": "60020ddd2c689d757c1b6ccd2be6fa31",
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/decision_support/application/policy_lifecycle.py": {
@@ -1854,9 +1854,9 @@
     "semantic_hash": ""
   },
   "docs/architecture/deployment-runtime.md": {
-    "mtime": 1790360887.3195632,
-    "seen": 1790385527.7492256,
-    "ast_hash": "b7b790c25b18c91638d3ad9e48507ffd",
+    "mtime": 1790476345.0406382,
+    "seen": 1790524813.483223,
+    "ast_hash": "ef115bb8e331da383168cc35eee648b1",
     "semantic_hash": ""
   },
   "backend/scripts/verify_container_runtime.py": {
@@ -1878,9 +1878,9 @@
     "semantic_hash": ""
   },
   "backend/src/via_backend/app.py": {
-    "mtime": 1790441471.257154,
-    "seen": 1790441724.215268,
-    "ast_hash": "c23af3441c630830e95ea94a58e66f81",
+    "mtime": 1790522582.4057195,
+    "seen": 1790524813.4829037,
+    "ast_hash": "b0f772a32d766ccb78c0c3ea267e26ce",
     "semantic_hash": ""
   },
   "backend/tests/test_api_host.py": {
@@ -1932,9 +1932,9 @@
     "semantic_hash": ""
   },
   "backend/tests/test_digitalocean_deployment_contract.py": {
-    "mtime": 1790385379.552901,
-    "seen": 1790385527.7490947,
-    "ast_hash": "0baaf00ce0dafbbea3035c0bd3ea2030",
+    "mtime": 1790474642.5628643,
+    "seen": 1790524813.4830751,
+    "ast_hash": "efb17b40fd5944ee2c4bd79e4866e016",
     "semantic_hash": ""
   },
   "backend/tests/test_resource_benchmark_contract.py": {
@@ -2172,9 +2172,9 @@
     "semantic_hash": ""
   },
   "backend/tests/test_evaluation_capabilities_api.py": {
-    "mtime": 1790018986.4031405,
-    "seen": 1790044734.8399308,
-    "ast_hash": "94faf7b5509af7c3dcfe088d550f647c",
+    "mtime": 1790476345.03764,
+    "seen": 1790524813.4830825,
+    "ast_hash": "9e150e68274bdb33e98b8f533f2907e2",
     "semantic_hash": ""
   },
   "backend/tests/test_frontend_openapi.py": {
@@ -2202,9 +2202,9 @@
     "semantic_hash": ""
   },
   "docs/frontend/openapi.json": {
-    "mtime": 1790467828.3510804,
-    "seen": 1790467907.9679186,
-    "ast_hash": "1eeacd43952e4e4e616f477f161821dc",
+    "mtime": 1790522622.028246,
+    "seen": 1790524813.483115,
+    "ast_hash": "ece9b831a71bc36a1436d19ab1913a16",
     "semantic_hash": ""
   },
   "scripts/generate_frontend_openapi.py": {
@@ -2232,9 +2232,9 @@
     "semantic_hash": ""
   },
   "docs/frontend/api-reference.md": {
-    "mtime": 1790287051.675534,
-    "seen": 1790287241.9013414,
-    "ast_hash": "cf611a2c0b0fb78c1afdf98f8bc0aaf9",
+    "mtime": 1790523135.3955636,
+    "seen": 1790524813.4832304,
+    "ast_hash": "008be7d58b8261553b796b36b7373644",
     "semantic_hash": ""
   },
   "docs/frontend/async-evaluations.md": {
@@ -2460,9 +2460,9 @@
     "semantic_hash": ""
   },
   "backend/tests/test_ia5_release_artifacts.py": {
-    "mtime": 1790044450.5048745,
-    "seen": 1790044734.839946,
-    "ast_hash": "9f67e31c4d2ffd86430f0eee0eed184d",
+    "mtime": 1790523240.7587998,
+    "seen": 1790524813.483096,
+    "ast_hash": "354b72d514ed16ea7bfe0ed681273538",
     "semantic_hash": ""
   },
   "backend/tests/test_ia5_release_security.py": {
@@ -2502,15 +2502,15 @@
     "semantic_hash": ""
   },
   "docs/frontend/security-route-matrix.md": {
-    "mtime": 1790441627.166165,
-    "seen": 1790441724.2155852,
-    "ast_hash": "736450cb4188b77df814f90b4d68965f",
+    "mtime": 1790522647.2760925,
+    "seen": 1790524813.4832397,
+    "ast_hash": "d06faa0429644400be0d30b702d354c5",
     "semantic_hash": ""
   },
   "docs/operations/production-release.md": {
-    "mtime": 1790311638.5934646,
-    "seen": 1790385527.749245,
-    "ast_hash": "60e1b13f88d4bff5be780a901c40b358",
+    "mtime": 1790474648.397733,
+    "seen": 1790524813.4832425,
+    "ast_hash": "8f7ccf1426129a663d95f211e79b8134",
     "semantic_hash": ""
   },
   "CHANGELOG.md": {
@@ -2586,9 +2586,9 @@
     "semantic_hash": ""
   },
   "backend/tests/test_hybrid_deployment_contract.py": {
-    "mtime": 1790360887.3225589,
-    "seen": 1790385527.7491066,
-    "ast_hash": "e36240f7fc35fe2e6fb1977dd31b7a1b",
+    "mtime": 1790474642.5598645,
+    "seen": 1790524813.4830902,
+    "ast_hash": "cade637b95d7f7265a42827838706c75",
     "semantic_hash": ""
   },
   "backend/tests/test_r2_scientific_storage.py": {
@@ -2625,6 +2625,48 @@
     "mtime": 1790357164.118415,
     "seen": 1790385527.7492456,
     "ast_hash": "9bff8a4208b5e2fbbfccf66e2490432a",
+    "semantic_hash": ""
+  },
+  "backend/migrations/versions/20260927_0018_evaluation_viability_policy_bindings.py": {
+    "mtime": 1790522589.2756548,
+    "seen": 1790524813.4828951,
+    "ast_hash": "aaf27f43b1518d5a4fbdd093ea9fb80d",
+    "semantic_hash": ""
+  },
+  "backend/src/via_backend/contexts/decision_support/application/default_policy.py": {
+    "mtime": 1790523381.1140106,
+    "seen": 1790524813.48295,
+    "ast_hash": "16f9451f4b2d7bd7473fe61cc235dd85",
+    "semantic_hash": ""
+  },
+  "backend/src/via_backend/contexts/decision_support/infrastructure/memory_policy.py": {
+    "mtime": 1790523381.1162899,
+    "seen": 1790524813.4829662,
+    "ast_hash": "16e0f7444f3dcca76538b4cb43a6fd76",
+    "semantic_hash": ""
+  },
+  "backend/src/via_backend/contexts/decision_support/interfaces/policy_http.py": {
+    "mtime": 1790522490.142136,
+    "seen": 1790524813.4829729,
+    "ast_hash": "6db8910a0e89c33326903c590934d79e",
+    "semantic_hash": ""
+  },
+  "backend/tests/test_default_viability_policy_http.py": {
+    "mtime": 1790523391.476622,
+    "seen": 1790524813.4830742,
+    "ast_hash": "8d456efac9073e80249912c1f3b63070",
+    "semantic_hash": ""
+  },
+  "backend/tests/test_viability_policy_migration.py": {
+    "mtime": 1790522729.4903858,
+    "seen": 1790524813.4831083,
+    "ast_hash": "36d4a57b279a095021553bb141bd211a",
+    "semantic_hash": ""
+  },
+  "docs/architecture/decision-support-viability-policy.md": {
+    "mtime": 1790522647.2770941,
+    "seen": 1790524813.4832222,
+    "ast_hash": "0e90562e24fb493f0012551a8280a0ec",
     "semantic_hash": ""
   }
 }
