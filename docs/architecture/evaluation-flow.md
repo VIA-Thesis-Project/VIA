@@ -130,6 +130,12 @@ Application also publishes the immutable `FinalizedEvaluationResult` contract th
 
 Decision Support remains deferred. The current independent per-crop summaries do not contain the common-valid-support comparison required by ADR-009. Consumers must not sort independent means and call that a ranking; common-support ranking remains a later scientifically justified contract.
 
+Update (2026-09-27): New evaluations record an immutable Decision Support policy
+binding at creation. A Decision Support read endpoint classifies only finalized
+common-support comparison evidence using that binding. The caution above still
+applies to independent crop summaries and legacy evaluations without recorded
+policy bindings.
+
 ## Reproducibility requirements
 
 An evaluation must retain the parcel version and geometry, dataset versions, crop parameters, effective scientific configuration, engine version or commit, relevant dependency versions, scenario, management, spatial scope, transformation and aggregation methods, checksums, attempts, timestamps, and artifact references. Audit records answer who did what; scientific evidence answers which inputs and rules produced the estimate.

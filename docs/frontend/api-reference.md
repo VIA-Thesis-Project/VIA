@@ -31,8 +31,21 @@ All paths below are relative to the configured backend origin. Operation IDs are
 | Evidence | GET | `/api/v1/evaluations/{evaluation_id}/evidence` | `get_evaluation_evidence` | 200 |
 | Limitations | GET | `/api/v1/evaluations/{evaluation_id}/limitations` | `get_evaluation_limitations` | 200 |
 | Knowledge | GET | `/api/v1/decision-support/evaluations/{evaluation_id}/knowledge` | `get_evaluation_knowledge` | 200 |
+| Viability policy | GET | `/api/v1/decision-support/viability-policy` | `get_default_viability_policy` | 200 |
+| Viability policy | PUT | `/api/v1/decision-support/viability-policy` | `update_default_viability_policy` | 200 |
+| Evaluation policy | GET | `/api/v1/decision-support/evaluations/{evaluation_id}/viability-policy` | `get_evaluation_viability_policy` | 200 |
+| Evaluation viability | GET | `/api/v1/decision-support/evaluations/{evaluation_id}/viability` | `get_evaluation_viability` | 200 |
 | Recommendations | POST | `/api/v1/decision-support/evaluations/{evaluation_id}/recommendations` | `create_evaluation_recommendation` | 200 |
 | Recommendations | GET | `/api/v1/decision-support/evaluations/{evaluation_id}/recommendations` | `list_evaluation_recommendations` | 200 |
+
+The global policy GET returns `identifier`, `version`, `conditional_from`,
+`viable_from`, and `default_configuration` (the backend-owned 40/70 baseline).
+The administrator PUT sends `conditional_from`, `viable_from`,
+`expected_identifier`, and `expected_version`. The backend generates the next
+version and returns the effective snapshot. A stale reference returns `409`,
+invalid thresholds return `422`, and a USER writing returns `403`. The
+evaluation policy lookup returns `status: policy_not_recorded` and `policy: null`
+for legacy evaluations; it never substitutes the current default.
 
 ## Capability discovery
 

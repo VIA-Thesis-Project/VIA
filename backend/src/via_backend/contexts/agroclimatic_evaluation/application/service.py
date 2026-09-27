@@ -75,19 +75,21 @@ class AgroclimaticEvaluationService:
         *,
         new_id: Callable[[], UUID] = uuid4,
         clock: Callable[[], datetime] | None = None,
+        bind_viability_policy: Callable[[UUID], object] | None = None,
+        recover_unpersisted_policy: Callable[[UUID], None] | None = None,
     ) -> None:
         self._evaluations = evaluations
         self._parcel_snapshots = parcel_snapshots
         self._new_id = new_id
         self._clock = clock or (lambda: datetime.now(UTC))
+        self._bind_viability_policy = bind_viability_policy
+        self._recover_unpersisted_policy = recover_unpersisted_policy
 
     def request_evaluation(self, command: RequestEvaluation) -> EvaluationResult:
         reference = command.parcel_reference
         try:
             if not command.environmental_inputs:
-                raise DomainValidationError(
-                    "At least one environmental input must be requested."
-                )
+                raise DomainValidationError("At least one environmental input must be requested.")
             snapshot = self._parcel_snapshots.resolve(
                 owner_user_id=command.owner_user_id,
                 project_id=reference.project_id,
@@ -116,10 +118,23 @@ class AgroclimaticEvaluationService:
         except DomainValidationError as error:
             raise InvalidCommandError(str(error)) from error
 
+        if (
+            self._bind_viability_policy is not None
+            and self._evaluations.get(evaluation.id) is not None
+        ):
+            raise ResourceConflictError("Evaluation identity already exists.")
+        if self._bind_viability_policy is not None:
+            self._bind_viability_policy(evaluation.id)
         try:
             self._evaluations.add(evaluation)
         except EvaluationConflictError as error:
+            if self._recover_unpersisted_policy is not None:
+                self._recover_unpersisted_policy(evaluation.id)
             raise ResourceConflictError(str(error)) from error
+        except Exception:
+            if self._recover_unpersisted_policy is not None:
+                self._recover_unpersisted_policy(evaluation.id)
+            raise
         return EvaluationResult.from_domain(evaluation)
 
     def get_evaluation(self, query: GetEvaluation) -> EvaluationStatusResult:
@@ -166,8 +181,7 @@ class AgroclimaticEvaluationService:
         )
         if scenario is None and not legacy_rainfed_result:
             raise ResourceConflictError(
-                f"Evaluation {evaluation.id} does not have finalized "
-                f"{water_regime.value} evidence."
+                f"Evaluation {evaluation.id} does not have finalized {water_regime.value} evidence."
             )
         common_support = scenario.common_support if scenario is not None else None
         return FinalizedEvaluationResult(
@@ -186,20 +200,14 @@ class AgroclimaticEvaluationService:
             ),
             common_support=(
                 FinalizedCommonSupport(
-                    status=FinalizedCommonSupportStatus(
-                        common_support.status.value
-                    ),
+                    status=FinalizedCommonSupportStatus(common_support.status.value),
                     method=common_support.method,
                     area_crs=common_support.area_crs,
                     parcel_area_m2=common_support.parcel_area_m2,
                     common_valid_area_m2=common_support.common_valid_area_m2,
-                    common_coverage_fraction=(
-                        common_support.common_coverage_fraction
-                    ),
+                    common_coverage_fraction=(common_support.common_coverage_fraction),
                     eligible_crops=common_support.eligible_crops,
-                    excluded_without_coverage=(
-                        common_support.excluded_without_coverage
-                    ),
+                    excluded_without_coverage=(common_support.excluded_without_coverage),
                 )
                 if common_support is not None
                 else None
@@ -214,17 +222,13 @@ class AgroclimaticEvaluationService:
             ),
         )
 
-    def list_evaluations(
-        self, query: ListEvaluations
-    ) -> tuple[EvaluationResult, ...]:
+    def list_evaluations(self, query: ListEvaluations) -> tuple[EvaluationResult, ...]:
         return tuple(
             EvaluationResult.from_domain(evaluation)
             for evaluation in self._evaluations.list_for_owner(query.owner_user_id)
         )
 
-    def _get_owned_evaluation(
-        self, owner_user_id: UUID, evaluation_id: UUID
-    ) -> Evaluation:
+    def _get_owned_evaluation(self, owner_user_id: UUID, evaluation_id: UUID) -> Evaluation:
         evaluation = self._evaluations.get_for_owner(owner_user_id, evaluation_id)
         if evaluation is None:
             raise ResourceNotFoundError(f"Evaluation {evaluation_id} was not found.")

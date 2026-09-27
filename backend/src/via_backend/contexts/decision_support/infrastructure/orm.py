@@ -13,6 +13,7 @@ from sqlalchemy import (
     Float,
     ForeignKey,
     ForeignKeyConstraint,
+    Index,
     Integer,
     String,
     Text,
@@ -114,6 +115,35 @@ class DefaultViabilityPolicyRecord(Base):
         DateTime(timezone=True),
         server_default=func.now(),
         nullable=False,
+    )
+
+
+class EvaluationViabilityPolicyBindingRecord(Base):
+    """Immutable selection made when an evaluation request is created."""
+
+    __tablename__ = "evaluation_viability_policy_bindings"
+    __table_args__ = (
+        Index(
+            "ix_evaluation_viability_policy_bindings_policy",
+            "policy_identifier",
+            "policy_version",
+        ),
+        ForeignKeyConstraint(
+            ["policy_identifier", "policy_version"],
+            [
+                "decision_support.viability_policy_versions.identifier",
+                "decision_support.viability_policy_versions.version",
+            ],
+            name="fk_evaluation_viability_policy_binding_version",
+            ondelete="RESTRICT",
+        ),
+    )
+
+    evaluation_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True)
+    policy_identifier: Mapped[str] = mapped_column(String(120), nullable=False)
+    policy_version: Mapped[str] = mapped_column(String(64), nullable=False)
+    selected_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
     )
 
 

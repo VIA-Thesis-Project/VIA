@@ -7,16 +7,18 @@ from collections.abc import Iterator
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from threading import Barrier
+from uuid import uuid4
 
 import pytest
 from alembic import command
 from alembic.config import Config
-from sqlalchemy import Engine, text
+from sqlalchemy import Engine, inspect, text
 
 from database_test_support import require_test_database_url
 from via_backend.contexts.decision_support.application.errors import (
     DefaultViabilityPolicyConflictError,
     DefaultViabilityPolicyNotConfiguredError,
+    EvaluationPolicyBindingConflictError,
     ViabilityPolicyVersionNotFoundError,
 )
 from via_backend.contexts.decision_support.application.policy_lifecycle import (
@@ -33,6 +35,9 @@ from via_backend.contexts.decision_support.domain import (
 from via_backend.contexts.decision_support.infrastructure import (
     PostgreSQLDefaultViabilityPolicyStore,
     PostgreSQLViabilityPolicyRepository,
+)
+from via_backend.contexts.decision_support.infrastructure.postgresql_repositories import (
+    PostgreSQLEvaluationPolicyBindingStore,
 )
 from via_backend.infrastructure import SessionFactory, create_database
 
@@ -79,6 +84,7 @@ def clean_policy_versions(
         connection.execute(
             text(
                 "TRUNCATE TABLE "
+                "decision_support.evaluation_viability_policy_bindings, "
                 "decision_support.default_viability_policy, "
                 "decision_support.viability_policy_versions"
             )
@@ -462,3 +468,35 @@ def test_concurrent_default_changes_detect_stale_writer(
     assert results.count("success") == 1
     assert results.count("conflict") == 1
     assert store.get_default_viability_policy() in (second, third)
+
+
+def test_evaluation_binding_is_immutable_and_has_no_cross_context_foreign_key(
+    database: tuple[Engine, SessionFactory],
+) -> None:
+    engine, sessions = database
+    foreign_keys = inspect(engine).get_foreign_keys(
+        "evaluation_viability_policy_bindings", schema="decision_support"
+    )
+    assert len(foreign_keys) == 1
+    assert foreign_keys[0]["referred_schema"] == "decision_support"
+    assert foreign_keys[0]["referred_table"] == "viability_policy_versions"
+
+    policies = PostgreSQLViabilityPolicyRepository(sessions)
+    defaults = PostgreSQLDefaultViabilityPolicyStore(sessions)
+    bindings = PostgreSQLEvaluationPolicyBindingStore(sessions)
+    first = _snapshot()
+    second = _snapshot(version="2", conditional_from=45.0, viable_from=75.0)
+    policies.add(first)
+    policies.add(second)
+    defaults.set_default_viability_policy(first.reference, expected_current=None)
+    evaluation_a, evaluation_b, legacy = uuid4(), uuid4(), uuid4()
+    assert bindings.get(legacy) is None
+    bindings.bind(evaluation_a, first.reference)
+    bindings.bind(evaluation_a, first.reference)
+    defaults.set_default_viability_policy(second.reference, expected_current=first.reference)
+    bindings.bind(evaluation_b, second.reference)
+    with pytest.raises(EvaluationPolicyBindingConflictError):
+        bindings.bind(evaluation_a, second.reference)
+    assert bindings.get(evaluation_a) == first
+    assert bindings.get(evaluation_b) == second
+    assert policies.get(first.reference) == first

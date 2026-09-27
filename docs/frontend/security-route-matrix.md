@@ -18,6 +18,9 @@ This matrix describes the live non-production schema and the production runtime 
 | `/api/v1/evaluations` | GET/POST | Bearer | owner-scoped; foreign ParcelVersion is `404` | evaluations are queued without a per-user quota |
 | `/api/v1/evaluations/{id}` and result/evidence/limitations | GET | Bearer | owner only; foreign Evaluation is `404` for USER and ADMIN | none |
 | Decision Support knowledge | GET | Bearer | evaluation owner only; foreign is `404` for USER and ADMIN | per-user rate limit; `429` + `Retry-After` |
+| `/api/v1/decision-support/viability-policy` | GET | Bearer | USER or ADMIN; global policy | none |
+| `/api/v1/decision-support/viability-policy` | PUT | Bearer | ADMIN only; USER is `403`; stale version is `409` | none |
+| Decision Support evaluation viability policy and classification | GET | Bearer | evaluation owner only; foreign is `404` for USER and ADMIN | none |
 | Decision Support recommendations list | GET | Bearer | evaluation owner only; foreign is `404` | none |
 | Decision Support recommendation generation | POST | Bearer | owner; `force_regenerate=true` additionally requires ADMIN; foreign ADMIN is `404` | per-user rate limit; `429` + `Retry-After` |
 

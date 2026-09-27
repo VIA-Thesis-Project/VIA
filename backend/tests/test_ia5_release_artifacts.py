@@ -53,7 +53,7 @@ def test_production_smoke_is_secret_safe_and_covers_the_release_flow() -> None:
     assert "print(response_headers)" not in source
 
 
-def test_expected_alembic_head_remains_0017_without_unnecessary_0018() -> None:
+def test_expected_alembic_head_includes_required_policy_binding_migration() -> None:
     revisions: set[str] = set()
     parents: set[str] = set()
     for migration in MIGRATIONS.glob("*.py"):
@@ -70,5 +70,4 @@ def test_expected_alembic_head_remains_0017_without_unnecessary_0018() -> None:
         if parent.group(1):
             parents.add(parent.group(1))
 
-    assert revisions - parents == {"20260921_0017"}
-    assert not any(path.name.startswith("20260921_0018") for path in MIGRATIONS.glob("*.py"))
+    assert revisions - parents == {"20260927_0018"}

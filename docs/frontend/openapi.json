@@ -488,6 +488,34 @@
         "title": "CropOutcomeStatus",
         "type": "string"
       },
+      "CropViabilityResponse": {
+        "properties": {
+          "comparable_mean": {
+            "title": "Comparable Mean",
+            "type": "number"
+          },
+          "crop_id": {
+            "title": "Crop Id",
+            "type": "string"
+          },
+          "scientific_rank": {
+            "title": "Scientific Rank",
+            "type": "integer"
+          },
+          "viability": {
+            "title": "Viability",
+            "type": "string"
+          }
+        },
+        "required": [
+          "crop_id",
+          "comparable_mean",
+          "scientific_rank",
+          "viability"
+        ],
+        "title": "CropViabilityResponse",
+        "type": "object"
+      },
       "DatasetResponse": {
         "properties": {
           "created_at": {
@@ -949,6 +977,30 @@
         "title": "EvaluationLimitationsResponse",
         "type": "object"
       },
+      "EvaluationPolicyResponse": {
+        "properties": {
+          "policy": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ViabilityPolicyResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "policy"
+        ],
+        "title": "EvaluationPolicyResponse",
+        "type": "object"
+      },
       "EvaluationResponse": {
         "properties": {
           "created_at": {
@@ -1198,6 +1250,38 @@
           "failed"
         ],
         "title": "EvaluationStatusResponse",
+        "type": "object"
+      },
+      "EvaluationViabilityResponse": {
+        "properties": {
+          "assessments": {
+            "items": {
+              "$ref": "#/components/schemas/CropViabilityResponse"
+            },
+            "title": "Assessments",
+            "type": "array"
+          },
+          "policy": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ViabilityPolicyResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "policy",
+          "assessments"
+        ],
+        "title": "EvaluationViabilityResponse",
         "type": "object"
       },
       "EvidenceItem": {
@@ -1602,6 +1686,24 @@
           "created_at"
         ],
         "title": "ParcelVersionResponse",
+        "type": "object"
+      },
+      "PolicyConfigurationResponse": {
+        "properties": {
+          "conditional_from": {
+            "title": "Conditional From",
+            "type": "number"
+          },
+          "viable_from": {
+            "title": "Viable From",
+            "type": "number"
+          }
+        },
+        "required": [
+          "conditional_from",
+          "viable_from"
+        ],
+        "title": "PolicyConfigurationResponse",
         "type": "object"
       },
       "ProjectResponse": {
@@ -2380,6 +2482,35 @@
         "title": "SuitabilitySummaryResponse",
         "type": "object"
       },
+      "UpdateViabilityPolicyRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "conditional_from": {
+            "title": "Conditional From",
+            "type": "number"
+          },
+          "expected_identifier": {
+            "title": "Expected Identifier",
+            "type": "string"
+          },
+          "expected_version": {
+            "title": "Expected Version",
+            "type": "string"
+          },
+          "viable_from": {
+            "title": "Viable From",
+            "type": "number"
+          }
+        },
+        "required": [
+          "conditional_from",
+          "viable_from",
+          "expected_identifier",
+          "expected_version"
+        ],
+        "title": "UpdateViabilityPolicyRequest",
+        "type": "object"
+      },
       "UserResponse": {
         "properties": {
           "email": {
@@ -2461,6 +2592,38 @@
           "type"
         ],
         "title": "ValidationError",
+        "type": "object"
+      },
+      "ViabilityPolicyResponse": {
+        "properties": {
+          "conditional_from": {
+            "title": "Conditional From",
+            "type": "number"
+          },
+          "default_configuration": {
+            "$ref": "#/components/schemas/PolicyConfigurationResponse"
+          },
+          "identifier": {
+            "title": "Identifier",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "string"
+          },
+          "viable_from": {
+            "title": "Viable From",
+            "type": "number"
+          }
+        },
+        "required": [
+          "identifier",
+          "version",
+          "conditional_from",
+          "viable_from",
+          "default_configuration"
+        ],
+        "title": "ViabilityPolicyResponse",
         "type": "object"
       },
       "WaterRegime-Output": {
@@ -2955,6 +3118,187 @@
           }
         ],
         "summary": "Generate Recommendation",
+        "tags": [
+          "decision-support"
+        ]
+      }
+    },
+    "/api/v1/decision-support/evaluations/{evaluation_id}/viability": {
+      "get": {
+        "operationId": "get_evaluation_viability",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "evaluation_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Evaluation Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "water_regime",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/via_backend__contexts__agroclimatic_evaluation__application__public__WaterRegime",
+              "default": "rainfed"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EvaluationViabilityResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Get Evaluation Viability",
+        "tags": [
+          "decision-support"
+        ]
+      }
+    },
+    "/api/v1/decision-support/evaluations/{evaluation_id}/viability-policy": {
+      "get": {
+        "operationId": "get_evaluation_viability_policy",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "evaluation_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Evaluation Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EvaluationPolicyResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Get Evaluation Policy",
+        "tags": [
+          "decision-support"
+        ]
+      }
+    },
+    "/api/v1/decision-support/viability-policy": {
+      "get": {
+        "operationId": "get_default_viability_policy",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ViabilityPolicyResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Get Policy",
+        "tags": [
+          "decision-support"
+        ]
+      },
+      "put": {
+        "operationId": "update_default_viability_policy",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateViabilityPolicyRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ViabilityPolicyResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Administrator permission required."
+          },
+          "409": {
+            "description": "Default policy changed since it was read."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Update Policy",
         "tags": [
           "decision-support"
         ]

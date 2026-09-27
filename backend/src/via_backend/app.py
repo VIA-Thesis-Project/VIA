@@ -30,23 +30,46 @@ from via_backend.contexts.agroclimatic_evaluation.interfaces import (
 from via_backend.contexts.agroclimatic_evaluation.interfaces import (
     create_router as create_agroclimatic_evaluation_router,
 )
+from via_backend.contexts.decision_support.application.default_policy import (
+    BASELINE_CONFIGURATION,
+    DefaultViabilityPolicyService,
+)
 from via_backend.contexts.decision_support.application.knowledge_services import (
     HybridKnowledgeRetriever,
     RecommendationApplicationService,
     RecommendationContextBuilder,
     configured_embedding_index,
 )
+from via_backend.contexts.decision_support.application.policy_lifecycle import (
+    ViabilityPolicyLifecycleService,
+)
+from via_backend.contexts.decision_support.application.service import DecisionSupportService
+from via_backend.contexts.decision_support.domain.models import (
+    PolicyReference,
+    ViabilityPolicySnapshot,
+)
 from via_backend.contexts.decision_support.infrastructure import (
     OpenAIEmbeddingProvider,
     OpenAIRecommendationGenerator,
+    PostgreSQLDefaultViabilityPolicyStore,
     PostgreSQLKnowledgeCorpusRepository,
     PostgreSQLRecommendationRepository,
+    PostgreSQLViabilityPolicyRepository,
     YamlFilesystemKnowledgeSourceCatalog,
     load_taxonomy,
+)
+from via_backend.contexts.decision_support.infrastructure.memory_policy import (
+    InMemoryDefaultViabilityPolicyStore,
+    InMemoryEvaluationPolicyBindingStore,
+    InMemoryViabilityPolicyRepository,
+)
+from via_backend.contexts.decision_support.infrastructure.postgresql_repositories import (
+    PostgreSQLEvaluationPolicyBindingStore,
 )
 from via_backend.contexts.decision_support.interfaces import (
     create_router as create_decision_support_router,
 )
+from via_backend.contexts.decision_support.interfaces.policy_http import create_policy_router
 from via_backend.contexts.environmental_information.application import (
     EnvironmentalInformationService,
 )
@@ -234,7 +257,7 @@ def create_app(
             CORSMiddleware,
             allow_origins=list(settings.cors_allowed_origins),
             allow_credentials=True,
-            allow_methods=["GET", "POST", "OPTIONS"],
+            allow_methods=["GET", "POST", "PUT", "OPTIONS"],
             allow_headers=["Content-Type", "Authorization"],
         )
     farm_management = FarmManagementService(
@@ -250,14 +273,37 @@ def create_app(
         versions=dataset_versions,
         coverage=coverage,
     )
+    if sessions is not None:
+        policy_versions = PostgreSQLViabilityPolicyRepository(sessions)
+        policy_defaults = PostgreSQLDefaultViabilityPolicyStore(sessions)
+        policy_bindings = PostgreSQLEvaluationPolicyBindingStore(sessions)
+    else:
+        policy_versions = InMemoryViabilityPolicyRepository()
+        policy_defaults = InMemoryDefaultViabilityPolicyStore(policy_versions)
+        policy_bindings = InMemoryEvaluationPolicyBindingStore(policy_versions)
+        initial_reference = PolicyReference(identifier="via-policy", version="1")
+        policy_versions.add(ViabilityPolicySnapshot(initial_reference, BASELINE_CONFIGURATION))
+        policy_defaults.set_default_viability_policy(initial_reference, expected_current=None)
+    default_policy = DefaultViabilityPolicyService(
+        policy_defaults, ViabilityPolicyLifecycleService(policy_versions), policy_bindings
+    )
+
+    def recover_unpersisted_policy(evaluation_id: UUID) -> None:
+        if evaluations.get(evaluation_id) is None:
+            policy_bindings.release_orphan(evaluation_id)
+
     agroclimatic_evaluation = AgroclimaticEvaluationService(
         evaluations=evaluations,
         parcel_snapshots=_FarmAuthorizedParcelSnapshotProvider(farm_management),
+        bind_viability_policy=default_policy.bind_default_policy_to_evaluation,
+        recover_unpersisted_policy=recover_unpersisted_policy,
     )
     application.state.settings = settings
     identity_administration = IdentityAdministrationService(
-        users=identity_users, sessions=auth_sessions,
-        password_hasher=Argon2PasswordHasher(), clock=SystemClock(),
+        users=identity_users,
+        sessions=auth_sessions,
+        password_hasher=Argon2PasswordHasher(),
+        clock=SystemClock(),
     )
     application.state.identity_administration = identity_administration
     application.include_router(health_router)
@@ -279,12 +325,12 @@ def create_app(
         ),
         prefix="/api/v1",
     )
-    application.include_router(
-        create_farm_management_router(farm_management, principal_resolver)
-    )
+    application.include_router(create_farm_management_router(farm_management, principal_resolver))
     application.include_router(
         create_environmental_information_router(
-            environmental_information, principal_resolver, limiter,
+            environmental_information,
+            principal_resolver,
+            limiter,
             settings.rate_dataset_coverage_per_minute,
         )
     )
@@ -295,15 +341,22 @@ def create_app(
         ),
         prefix="/api/v1",
     )
+    application.include_router(
+        create_policy_router(
+            default_policy,
+            principal_resolver,
+            agroclimatic_evaluation,
+            DecisionSupportService(agroclimatic_evaluation),
+        ),
+        prefix="/api/v1",
+    )
     capability_catalog = (
         FilesystemCropCapabilityCatalog(settings.cropsuite_catalog)
         if settings.cropsuite_catalog is not None
         else None
     )
     scientific_input_binding_catalog = (
-        FilesystemScientificInputBindingCatalog(
-            settings.cropsuite_input_bindings
-        )
+        FilesystemScientificInputBindingCatalog(settings.cropsuite_input_bindings)
         if settings.cropsuite_input_bindings is not None
         else None
     )

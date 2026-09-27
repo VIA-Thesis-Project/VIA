@@ -52,6 +52,13 @@ The contexts below are the current modeling hypothesis for the VIA modular monol
 
 **Must not access directly.** CropSuiteLite, raw evaluation tables, parcel internals, environmental repositories, or identity tables. It must not silently modify scientific scores or present suitability as profitability.
 
+**Current viability-policy integration (2026-09-27).** Decision Support owns the
+global default, immutable policy versions, and evaluation-to-policy bindings.
+At authorized evaluation creation, composition invokes its Application service
+to bind the new evaluation UUID. Decision Support reads finalized scientific
+evidence through `FinalizedEvaluationResultReader` and never accesses the
+Agroclimatic Evaluation tables. See `decision-support-viability-policy.md`.
+
 ## Collaboration rules
 
 - A context changes its state only through its own use cases and repositories.

@@ -15,6 +15,7 @@ from via_backend.infrastructure.database import SessionFactory
 from ..application.errors import (
     DefaultViabilityPolicyConflictError,
     DefaultViabilityPolicyNotConfiguredError,
+    EvaluationPolicyBindingConflictError,
     ViabilityPolicyVersionNotFoundError,
 )
 from ..application.knowledge_models import (
@@ -42,6 +43,7 @@ from ..domain.models import (
 from .orm import (
     DefaultViabilityPolicyRecord,
     EmbeddingIndexRecord,
+    EvaluationViabilityPolicyBindingRecord,
     KnowledgeChunkRecord,
     KnowledgeDocumentRecord,
     KnowledgeEmbeddingRecord,
@@ -143,6 +145,55 @@ def _snapshot_from_record(
 _DEFAULT_POLICY_SLOT = "default"
 
 
+class PostgreSQLEvaluationPolicyBindingStore:
+    def __init__(self, sessions: SessionFactory) -> None:
+        self._sessions = sessions
+
+    def bind(self, evaluation_id: UUID, reference: PolicyReference) -> None:
+        with self._sessions.begin() as session:
+            session.execute(
+                postgresql_insert(EvaluationViabilityPolicyBindingRecord)
+                .values(
+                    evaluation_id=evaluation_id,
+                    policy_identifier=reference.identifier,
+                    policy_version=reference.version,
+                )
+                .on_conflict_do_nothing(
+                    index_elements=[EvaluationViabilityPolicyBindingRecord.evaluation_id]
+                )
+            )
+            recorded = session.get(EvaluationViabilityPolicyBindingRecord, evaluation_id)
+            if recorded is None or (
+                recorded.policy_identifier != reference.identifier
+                or recorded.policy_version != reference.version
+            ):
+                raise EvaluationPolicyBindingConflictError(
+                    "Evaluation already has a different viability policy."
+                )
+
+    def get(self, evaluation_id: UUID) -> ViabilityPolicySnapshot | None:
+        with self._sessions() as session:
+            binding = session.get(EvaluationViabilityPolicyBindingRecord, evaluation_id)
+            if binding is None:
+                return None
+            policy = session.get(
+                ViabilityPolicyVersionRecord,
+                (binding.policy_identifier, binding.policy_version),
+            )
+            if policy is None:
+                raise RuntimeError("Bound viability policy version is missing.")
+            return _snapshot_from_record(policy)
+
+    def release_orphan(self, evaluation_id: UUID) -> None:
+        """Composition may call this only after verifying no evaluation was persisted."""
+        with self._sessions.begin() as session:
+            session.execute(
+                delete(EvaluationViabilityPolicyBindingRecord).where(
+                    EvaluationViabilityPolicyBindingRecord.evaluation_id == evaluation_id
+                )
+            )
+
+
 class PostgreSQLDefaultViabilityPolicyStore:
     """Persist and resolve the singleton VIA default-policy pointer."""
 
@@ -173,8 +224,7 @@ class PostgreSQLDefaultViabilityPolicyStore:
 
             if policy_record is None:
                 raise RuntimeError(
-                    "Default viability-policy pointer references "
-                    "missing persisted policy data."
+                    "Default viability-policy pointer references missing persisted policy data."
                 )
 
             return _snapshot_from_record(policy_record)
@@ -210,9 +260,7 @@ class PostgreSQLDefaultViabilityPolicyStore:
                         policy_identifier=reference.identifier,
                         policy_version=reference.version,
                     )
-                    .on_conflict_do_nothing(
-                        index_elements=[DefaultViabilityPolicyRecord.slot]
-                    )
+                    .on_conflict_do_nothing(index_elements=[DefaultViabilityPolicyRecord.slot])
                     .returning(DefaultViabilityPolicyRecord.slot)
                 )
             else:
@@ -222,8 +270,7 @@ class PostgreSQLDefaultViabilityPolicyStore:
                         DefaultViabilityPolicyRecord.slot == _DEFAULT_POLICY_SLOT,
                         DefaultViabilityPolicyRecord.policy_identifier
                         == expected_current.identifier,
-                        DefaultViabilityPolicyRecord.policy_version
-                        == expected_current.version,
+                        DefaultViabilityPolicyRecord.policy_version == expected_current.version,
                     )
                     .values(
                         policy_identifier=reference.identifier,
@@ -325,10 +372,7 @@ class PostgreSQLKnowledgeCorpusRepository:
                 )
             ).all()
 
-        return {
-            chunk_id: tuple(float(value) for value in vector)
-            for chunk_id, vector in rows
-        }
+        return {chunk_id: tuple(float(value) for value in vector) for chunk_id, vector in rows}
 
     def save_document(
         self,
@@ -528,13 +572,20 @@ class PostgreSQLRecommendationRepository:
         self._sessions = sessions
 
     def record_generation_attempt(
-        self, owner_user_id: UUID, evaluation_id: UUID, created_at: datetime,
+        self,
+        owner_user_id: UUID,
+        evaluation_id: UUID,
+        created_at: datetime,
     ) -> None:
         with self._sessions.begin() as session:
-            session.add(RecommendationGenerationAttemptRecord(
-                id=uuid4(), owner_user_id=owner_user_id,
-                evaluation_id=evaluation_id, created_at=created_at,
-            ))
+            session.add(
+                RecommendationGenerationAttemptRecord(
+                    id=uuid4(),
+                    owner_user_id=owner_user_id,
+                    evaluation_id=evaluation_id,
+                    created_at=created_at,
+                )
+            )
 
     def find_succeeded_by_cache_key(self, cache_key: str) -> RecommendationRun | None:
         with self._sessions() as session:
@@ -608,11 +659,13 @@ class PostgreSQLRecommendationRepository:
 
     def list_for_evaluation(self, evaluation_id: UUID) -> tuple[RecommendationRun, ...]:
         with self._sessions() as session:
-            records = tuple(session.execute(
-                select(RecommendationRunRecord)
-                .where(RecommendationRunRecord.evaluation_id == evaluation_id)
-                .order_by(RecommendationRunRecord.created_at.desc(), RecommendationRunRecord.id)
-            ).scalars())
+            records = tuple(
+                session.execute(
+                    select(RecommendationRunRecord)
+                    .where(RecommendationRunRecord.evaluation_id == evaluation_id)
+                    .order_by(RecommendationRunRecord.created_at.desc(), RecommendationRunRecord.id)
+                ).scalars()
+            )
             citations_by_run = _recommendation_citations_for_runs(
                 session,
                 tuple(record.id for record in records),
@@ -823,18 +876,12 @@ def _recommendation_citations_for_runs(
                 page_start=chunk.page_start,
                 page_end=chunk.page_end,
                 section=chunk.section,
-                source_reference=(
-                    document.source_reference
-                    or document.relative_path
-                ),
+                source_reference=(document.source_reference or document.relative_path),
                 source_id=document.source_id,
             )
         )
 
-    return {
-        run_id: tuple(citations)
-        for run_id, citations in grouped.items()
-    }
+    return {run_id: tuple(citations) for run_id, citations in grouped.items()}
 
 
 def _recommendation_run_from_record(
