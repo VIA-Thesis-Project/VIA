@@ -1770,9 +1770,9 @@
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/decision_support/infrastructure/postgresql_repositories.py": {
-    "mtime": 1790385334.9710212,
-    "seen": 1790385527.749006,
-    "ast_hash": "3549009cfcb2c3c7ac467108b8136010",
+    "mtime": 1790467711.3467746,
+    "seen": 1790467907.967793,
+    "ast_hash": "8c312d7f73e9d3cf4030ae84443593d7",
     "semantic_hash": ""
   },
   "backend/tests/test_decision_support_postgresql.py": {
@@ -2040,9 +2040,9 @@
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/decision_support/application/knowledge_models.py": {
-    "mtime": 1790287051.6679127,
-    "seen": 1790287241.9011028,
-    "ast_hash": "6a9c2a6dd75bb611067301e99bc660a7",
+    "mtime": 1790467711.3447676,
+    "seen": 1790467907.9677777,
+    "ast_hash": "af7bfb996a14ba75b2b8bc3b937750a4",
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/decision_support/application/knowledge_ports.py": {
@@ -2052,9 +2052,9 @@
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py": {
-    "mtime": 1790385334.9700148,
-    "seen": 1790385527.748993,
-    "ast_hash": "07097a87c835109e182351293835148c",
+    "mtime": 1790467711.3457668,
+    "seen": 1790467907.9677799,
+    "ast_hash": "b8c975ce5d5f9333bac71cf7d30e4d74",
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/decision_support/infrastructure/knowledge_manifest.py": {
@@ -2064,9 +2064,9 @@
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/decision_support/infrastructure/openai_knowledge.py": {
-    "mtime": 1789860430.6450548,
-    "seen": 1789899838.8571677,
-    "ast_hash": "ed1a3bb330fc2fa0d41521cfbf8caec7",
+    "mtime": 1790467608.9816487,
+    "seen": 1790467907.9677904,
+    "ast_hash": "63500e3645ec037a2f33ea5bc6a43a24",
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/decision_support/infrastructure/pdf_extractor.py": {
@@ -2088,9 +2088,9 @@
     "semantic_hash": ""
   },
   "backend/tests/test_agronomic_knowledge.py": {
-    "mtime": 1790385379.5160067,
-    "seen": 1790385527.7490785,
-    "ast_hash": "3127a231c04f04e8b3d2812a802e85d9",
+    "mtime": 1790468007.6088326,
+    "seen": 1790468090.701934,
+    "ast_hash": "34d3f45db7b064db42e858c1fa133cc1",
     "semantic_hash": ""
   },
   "backend/tests/test_agronomic_knowledge_http.py": {
@@ -2100,9 +2100,9 @@
     "semantic_hash": ""
   },
   "backend/tests/test_agronomic_knowledge_postgresql.py": {
-    "mtime": 1790287134.6200607,
-    "seen": 1790287241.9011955,
-    "ast_hash": "fe3ec089a140cd99c17d7b5b876eea9c",
+    "mtime": 1790467711.3507752,
+    "seen": 1790467907.967868,
+    "ast_hash": "b1e7702e0bcc8e95b25c5e228333227d",
     "semantic_hash": ""
   },
   "knowledge/README.md": {
@@ -2202,9 +2202,9 @@
     "semantic_hash": ""
   },
   "docs/frontend/openapi.json": {
-    "mtime": 1790441650.583815,
-    "seen": 1790441724.2154639,
-    "ast_hash": "d22515457d558e7e2b8446fa241851e0",
+    "mtime": 1790467828.3510804,
+    "seen": 1790467907.9679186,
+    "ast_hash": "1eeacd43952e4e4e616f477f161821dc",
     "semantic_hash": ""
   },
   "scripts/generate_frontend_openapi.py": {
