@@ -481,7 +481,7 @@ def test_packaged_manifest_loads_without_external_source_directory() -> None:
     catalog = YamlFilesystemKnowledgeSourceCatalog()
     manifest = catalog.load_manifest()
 
-    assert manifest.corpus_version == "2026-09-20"
+    assert manifest.corpus_version == "2026-10-01"
     assert manifest.sources
     with pytest.raises(RuntimeError, match="VIA_KNOWLEDGE_SOURCE_DIR"):
         catalog.read_source(manifest.sources[0])
@@ -489,7 +489,7 @@ def test_packaged_manifest_loads_without_external_source_directory() -> None:
 
 def test_repo_taxonomy_covers_known_and_future_factors() -> None:
     taxonomy = load_taxonomy()
-    assert taxonomy.version == "2026-09-19"
+    assert taxonomy.version == "2026-10-01"
     assert "déficit hídrico" in taxonomy.expand_factor("precipitation")
     assert "precipitación" in taxonomy.expand_factor("precipitation")
     assert "profundidad efectiva" in taxonomy.expand_factor("parameter_soildepth")
@@ -509,6 +509,13 @@ def test_repo_taxonomy_covers_known_and_future_factors() -> None:
     assert "frío" in taxonomy.expand_factor("temperature")
     assert "maíz amarillo duro" in taxonomy.expand_crop("maize")
     assert "maíz" in taxonomy.expand_crop("maize")
+    assert "zea mays" in taxonomy.expand_crop("maize")
+    assert "palto" in taxonomy.expand_crop("avocado")
+    assert "persea americana" in taxonomy.expand_crop("avocado")
+    assert "fresa" in taxonomy.expand_crop("strawberry")
+    assert "fragaria x ananassa" in taxonomy.expand_crop("strawberry")
+    assert "caña de azúcar" in taxonomy.expand_crop("sugarcane")
+    assert "saccharum officinarum" in taxonomy.expand_crop("sugarcane")
     assert "riego" in taxonomy.expand_water_regime("irrigated")
     assert taxonomy.expand_factor("parameter_custom")
 

@@ -1,4 +1,4 @@
-corpus_version: "2026-09-20"
+corpus_version: "2026-10-01"
 sources:
   - source_id: fao_crop_water_requirements
     organization: FAO
@@ -38,6 +38,37 @@ sources:
     crops:
       - avocado
     factors: []
+    source_reference: "https://repositorio.inia.gob.pe/handle/20.500.12955/166"
+
+  - source_id: inia_muestreo_cadmio_palto_2026
+    organization: INIA
+    title: "Muestreo de suelo, agua de riego, fertilizantes, fruto, hojas y raíces para la evaluación de cadmio (Cd) en el cultivo de palto (Persea americana L.)"
+    source_type: pdf
+    source_roles:
+      - management_guidance
+      - soil_management
+      - water_management
+    language: es
+    country: Peru
+    relative_path: "inia/INIA-Muestreo cadmio cultivo palto-2026.pdf"
+    crops:
+      - avocado
+    factors: []
+    source_reference: "https://repositorio.inia.gob.pe/items/2ed1e8ce-68b6-4048-891f-120cbc610471"
+
+  - source_id: senamhi_riesgo_agroclimatico_palto_2025_05
+    organization: SENAMHI
+    title: "Pronóstico de riesgo agroclimático: cultivo de palto, mayo-julio 2025"
+    source_type: pdf
+    source_roles:
+      - agroclimatic_monitoring
+    language: es
+    country: Peru
+    relative_path: "senamhi/SENAMHI-Riesgo agroclimatico palto-2025-05.pdf"
+    crops:
+      - avocado
+    factors: []
+    source_reference: "https://www.senamhi.gob.pe/load/file/02964SENA-52.pdf"
 
   - source_id: inia_maiz_amarillo_duro
     organization: INIA
@@ -52,6 +83,389 @@ sources:
     crops:
       - maize
     factors: []
+    source_reference: "https://repositorio.inia.gob.pe/handle/20.500.12955/1643"
+
+  - source_id: inia_manejo_maiz_amarillo_duro_costa_2009
+    organization: INIA
+    title: "Manejo de maíz amarillo duro (híbridos)"
+    source_type: pdf
+    source_roles:
+      - crop_requirements
+      - management_guidance
+    language: es
+    country: Peru
+    relative_path: "inia/INIA-Manejo maiz amarillo duro costa-2009.pdf"
+    crops:
+      - maize
+    factors: []
+    source_reference: "https://repositorio.inia.gob.pe/handle/20.500.12955/171"
+
+  - source_id: inia_manejo_integrado_mango_kent_2019
+    organization: INIA
+    title: Manejo Integrado del Cultivo de Mango Kent
+    source_type: pdf
+    source_roles:
+      - crop_requirements
+      - management_guidance
+    language: es
+    country: Peru
+    relative_path: "inia/INIA-Manejo Integrado del Cultivo de Mango Kent.pdf"
+    crops:
+      - mango
+    factors: []
+    source_reference: "https://repositorio.inia.gob.pe/handle/20.500.12955/966"
+
+  - source_id: agrosavia_tecnologia_cultivo_mango_2009
+    organization: AGROSAVIA
+    title: "Tecnología para el cultivo del mango con énfasis en mangos criollos: manual técnico"
+    source_type: pdf
+    source_roles:
+      - crop_requirements
+      - management_guidance
+    language: es
+    country: Colombia
+    relative_path: "agrosavia/AGROSAVIA-Tecnologia para el cultivo del mango.pdf"
+    crops:
+      - mango
+    factors: []
+    source_reference: "https://hdl.handle.net/20.500.12324/13523"
+
+  - source_id: senamhi_mango_rice_piura_tumbes_2025_08
+    organization: SENAMHI
+    title: "Boletín agroclimático de mango y arroz - Piura y Tumbes, agosto 2025"
+    source_type: pdf
+    source_roles:
+      - agroclimatic_monitoring
+    language: es
+    country: Peru
+    relative_path: "senamhi/SENAMHI-Boletin agroclimatico mango arroz Piura Tumbes-2025-08.pdf"
+    crops:
+      - mango
+    factors: []
+    source_reference: "https://www.senamhi.gob.pe/load/file/03503SENA-122.pdf"
+
+  - source_id: agrosavia_guia_enfermedades_plagas_mango_2013
+    organization: AGROSAVIA
+    title: "Guía de campo para la identificación y manejo de enfermedades y plagas en el cultivo de mango"
+    source_type: pdf
+    source_roles:
+      - management_guidance
+    language: es
+    country: Colombia
+    relative_path: "agrosavia/AGROSAVIA-Guia enfermedades y plagas cultivo de mango-2013.pdf"
+    crops:
+      - mango
+    factors: []
+    source_reference: "https://hdl.handle.net/20.500.12324/13396"
+
+  - source_id: senasa_control_integrado_moscas_fruta_2007
+    organization: SENASA
+    title: "Manual del sistema nacional de control integrado de moscas de la fruta"
+    source_type: pdf
+    source_roles:
+      - management_guidance
+    language: es
+    country: Peru
+    relative_path: "senasa/SENASA-Manual control integrado moscas de la fruta-2007.pdf"
+    crops:
+      - mango
+    factors: []
+    source_reference: "https://repositorio.senasa.gob.pe/handle/20.500.14878/163"
+
+  - source_id: inia_variedades_mango_2008
+    organization: INIA
+    title: "Variedades de mango"
+    source_type: pdf
+    source_roles:
+      - management_guidance
+    language: es
+    country: Peru
+    relative_path: "inia/INIA-Variedades de Mango.pdf"
+    crops:
+      - mango
+    factors: []
+    source_reference: "https://repositorio.inia.gob.pe/handle/20.500.12955/1137"
+
+  - source_id: inia_propagacion_mango_2008
+    organization: INIA
+    title: "Propagación del mango"
+    source_type: pdf
+    source_roles:
+      - management_guidance
+    language: es
+    country: Peru
+    relative_path: "inia/INIA-Propagacion del Mango.pdf"
+    crops:
+      - mango
+    factors: []
+    source_reference: "https://repositorio.inia.gob.pe/handle/20.500.12955/633"
+
+  - source_id: inia_tendencias_mercado_mango_2022
+    organization: INIA
+    title: "Estudio de tendencias de mercado - Mango"
+    source_type: pdf
+    source_roles:
+      - market_context
+    language: es
+    country: Peru
+    relative_path: "inia/INIA-Estudio tendencias mercado mango-2022.pdf"
+    crops:
+      - mango
+    factors: []
+    source_reference: "https://repositorio.inia.gob.pe/handle/20.500.12955/2025"
+
+  - source_id: unalm_manejo_esparrago_ica_2017
+    organization: UNALM
+    title: "Manejo del cultivo del espárrago (Asparagus officinalis L.) en la Región Ica"
+    source_type: pdf
+    source_roles:
+      - crop_requirements
+      - management_guidance
+    language: es
+    country: Peru
+    relative_path: "unalm/UNALM-Manejo cultivo esparrago region Ica-2017.pdf"
+    crops:
+      - asparagus
+    factors: []
+    source_reference: "https://repositorio.lamolina.edu.pe/server/api/core/bitstreams/47c18ccd-978c-457e-9530-48b0b4e305ae/content"
+
+  - source_id: inia_muestreo_cadmio_esparrago_2026
+    organization: INIA
+    title: "Guía metodológica. Muestreo de suelo, agua de riego, fertilizantes, turiones y raíces para la evaluación de cadmio (Cd) en el cultivo de espárrago (Asparagus officinalis L.)"
+    source_type: pdf
+    source_roles:
+      - management_guidance
+      - soil_management
+      - water_management
+    language: es
+    country: Peru
+    relative_path: "inia/INIA-Muestreo cadmio cultivo esparrago-2026.pdf"
+    crops:
+      - asparagus
+    factors: []
+    source_reference: "https://repositorio.inia.gob.pe/items/dcf0085d-7405-46b9-96d8-2798c0b663c9"
+
+  - source_id: inia_enfermedades_hortalizas_2001
+    organization: INIA
+    title: "Enfermedades en hortalizas"
+    source_type: pdf
+    source_roles:
+      - management_guidance
+    language: es
+    country: Peru
+    relative_path: "inia/INIA-Enfermedades en hortalizas-2001.pdf"
+    crops:
+      - asparagus
+      - strawberry
+    factors: []
+    source_reference: "https://repositorio.inia.gob.pe/server/api/core/bitstreams/e18330c8-f9a8-4a12-a714-5996d4419b31/content"
+
+  - source_id: iica_esparrago_peruano_2004
+    organization: IICA/PROMPEX
+    title: "El ejemplo del espárrago peruano"
+    source_type: pdf
+    source_roles:
+      - market_context
+      - quality_context
+    language: es
+    country: Peru
+    relative_path: "iica/IICA-El ejemplo del esparrago peruano-2004.pdf"
+    crops:
+      - asparagus
+    factors: []
+    source_reference: "https://cendoc.esan.edu.pe/fulltext/e-documents/iica/esparrago_peru.pdf"
+
+  - source_id: unalm_agroecosistemas_esparrago_peru_2017
+    organization: UNALM
+    title: "Análisis de los distintos agroecosistemas del espárrago (Asparagus officinalis L.) del Perú"
+    source_type: pdf
+    source_roles:
+      - crop_requirements
+      - management_guidance
+    language: es
+    country: Peru
+    relative_path: "unalm/UNALM-Analisis agroecosistemas esparrago Peru-2017.pdf"
+    crops:
+      - asparagus
+    factors: []
+    source_reference: "https://repositorio.lamolina.edu.pe/server/api/core/bitstreams/9b575830-c417-46fd-b466-83cb20fd0026/content"
+
+  - source_id: agrosavia_manual_produccion_citricos_momposina_2020
+    organization: AGROSAVIA
+    title: "Manual técnico para la producción de cítricos en la región de la Depresión Momposina"
+    source_type: pdf
+    source_roles:
+      - crop_requirements
+      - management_guidance
+    language: es
+    country: Colombia
+    relative_path: "agrosavia/AGROSAVIA-Manual tecnico produccion citricos Depresion Momposina-2020.pdf"
+    crops:
+      - citrus
+    factors: []
+    source_reference: "https://repository.agrosavia.co/server/api/core/bitstreams/2929d666-5122-4262-bcde-65afd52ad96f/content"
+
+  - source_id: senasa_plagas_citricos_manejo_ecologico_2008
+    organization: SENASA
+    title: "Plagas de paltos y cítricos en Perú y su manejo con fundamento ecológico"
+    source_type: pdf
+    source_roles:
+      - management_guidance
+    language: es
+    country: Peru
+    relative_path: "senasa/SENASA-Plagas paltos citricos manejo ecologico-2008.pdf"
+    crops:
+      - avocado
+      - citrus
+    factors: []
+    source_reference: "https://repositorio.senasa.gob.pe/items/b1e225ab-7a02-407f-8eff-f8b09cbe4e78"
+
+  - source_id: senasa_prevencion_emergencia_hlb_citricos_2014
+    organization: SENASA
+    title: "Procedimiento de prevención y emergencia del Huanglongbing de los cítricos y/o sus vectores"
+    source_type: pdf
+    source_roles:
+      - management_guidance
+    language: es
+    country: Peru
+    relative_path: "senasa/SENASA-Prevencion emergencia HLB citricos.pdf"
+    crops:
+      - citrus
+    factors: []
+    source_reference: "https://www.senasa.gob.pe/senasa/descargasarchivos/2014/12/PRO-SARVF-SCV-SMFPF-01-Prev.-y-Emer.-HLB.pdf"
+
+  - source_id: inia_muestreo_foliar_citricos_2016
+    organization: INIA
+    title: "Muestreo foliar para el cultivo de cítricos"
+    source_type: pdf
+    source_roles:
+      - management_guidance
+    language: es
+    country: Peru
+    relative_path: "inia/INIA-Muestreo foliar cultivo citricos-2016.pdf"
+    crops:
+      - citrus
+    factors: []
+    source_reference: "https://repositorio.inia.gob.pe/handle/20.500.12955/206"
+
+  - source_id: inia_cultivo_fresa_2012
+    organization: INIA
+    title: "Cultivo de Fresa (Fragaria x ananassa Duch.)"
+    source_type: pdf
+    source_roles:
+      - crop_requirements
+      - management_guidance
+    language: es
+    country: Peru
+    relative_path: "inia/INIA-Cultivo de Fresa-2012.pdf"
+    crops:
+      - strawberry
+    factors: []
+    source_reference: "https://repositorio.inia.gob.pe/handle/20.500.12955/752"
+
+  - source_id: agrosavia_fresa_produccion_poscosecha_2010
+    organization: AGROSAVIA
+    title: "Fresa (Fragaria x ananassa Duch.): producción y manejo poscosecha"
+    source_type: pdf
+    source_roles:
+      - crop_requirements
+      - management_guidance
+      - quality_context
+    language: es
+    country: Colombia
+    relative_path: "agrosavia/AGROSAVIA-Fresa produccion manejo poscosecha-2010.pdf"
+    crops:
+      - strawberry
+    factors: []
+    source_reference: "https://hdl.handle.net/20.500.12324/13332"
+
+  - source_id: senamhi_pronostico_agrometeorologico_fresa_2025_04
+    organization: SENAMHI
+    title: "Pronóstico agrometeorológico para el cultivo de fresa - 23 al 29 de abril de 2025"
+    source_type: pdf
+    source_roles:
+      - agroclimatic_monitoring
+    language: es
+    country: Peru
+    relative_path: "senamhi/SENAMHI-Pronostico agrometeorologico fresa-2025-04.pdf"
+    crops:
+      - strawberry
+    factors: []
+    source_reference: "https://www.senamhi.gob.pe/load/file/02978SENA-86.pdf"
+
+  - source_id: senasa_xanthomonas_fragariae_control_2025
+    organization: SENASA
+    title: "Declaran la plaga Xanthomonas fragariae bajo control oficial y establecen medidas fitosanitarias"
+    source_type: pdf
+    source_roles:
+      - management_guidance
+    language: es
+    country: Peru
+    relative_path: "senasa/SENASA-Xanthomonas fragariae control oficial-2025.pdf"
+    crops:
+      - strawberry
+    factors: []
+    source_reference: "https://www.gob.pe/institucion/senasa/normas-legales/7353117-037-2025-midagri-senasa-dsv"
+
+  - source_id: inia_semilla_vegetativa_cana_azucar_2014
+    organization: INIA
+    title: "Producción de Semilla Vegetativa de Caña de Azúcar, a Partir de Plántulas In Vitro en Condiciones de Costa Norte"
+    source_type: pdf
+    source_roles:
+      - crop_requirements
+      - management_guidance
+    language: es
+    country: Peru
+    relative_path: "inia/INIA-Produccion semilla vegetativa cana azucar-2014.pdf"
+    crops:
+      - sugarcane
+    factors: []
+    source_reference: "https://repositorio.inia.gob.pe/handle/20.500.12955/829"
+
+  - source_id: inia_variedades_cana_azucar_2014
+    organization: INIA
+    title: "Variedades de caña de azúcar"
+    source_type: pdf
+    source_roles:
+      - crop_requirements
+    language: es
+    country: Peru
+    relative_path: "inia/INIA-Variedades cana de azucar-2014.pdf"
+    crops:
+      - sugarcane
+    factors: []
+    source_reference: "https://repositorio.inia.gob.pe/handle/20.500.12955/63"
+
+  - source_id: senamhi_requerimientos_cana_azucar_2010
+    organization: SENAMHI
+    title: "Impacto del fenómeno El Niño en la agricultura peruana: requerimientos térmicos e hídricos del cultivo de caña de azúcar"
+    source_type: pdf
+    source_roles:
+      - crop_requirements
+      - agroclimatic_monitoring
+    language: es
+    country: Peru
+    relative_path: "senamhi/SENAMHI-Requerimientos termicos hidricos cana de azucar-2010.pdf"
+    crops:
+      - sugarcane
+    factors: []
+    source_reference: "https://www.senamhi.gob.pe/load/file/01401SENA-15.pdf"
+
+  - source_id: agrosavia_recomendaciones_cana_panela_2022
+    organization: AGROSAVIA
+    title: "Recomendaciones tecnológicas para el mejoramiento del sistema productivo de caña de azúcar para panela en el occidente de Nariño"
+    source_type: pdf
+    source_roles:
+      - crop_requirements
+      - management_guidance
+      - quality_context
+    language: es
+    country: Colombia
+    relative_path: "agrosavia/AGROSAVIA-Recomendaciones tecnologicas cana de azucar panela-2022.pdf"
+    crops:
+      - sugarcane
+    factors: []
+    source_reference: "https://hdl.handle.net/20.500.12324/37997"
 
   - source_id: inia_suelos_agricolas_agua_riego_2024
     organization: INIA

@@ -1,4 +1,4 @@
-taxonomy_version: "2026-09-19"
+taxonomy_version: "2026-10-01"
 factors:
   precipitation:
     - precipitation
@@ -119,14 +119,65 @@ crops:
     - corn
     - yellow maize
     - hard yellow maize
+    - zea mays
+    - zea mays l.
     - maíz
     - maíz amarillo
     - maíz amarillo duro
+    - cultivo de maíz
+    - cultivo de maiz
   avocado:
     - avocado
     - avocado tree
+    - persea americana
+    - persea americana l.
+    - aguacate
     - palto
     - palta
+    - cultivo de palto
+    - cultivo de palta
+    - cultivo de aguacate
+  mango:
+    - mango
+    - mango tree
+    - mango kent
+    - kent mango
+    - mangifera indica
+    - cultivo de mango
+  asparagus:
+    - asparagus
+    - asparagus officinalis
+    - espárrago
+    - esparrago
+    - cultivo de espárrago
+    - cultivo de esparrago
+  citrus:
+    - citrus
+    - citrus spp
+    - cítricos
+    - citricos
+    - cultivo de cítricos
+    - cultivo de citricos
+  strawberry:
+    - strawberry
+    - strawberries
+    - fragaria x ananassa
+    - fragaria × ananassa
+    - fragaria ananassa
+    - fresa
+    - cultivo de fresa
+  sugarcane:
+    - sugarcane
+    - sugar cane
+    - saccharum officinarum
+    - saccharum spp
+    - saccharum spp.
+    - caña de azúcar
+    - cana de azucar
+    - caña panelera
+    - cana panelera
+    - cultivo de caña de azúcar
+    - cultivo de cana de azucar
 
 water_regimes:
   rainfed:

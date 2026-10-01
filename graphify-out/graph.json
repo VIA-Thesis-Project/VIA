@@ -11986,7 +11986,7 @@
       "file_type": "code",
       "norm_label": "test_openai_embedding_key_is_lazy()",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1324"
+      "source_location": "L1331"
     },
     {
       "id": "backend_tests_test_agronomic_knowledge_test_real_openai_embedding_only_with_explicit_opt_in",
@@ -11998,7 +11998,7 @@
       "file_type": "code",
       "norm_label": "test_real_openai_embedding_only_with_explicit_opt_in()",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1413"
+      "source_location": "L1420"
     },
     {
       "id": "cropsuitelite_src_read_plant_params_get_formula",
@@ -19894,7 +19894,7 @@
       "file_type": "code",
       "norm_label": "test_numbered_heading_detection_preserves_structural_headings()",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L589"
+      "source_location": "L596"
     },
     {
       "id": "backend_tests_test_agronomic_knowledge_test_numbered_heading_detection_rejects_data_and_list_items",
@@ -19906,7 +19906,7 @@
       "file_type": "code",
       "norm_label": "test_numbered_heading_detection_rejects_data_and_list_items()",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L615"
+      "source_location": "L622"
     },
     {
       "id": "backend_tests_test_agronomic_knowledge_test_uppercase_heading_detection_preserves_textual_headings",
@@ -19918,7 +19918,7 @@
       "file_type": "code",
       "norm_label": "test_uppercase_heading_detection_preserves_textual_headings()",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L630"
+      "source_location": "L637"
     },
     {
       "id": "backend_tests_test_agronomic_knowledge_test_uppercase_heading_detection_rejects_table_and_ocr_fragments",
@@ -19930,7 +19930,7 @@
       "file_type": "code",
       "norm_label": "test_uppercase_heading_detection_rejects_table_and_ocr_fragments()",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L666"
+      "source_location": "L673"
     },
     {
       "id": "backend_src_via_backend_contexts_identity_access_infrastructure_security_argon2passwordhasher_hash",
@@ -20830,7 +20830,7 @@
       "file_type": "code",
       "norm_label": "test_blank_pdf_is_marked_as_needing_ocr()",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L542"
+      "source_location": "L549"
     },
     {
       "id": "backend_tests_test_agronomic_knowledge_test_chunking_does_not_cross_detected_sections",
@@ -20842,7 +20842,7 @@
       "file_type": "code",
       "norm_label": "test_chunking_does_not_cross_detected_sections()",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L699"
+      "source_location": "L706"
     },
     {
       "id": "backend_tests_test_agronomic_knowledge_test_chunking_is_deterministic_and_preserves_page_provenance",
@@ -20854,7 +20854,7 @@
       "file_type": "code",
       "norm_label": "test_chunking_is_deterministic_and_preserves_page_provenance()",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L553"
+      "source_location": "L560"
     },
     {
       "id": "backend_tests_test_agronomic_knowledge_test_dry_run_does_not_embed_or_persist",
@@ -20866,7 +20866,7 @@
       "file_type": "code",
       "norm_label": "test_dry_run_does_not_embed_or_persist()",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L783"
+      "source_location": "L790"
     },
     {
       "id": "backend_tests_test_agronomic_knowledge_test_heading_detection_uses_raw_spacing_before_content_normalization",
@@ -20878,7 +20878,7 @@
       "file_type": "code",
       "norm_label": "test_heading_detection_uses_raw_spacing_before_content_normalization()",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L672"
+      "source_location": "L679"
     },
     {
       "id": "backend_tests_test_agronomic_knowledge_test_hybrid_retrieval_uses_crop_factor_filters_and_deterministic_rrf",
@@ -20890,7 +20890,7 @@
       "file_type": "code",
       "norm_label": "test_hybrid_retrieval_uses_crop_factor_filters_and_deterministic_rrf()",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L803"
+      "source_location": "L810"
     },
     {
       "id": "backend_tests_test_agronomic_knowledge_test_hybrid_retrieval_v4_filters_noise_with_factor_focused_queries",
@@ -20902,7 +20902,7 @@
       "file_type": "code",
       "norm_label": "test_hybrid_retrieval_v4_filters_noise_with_factor_focused_queries()",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L841"
+      "source_location": "L848"
     },
     {
       "id": "backend_tests_test_agronomic_knowledge_test_hybrid_retrieval_v4_keeps_context_out_of_lexical_factor_query",
@@ -20914,7 +20914,7 @@
       "file_type": "code",
       "norm_label": "test_hybrid_retrieval_v4_keeps_context_out_of_lexical_factor_query()",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1021"
+      "source_location": "L1028"
     },
     {
       "id": "backend_tests_test_agronomic_knowledge_test_hybrid_retrieval_v4_preserves_useful_introduction_sections",
@@ -20926,7 +20926,7 @@
       "file_type": "code",
       "norm_label": "test_hybrid_retrieval_v4_preserves_useful_introduction_sections()",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1137"
+      "source_location": "L1144"
     },
     {
       "id": "backend_tests_test_agronomic_knowledge_test_ingestion_embeds_document_and_section_context",
@@ -20938,7 +20938,7 @@
       "file_type": "code",
       "norm_label": "test_ingestion_embeds_document_and_section_context()",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L756"
+      "source_location": "L763"
     },
     {
       "id": "backend_tests_test_agronomic_knowledge_test_ingestion_is_sha_idempotent_and_reingests_changed_source",
@@ -20950,7 +20950,7 @@
       "file_type": "code",
       "norm_label": "test_ingestion_is_sha_idempotent_and_reingests_changed_source()",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L729"
+      "source_location": "L736"
     },
     {
       "id": "backend_tests_test_agronomic_knowledge_test_migration_0015_compiles_with_postgresql_identifier_limits",
@@ -20998,7 +20998,7 @@
       "file_type": "code",
       "norm_label": "test_repo_taxonomy_file_is_valid_utf8_without_mojibake()",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L516"
+      "source_location": "L523"
     },
     {
       "id": "backend_tests_test_production_compose_contract_mapping_keys",
@@ -29446,7 +29446,7 @@
       "file_type": "code",
       "norm_label": "test_generation_context_presents_exact_scientific_values_readably()",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1279"
+      "source_location": "L1286"
     },
     {
       "id": "backend_tests_test_agronomic_knowledge_test_missing_evidence_does_not_generate_unsupported_action_or_dose",
@@ -29458,7 +29458,7 @@
       "file_type": "code",
       "norm_label": "test_missing_evidence_does_not_generate_unsupported_action_or_dose()",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1306"
+      "source_location": "L1313"
     },
     {
       "id": "backend_tests_test_agronomic_knowledge_test_openai_responses_adapter_uses_strict_schema_and_no_tools",
@@ -29470,7 +29470,7 @@
       "file_type": "code",
       "norm_label": "test_openai_responses_adapter_uses_strict_schema_and_no_tools()",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1331"
+      "source_location": "L1338"
     },
     {
       "id": "backend_tests_test_agronomic_knowledge_test_openai_responses_adapter_uses_strict_schema_and_no_tools_create",
@@ -29482,7 +29482,7 @@
       "file_type": "code",
       "norm_label": "create()",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1358"
+      "source_location": "L1365"
     },
     {
       "id": "backend_tests_test_agronomic_knowledge_test_openai_responses_adapter_uses_strict_schema_and_no_tools_init",
@@ -29494,7 +29494,7 @@
       "file_type": "code",
       "norm_label": "__init__()",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1365"
+      "source_location": "L1372"
     },
     {
       "id": "backend_tests_test_agronomic_knowledge_test_recommendation_cache_key_changes_with_prompt_version",
@@ -29506,7 +29506,7 @@
       "file_type": "code",
       "norm_label": "test_recommendation_cache_key_changes_with_prompt_version()",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1238"
+      "source_location": "L1245"
     },
     {
       "id": "backend_tests_test_agronomic_knowledge_test_recommendation_validates_citations_and_reuses_cache",
@@ -29518,7 +29518,7 @@
       "file_type": "code",
       "norm_label": "test_recommendation_validates_citations_and_reuses_cache()",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1201"
+      "source_location": "L1208"
     },
     {
       "id": "backend_tests_test_agronomic_knowledge_test_recommendation_without_item_citation_is_rejected",
@@ -29530,7 +29530,7 @@
       "file_type": "code",
       "norm_label": "test_recommendation_without_item_citation_is_rejected()",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1246"
+      "source_location": "L1253"
     },
     {
       "id": "backend_tests_test_agronomic_knowledge_test_unused_retrieved_source_cannot_be_presented_as_cited",
@@ -29542,7 +29542,7 @@
       "file_type": "code",
       "norm_label": "test_unused_retrieved_source_cannot_be_presented_as_cited()",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1265"
+      "source_location": "L1272"
     },
     {
       "id": "backend_tests_test_ia4_quota_attemptrepository_init",
@@ -76568,7 +76568,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L705",
+      "source_location": "L712",
       "weight": 1.0
     },
     {
@@ -76580,7 +76580,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L717",
+      "source_location": "L724",
       "weight": 1.0
     },
     {
@@ -76592,7 +76592,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L556",
+      "source_location": "L563",
       "weight": 1.0
     },
     {
@@ -76604,7 +76604,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L564",
+      "source_location": "L571",
       "weight": 1.0
     },
     {
@@ -76616,7 +76616,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L784",
+      "source_location": "L791",
       "weight": 1.0
     },
     {
@@ -76628,7 +76628,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L785",
+      "source_location": "L792",
       "weight": 1.0
     },
     {
@@ -76640,7 +76640,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L786",
+      "source_location": "L793",
       "weight": 1.0
     },
     {
@@ -76652,7 +76652,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L789",
+      "source_location": "L796",
       "weight": 1.0
     },
     {
@@ -76664,7 +76664,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1281",
+      "source_location": "L1288",
       "weight": 1.0
     },
     {
@@ -76676,7 +76676,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1294",
+      "source_location": "L1301",
       "weight": 1.0
     },
     {
@@ -76688,7 +76688,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1294",
+      "source_location": "L1301",
       "weight": 1.0
     },
     {
@@ -76700,7 +76700,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L676",
+      "source_location": "L683",
       "weight": 1.0
     },
     {
@@ -76712,7 +76712,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L679",
+      "source_location": "L686",
       "weight": 1.0
     },
     {
@@ -76724,7 +76724,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L692",
+      "source_location": "L699",
       "weight": 1.0
     },
     {
@@ -76736,7 +76736,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L804",
+      "source_location": "L811",
       "weight": 1.0
     },
     {
@@ -76748,36 +76748,12 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L805",
+      "source_location": "L812",
       "weight": 1.0
     },
     {
       "source": "backend_tests_test_agronomic_knowledge_test_hybrid_retrieval_uses_crop_factor_filters_and_deterministic_rrf",
       "target": "backend_tests_test_agronomic_knowledge_stored_chunk",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L806",
-      "weight": 1.0
-    },
-    {
-      "source": "backend_tests_test_agronomic_knowledge_test_hybrid_retrieval_uses_crop_factor_filters_and_deterministic_rrf",
-      "target": "backend_src_via_backend_contexts_decision_support_application_knowledge_models_lexicalsearchhit",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L809",
-      "weight": 1.0
-    },
-    {
-      "source": "backend_tests_test_agronomic_knowledge_test_hybrid_retrieval_uses_crop_factor_filters_and_deterministic_rrf",
-      "target": "backend_src_via_backend_contexts_decision_support_application_knowledge_models_vectorsearchcandidate",
       "relation": "calls",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -76789,7 +76765,7 @@
     },
     {
       "source": "backend_tests_test_agronomic_knowledge_test_hybrid_retrieval_uses_crop_factor_filters_and_deterministic_rrf",
-      "target": "backend_tests_test_agronomic_knowledge_fakeembeddings",
+      "target": "backend_src_via_backend_contexts_decision_support_application_knowledge_models_lexicalsearchhit",
       "relation": "calls",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -76801,6 +76777,30 @@
     },
     {
       "source": "backend_tests_test_agronomic_knowledge_test_hybrid_retrieval_uses_crop_factor_filters_and_deterministic_rrf",
+      "target": "backend_src_via_backend_contexts_decision_support_application_knowledge_models_vectorsearchcandidate",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "backend/tests/test_agronomic_knowledge.py",
+      "source_location": "L820",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_tests_test_agronomic_knowledge_test_hybrid_retrieval_uses_crop_factor_filters_and_deterministic_rrf",
+      "target": "backend_tests_test_agronomic_knowledge_fakeembeddings",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "backend/tests/test_agronomic_knowledge.py",
+      "source_location": "L823",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_tests_test_agronomic_knowledge_test_hybrid_retrieval_uses_crop_factor_filters_and_deterministic_rrf",
       "target": "backend_src_via_backend_contexts_decision_support_application_knowledge_services_configured_embedding_index",
       "relation": "calls",
       "_origin": "ast",
@@ -76808,7 +76808,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L826",
+      "source_location": "L833",
       "weight": 1.0
     },
     {
@@ -76820,7 +76820,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L838",
+      "source_location": "L845",
       "weight": 1.0
     },
     {
@@ -76832,7 +76832,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L842",
+      "source_location": "L849",
       "weight": 1.0
     },
     {
@@ -76844,7 +76844,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L843",
+      "source_location": "L850",
       "weight": 1.0
     },
     {
@@ -76856,7 +76856,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L845",
+      "source_location": "L852",
       "weight": 1.0
     },
     {
@@ -76868,7 +76868,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L889",
+      "source_location": "L896",
       "weight": 1.0
     },
     {
@@ -76880,7 +76880,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L895",
+      "source_location": "L902",
       "weight": 1.0
     },
     {
@@ -76892,7 +76892,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L913",
+      "source_location": "L920",
       "weight": 1.0
     },
     {
@@ -76904,7 +76904,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L940",
+      "source_location": "L947",
       "weight": 1.0
     },
     {
@@ -76916,7 +76916,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1022",
+      "source_location": "L1029",
       "weight": 1.0
     },
     {
@@ -76928,7 +76928,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1037",
+      "source_location": "L1044",
       "weight": 1.0
     },
     {
@@ -76940,24 +76940,12 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1039",
+      "source_location": "L1046",
       "weight": 1.0
     },
     {
       "source": "backend_tests_test_agronomic_knowledge_test_hybrid_retrieval_v4_keeps_context_out_of_lexical_factor_query",
       "target": "backend_src_via_backend_contexts_decision_support_application_knowledge_models_lexicalsearchhit",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1050",
-      "weight": 1.0
-    },
-    {
-      "source": "backend_tests_test_agronomic_knowledge_test_hybrid_retrieval_v4_keeps_context_out_of_lexical_factor_query",
-      "target": "backend_src_via_backend_contexts_decision_support_application_knowledge_models_vectorsearchcandidate",
       "relation": "calls",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -76969,6 +76957,18 @@
     },
     {
       "source": "backend_tests_test_agronomic_knowledge_test_hybrid_retrieval_v4_keeps_context_out_of_lexical_factor_query",
+      "target": "backend_src_via_backend_contexts_decision_support_application_knowledge_models_vectorsearchcandidate",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "backend/tests/test_agronomic_knowledge.py",
+      "source_location": "L1064",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_tests_test_agronomic_knowledge_test_hybrid_retrieval_v4_keeps_context_out_of_lexical_factor_query",
       "target": "backend_tests_test_agronomic_knowledge_fakeembeddings",
       "relation": "calls",
       "_origin": "ast",
@@ -76976,7 +76976,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1063",
+      "source_location": "L1070",
       "weight": 1.0
     },
     {
@@ -76988,7 +76988,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1092",
+      "source_location": "L1099",
       "weight": 1.0
     },
     {
@@ -77000,7 +77000,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1138",
+      "source_location": "L1145",
       "weight": 1.0
     },
     {
@@ -77012,7 +77012,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1139",
+      "source_location": "L1146",
       "weight": 1.0
     },
     {
@@ -77024,7 +77024,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1141",
+      "source_location": "L1148",
       "weight": 1.0
     },
     {
@@ -77036,7 +77036,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1154",
+      "source_location": "L1161",
       "weight": 1.0
     },
     {
@@ -77048,7 +77048,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1161",
+      "source_location": "L1168",
       "weight": 1.0
     },
     {
@@ -77060,7 +77060,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1167",
+      "source_location": "L1174",
       "weight": 1.0
     },
     {
@@ -77072,7 +77072,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1183",
+      "source_location": "L1190",
       "weight": 1.0
     },
     {
@@ -77084,7 +77084,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L757",
+      "source_location": "L764",
       "weight": 1.0
     },
     {
@@ -77096,7 +77096,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L758",
+      "source_location": "L765",
       "weight": 1.0
     },
     {
@@ -77108,7 +77108,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L759",
+      "source_location": "L766",
       "weight": 1.0
     },
     {
@@ -77120,7 +77120,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L763",
+      "source_location": "L770",
       "weight": 1.0
     },
     {
@@ -77132,7 +77132,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L730",
+      "source_location": "L737",
       "weight": 1.0
     },
     {
@@ -77144,7 +77144,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L731",
+      "source_location": "L738",
       "weight": 1.0
     },
     {
@@ -77156,7 +77156,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L732",
+      "source_location": "L739",
       "weight": 1.0
     },
     {
@@ -77168,60 +77168,12 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L735",
+      "source_location": "L742",
       "weight": 1.0
     },
     {
       "source": "backend_tests_test_agronomic_knowledge_test_missing_evidence_does_not_generate_unsupported_action_or_dose",
       "target": "backend_tests_test_agronomic_knowledge_context",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1307",
-      "weight": 1.0
-    },
-    {
-      "source": "backend_tests_test_agronomic_knowledge_test_missing_evidence_does_not_generate_unsupported_action_or_dose",
-      "target": "backend_tests_test_agronomic_knowledge_retrieved",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1309",
-      "weight": 1.0
-    },
-    {
-      "source": "backend_tests_test_agronomic_knowledge_test_missing_evidence_does_not_generate_unsupported_action_or_dose",
-      "target": "backend_tests_test_agronomic_knowledge_generator",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1312",
-      "weight": 1.0
-    },
-    {
-      "source": "backend_tests_test_agronomic_knowledge_test_missing_evidence_does_not_generate_unsupported_action_or_dose",
-      "target": "backend_tests_test_agronomic_knowledge_recommendation",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1312",
-      "weight": 1.0
-    },
-    {
-      "source": "backend_tests_test_agronomic_knowledge_test_missing_evidence_does_not_generate_unsupported_action_or_dose",
-      "target": "backend_tests_test_agronomic_knowledge_retriever",
       "relation": "calls",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -77233,6 +77185,54 @@
     },
     {
       "source": "backend_tests_test_agronomic_knowledge_test_missing_evidence_does_not_generate_unsupported_action_or_dose",
+      "target": "backend_tests_test_agronomic_knowledge_retrieved",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "backend/tests/test_agronomic_knowledge.py",
+      "source_location": "L1316",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_tests_test_agronomic_knowledge_test_missing_evidence_does_not_generate_unsupported_action_or_dose",
+      "target": "backend_tests_test_agronomic_knowledge_generator",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "backend/tests/test_agronomic_knowledge.py",
+      "source_location": "L1319",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_tests_test_agronomic_knowledge_test_missing_evidence_does_not_generate_unsupported_action_or_dose",
+      "target": "backend_tests_test_agronomic_knowledge_recommendation",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "backend/tests/test_agronomic_knowledge.py",
+      "source_location": "L1319",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_tests_test_agronomic_knowledge_test_missing_evidence_does_not_generate_unsupported_action_or_dose",
+      "target": "backend_tests_test_agronomic_knowledge_retriever",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "backend/tests/test_agronomic_knowledge.py",
+      "source_location": "L1321",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_tests_test_agronomic_knowledge_test_missing_evidence_does_not_generate_unsupported_action_or_dose",
       "target": "backend_tests_test_agronomic_knowledge_recommendationrepository",
       "relation": "calls",
       "_origin": "ast",
@@ -77240,7 +77240,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1315",
+      "source_location": "L1322",
       "weight": 1.0
     },
     {
@@ -77252,7 +77252,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L590",
+      "source_location": "L597",
       "weight": 1.0
     },
     {
@@ -77264,7 +77264,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L616",
+      "source_location": "L623",
       "weight": 1.0
     },
     {
@@ -77276,7 +77276,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1370",
+      "source_location": "L1377",
       "weight": 1.0
     },
     {
@@ -77288,7 +77288,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1373",
+      "source_location": "L1380",
       "weight": 1.0
     },
     {
@@ -77300,7 +77300,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1239",
+      "source_location": "L1246",
       "weight": 1.0
     },
     {
@@ -77312,7 +77312,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1240",
+      "source_location": "L1247",
       "weight": 1.0
     },
     {
@@ -77324,7 +77324,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1241",
+      "source_location": "L1248",
       "weight": 1.0
     },
     {
@@ -77336,7 +77336,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1202",
+      "source_location": "L1209",
       "weight": 1.0
     },
     {
@@ -77348,7 +77348,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1203",
+      "source_location": "L1210",
       "weight": 1.0
     },
     {
@@ -77360,7 +77360,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1204",
+      "source_location": "L1211",
       "weight": 1.0
     },
     {
@@ -77372,7 +77372,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1205",
+      "source_location": "L1212",
       "weight": 1.0
     },
     {
@@ -77384,7 +77384,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1205",
+      "source_location": "L1212",
       "weight": 1.0
     },
     {
@@ -77396,7 +77396,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1206",
+      "source_location": "L1213",
       "weight": 1.0
     },
     {
@@ -77408,7 +77408,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1247",
+      "source_location": "L1254",
       "weight": 1.0
     },
     {
@@ -77420,7 +77420,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1248",
+      "source_location": "L1255",
       "weight": 1.0
     },
     {
@@ -77432,7 +77432,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1249",
+      "source_location": "L1256",
       "weight": 1.0
     },
     {
@@ -77444,7 +77444,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1258",
+      "source_location": "L1265",
       "weight": 1.0
     },
     {
@@ -77456,7 +77456,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1259",
+      "source_location": "L1266",
       "weight": 1.0
     },
     {
@@ -77468,7 +77468,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1260",
+      "source_location": "L1267",
       "weight": 1.0
     },
     {
@@ -77492,7 +77492,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1266",
+      "source_location": "L1273",
       "weight": 1.0
     },
     {
@@ -77504,7 +77504,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1267",
+      "source_location": "L1274",
       "weight": 1.0
     },
     {
@@ -77516,7 +77516,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1270",
+      "source_location": "L1277",
       "weight": 1.0
     },
     {
@@ -77528,7 +77528,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1272",
+      "source_location": "L1279",
       "weight": 1.0
     },
     {
@@ -77540,7 +77540,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1273",
+      "source_location": "L1280",
       "weight": 1.0
     },
     {
@@ -77552,7 +77552,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1274",
+      "source_location": "L1281",
       "weight": 1.0
     },
     {
@@ -77564,7 +77564,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L631",
+      "source_location": "L638",
       "weight": 1.0
     },
     {
@@ -77576,7 +77576,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L669",
+      "source_location": "L676",
       "weight": 1.0
     },
     {
@@ -92144,7 +92144,7 @@
       "confidence_score": 1.0,
       "context": "decorator",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L573",
+      "source_location": "L580",
       "weight": 1.0
     },
     {
@@ -92156,7 +92156,7 @@
       "confidence_score": 1.0,
       "context": "decorator",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L593",
+      "source_location": "L600",
       "weight": 1.0
     },
     {
@@ -92168,7 +92168,7 @@
       "confidence_score": 1.0,
       "context": "decorator",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1412",
+      "source_location": "L1419",
       "weight": 1.0
     },
     {
@@ -92180,7 +92180,7 @@
       "confidence_score": 1.0,
       "context": "decorator",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L619",
+      "source_location": "L626",
       "weight": 1.0
     },
     {
@@ -92192,7 +92192,7 @@
       "confidence_score": 1.0,
       "context": "decorator",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L634",
+      "source_location": "L641",
       "weight": 1.0
     },
     {
@@ -126704,7 +126704,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1331",
+      "source_location": "L1338",
       "weight": 1.0
     },
     {
@@ -142963,7 +142963,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1021",
+      "source_location": "L1028",
       "weight": 1.0
     },
     {
@@ -142985,7 +142985,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1137",
+      "source_location": "L1144",
       "weight": 1.0
     },
     {
@@ -142996,7 +142996,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1201",
+      "source_location": "L1208",
       "weight": 1.0
     },
     {
@@ -143007,7 +143007,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1238",
+      "source_location": "L1245",
       "weight": 1.0
     },
     {
@@ -143018,7 +143018,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1246",
+      "source_location": "L1253",
       "weight": 1.0
     },
     {
@@ -143029,7 +143029,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1265",
+      "source_location": "L1272",
       "weight": 1.0
     },
     {
@@ -143040,7 +143040,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1279",
+      "source_location": "L1286",
       "weight": 1.0
     },
     {
@@ -143051,7 +143051,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1306",
+      "source_location": "L1313",
       "weight": 1.0
     },
     {
@@ -143062,7 +143062,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1324",
+      "source_location": "L1331",
       "weight": 1.0
     },
     {
@@ -143073,7 +143073,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1331",
+      "source_location": "L1338",
       "weight": 1.0
     },
     {
@@ -143095,7 +143095,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1413",
+      "source_location": "L1420",
       "weight": 1.0
     },
     {
@@ -143282,7 +143282,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L516",
+      "source_location": "L523",
       "weight": 1.0
     },
     {
@@ -143293,7 +143293,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L542",
+      "source_location": "L549",
       "weight": 1.0
     },
     {
@@ -143304,7 +143304,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L553",
+      "source_location": "L560",
       "weight": 1.0
     },
     {
@@ -143315,7 +143315,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L589",
+      "source_location": "L596",
       "weight": 1.0
     },
     {
@@ -143326,7 +143326,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L615",
+      "source_location": "L622",
       "weight": 1.0
     },
     {
@@ -143337,7 +143337,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L630",
+      "source_location": "L637",
       "weight": 1.0
     },
     {
@@ -143348,7 +143348,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L666",
+      "source_location": "L673",
       "weight": 1.0
     },
     {
@@ -143359,7 +143359,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L672",
+      "source_location": "L679",
       "weight": 1.0
     },
     {
@@ -143370,7 +143370,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L699",
+      "source_location": "L706",
       "weight": 1.0
     },
     {
@@ -143381,7 +143381,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L729",
+      "source_location": "L736",
       "weight": 1.0
     },
     {
@@ -143392,7 +143392,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L756",
+      "source_location": "L763",
       "weight": 1.0
     },
     {
@@ -143403,7 +143403,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L783",
+      "source_location": "L790",
       "weight": 1.0
     },
     {
@@ -143414,7 +143414,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L803",
+      "source_location": "L810",
       "weight": 1.0
     },
     {
@@ -143436,7 +143436,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L841",
+      "source_location": "L848",
       "weight": 1.0
     },
     {
@@ -143700,7 +143700,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1358",
+      "source_location": "L1365",
       "weight": 1.0
     },
     {
@@ -143711,7 +143711,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1365",
+      "source_location": "L1372",
       "weight": 1.0
     },
     {
@@ -187295,23 +187295,12 @@
       "confidence": "INFERRED",
       "confidence_score": 0.95,
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L547",
+      "source_location": "L554",
       "weight": 0.8
     },
     {
       "source": "backend_tests_test_agronomic_knowledge_test_chunking_does_not_cross_detected_sections",
       "target": "backend_src_via_backend_contexts_decision_support_application_knowledge_services_deterministicknowledgechunker",
-      "relation": "uses",
-      "_origin": "ast",
-      "confidence": "INFERRED",
-      "confidence_score": 0.95,
-      "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L700",
-      "weight": 0.8
-    },
-    {
-      "source": "backend_tests_test_agronomic_knowledge_test_chunking_does_not_cross_detected_sections",
-      "target": "backend_src_via_backend_contexts_decision_support_application_knowledge_models_extractedpage",
       "relation": "uses",
       "_origin": "ast",
       "confidence": "INFERRED",
@@ -187321,6 +187310,17 @@
       "weight": 0.8
     },
     {
+      "source": "backend_tests_test_agronomic_knowledge_test_chunking_does_not_cross_detected_sections",
+      "target": "backend_src_via_backend_contexts_decision_support_application_knowledge_models_extractedpage",
+      "relation": "uses",
+      "_origin": "ast",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "backend/tests/test_agronomic_knowledge.py",
+      "source_location": "L714",
+      "weight": 0.8
+    },
+    {
       "source": "backend_tests_test_agronomic_knowledge_test_chunking_is_deterministic_and_preserves_page_provenance",
       "target": "backend_src_via_backend_contexts_decision_support_application_knowledge_services_deterministicknowledgechunker",
       "relation": "uses",
@@ -187328,7 +187328,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.95,
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L554",
+      "source_location": "L561",
       "weight": 0.8
     },
     {
@@ -187339,7 +187339,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.95,
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L558",
+      "source_location": "L565",
       "weight": 0.8
     },
     {
@@ -187350,7 +187350,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.95,
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L787",
+      "source_location": "L794",
       "weight": 0.8
     },
     {
@@ -187361,7 +187361,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.95,
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L790",
+      "source_location": "L797",
       "weight": 0.8
     },
     {
@@ -187372,7 +187372,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.95,
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1285",
+      "source_location": "L1292",
       "weight": 0.8
     },
     {
@@ -187383,7 +187383,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.95,
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L678",
+      "source_location": "L685",
       "weight": 0.8
     },
     {
@@ -187394,7 +187394,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.95,
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L681",
+      "source_location": "L688",
       "weight": 0.8
     },
     {
@@ -187405,7 +187405,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.95,
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L817",
+      "source_location": "L824",
       "weight": 0.8
     },
     {
@@ -187416,7 +187416,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.95,
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L820",
+      "source_location": "L827",
       "weight": 0.8
     },
     {
@@ -187427,7 +187427,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.95,
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L833",
+      "source_location": "L840",
       "weight": 0.8
     },
     {
@@ -187438,7 +187438,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.95,
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L915",
+      "source_location": "L922",
       "weight": 0.8
     },
     {
@@ -187449,7 +187449,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.95,
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L918",
+      "source_location": "L925",
       "weight": 0.8
     },
     {
@@ -187460,7 +187460,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.95,
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L953",
+      "source_location": "L960",
       "weight": 0.8
     },
     {
@@ -187471,7 +187471,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.95,
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1028",
+      "source_location": "L1035",
       "weight": 0.8
     },
     {
@@ -187482,7 +187482,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.95,
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1065",
+      "source_location": "L1072",
       "weight": 0.8
     },
     {
@@ -187493,7 +187493,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.95,
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1068",
+      "source_location": "L1075",
       "weight": 0.8
     },
     {
@@ -187504,7 +187504,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.95,
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1169",
+      "source_location": "L1176",
       "weight": 0.8
     },
     {
@@ -187515,7 +187515,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.95,
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1172",
+      "source_location": "L1179",
       "weight": 0.8
     },
     {
@@ -187526,7 +187526,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.95,
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1195",
+      "source_location": "L1202",
       "weight": 0.8
     },
     {
@@ -187537,7 +187537,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.95,
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L761",
+      "source_location": "L768",
       "weight": 0.8
     },
     {
@@ -187548,7 +187548,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.95,
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L764",
+      "source_location": "L771",
       "weight": 0.8
     },
     {
@@ -187559,7 +187559,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.95,
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L733",
+      "source_location": "L740",
       "weight": 0.8
     },
     {
@@ -187570,7 +187570,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.95,
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L736",
+      "source_location": "L743",
       "weight": 0.8
     },
     {
@@ -187614,7 +187614,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.95,
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1309",
+      "source_location": "L1316",
       "weight": 0.8
     },
     {
@@ -187625,7 +187625,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.95,
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1313",
+      "source_location": "L1320",
       "weight": 0.8
     },
     {
@@ -187636,7 +187636,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.95,
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1318",
+      "source_location": "L1325",
       "weight": 0.8
     },
     {
@@ -187647,7 +187647,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.95,
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1325",
+      "source_location": "L1332",
       "weight": 0.8
     },
     {
@@ -187658,7 +187658,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.95,
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1327",
+      "source_location": "L1334",
       "weight": 0.8
     },
     {
@@ -187669,7 +187669,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.95,
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1371",
+      "source_location": "L1378",
       "weight": 0.8
     },
     {
@@ -187691,7 +187691,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.95,
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1419",
+      "source_location": "L1426",
       "weight": 0.8
     },
     {
@@ -187702,7 +187702,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.95,
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1207",
+      "source_location": "L1214",
       "weight": 0.8
     },
     {
@@ -187713,7 +187713,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.95,
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1215",
+      "source_location": "L1222",
       "weight": 0.8
     },
     {
@@ -187724,7 +187724,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.95,
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1253",
+      "source_location": "L1260",
       "weight": 0.8
     },
     {
@@ -187735,7 +187735,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.95,
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1257",
+      "source_location": "L1264",
       "weight": 0.8
     },
     {
@@ -187746,7 +187746,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.95,
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1262",
+      "source_location": "L1269",
       "weight": 0.8
     },
     {
@@ -187757,7 +187757,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.95,
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1271",
+      "source_location": "L1278",
       "weight": 0.8
     },
     {
@@ -187768,7 +187768,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.95,
       "source_file": "backend/tests/test_agronomic_knowledge.py",
-      "source_location": "L1276",
+      "source_location": "L1283",
       "weight": 0.8
     },
     {
@@ -193489,5 +193489,5 @@
       "source_file": "docs/architecture/cropsuite-integration.md"
     }
   ],
-  "built_at_commit": "6b436e3356b4f3182efc148106996edd7583f913"
+  "built_at_commit": "171a166b515b5ad46115fea4a816621d17f88684"
 }

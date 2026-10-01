@@ -2088,9 +2088,9 @@
     "semantic_hash": ""
   },
   "backend/tests/test_agronomic_knowledge.py": {
-    "mtime": 1790468007.6088326,
-    "seen": 1790468090.701934,
-    "ast_hash": "34d3f45db7b064db42e858c1fa133cc1",
+    "mtime": 1790881331.962439,
+    "seen": 1790881443.70786,
+    "ast_hash": "d31523001925a39282c9a61be21ef2ce",
     "semantic_hash": ""
   },
   "backend/tests/test_agronomic_knowledge_http.py": {
@@ -2124,15 +2124,15 @@
     "semantic_hash": ""
   },
   "backend/src/via_backend/resources/knowledge/corpus.yaml": {
-    "mtime": 1789883600.6311612,
-    "seen": 1789899838.8573205,
-    "ast_hash": "dbde399c77902cbf431fb2b77504a711",
+    "mtime": 1790881331.9594452,
+    "seen": 1790881443.7079885,
+    "ast_hash": "45dcc63588902ccc27e3ae8fa031bc75",
     "semantic_hash": ""
   },
   "backend/src/via_backend/resources/knowledge/taxonomy.yaml": {
-    "mtime": 1789860459.160724,
-    "seen": 1789899838.8573213,
-    "ast_hash": "389b1a8fc1839c6ee7c0a95ea019546e",
+    "mtime": 1790881331.960444,
+    "seen": 1790881443.7079895,
+    "ast_hash": "121a649720f7d91f0bc0a8b017daeb9c",
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/agroclimatic_evaluation/application/factor_labels.py": {
