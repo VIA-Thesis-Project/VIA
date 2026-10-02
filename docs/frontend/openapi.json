@@ -377,7 +377,7 @@
                 "type": "null"
               }
             ],
-            "description": "Canonical engine name when the selected catalog provides one.",
+            "description": "Localized user-facing crop name.",
             "title": "Display Name"
           },
           "water_regimes": {

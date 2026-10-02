@@ -38,6 +38,15 @@ HUAURA_CROP_IDS = {
     "citrus",
     "strawberry",
 }
+HUAURA_DISPLAY_NAMES = {
+    "maize": "Maíz",
+    "sugarcane": "Caña de azúcar",
+    "avocado": "Palta",
+    "asparagus": "Espárrago",
+    "mango": "Mango",
+    "citrus": "Cítricos",
+    "strawberry": "Fresa",
+}
 
 
 def _app(settings: Settings) -> FastAPI:
@@ -159,7 +168,9 @@ def test_huaura_catalog_is_published_by_evaluation_capabilities(tmp_path: Path) 
     assert "strawberries" not in {crop["crop_id"] for crop in crops}
     assert "alfalfa" not in {crop["crop_id"] for crop in crops}
     assert all(crop["water_regimes"] == ["rainfed", "irrigated"] for crop in crops)
-    assert all(crop["display_name"] == crop["crop_id"] for crop in crops)
+    assert {
+        crop["crop_id"]: crop["display_name"] for crop in crops
+    } == HUAURA_DISPLAY_NAMES
 
 
 def test_capabilities_publish_configured_crops_scenarios_and_bindings(
@@ -180,7 +191,7 @@ def test_capabilities_publish_configured_crops_scenarios_and_bindings(
         "crops": [
             {
                 "crop_id": "maize",
-                "display_name": "maize",
+                "display_name": "Maíz",
                 "water_regimes": ["rainfed", "irrigated"],
             },
             {

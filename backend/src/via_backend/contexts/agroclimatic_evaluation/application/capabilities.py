@@ -8,6 +8,7 @@ from typing import Protocol, runtime_checkable
 from uuid import UUID
 
 from ..domain.water_regime import WaterRegime
+from .crop_labels import crop_display_label
 
 
 class CapabilityStatus(StrEnum):
@@ -120,7 +121,10 @@ class EvaluationCapabilitiesService:
         crops = tuple(
             CropEvaluationCapability(
                 crop_id=entry.crop_id,
-                display_name=entry.display_name,
+                display_name=crop_display_label(
+                    entry.crop_id,
+                    raw_label=entry.display_name,
+                ),
                 water_regimes=regimes,
             )
             for entry in entries

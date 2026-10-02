@@ -23,7 +23,7 @@ class CropEvaluationCapabilityResponse(BaseModel):
 
     crop_id: str = Field(description="Identifier accepted in requested_crops.")
     display_name: str | None = Field(
-        description="Canonical engine name when the selected catalog provides one."
+        description="Localized user-facing crop name."
     )
     water_regimes: list[WaterRegime] = Field(
         description="Scientific scenarios supported for this crop."

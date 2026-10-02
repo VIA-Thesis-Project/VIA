@@ -68,9 +68,7 @@ and continue processing independently of the parcel's deletion.
 
 ## Capability discovery
 
-`GET /api/v1/evaluation-capabilities` returns the deployment-selected crop catalog and currently enforceable input constraints. `crop_id` is the stable selection identifier. `display_name` currently comes
-from the CropSuite `.inf` engine name; clients that need localized labels should
-map them by `crop_id` in the UI. The successful contract is:
+`GET /api/v1/evaluation-capabilities` returns the deployment-selected crop catalog and currently enforceable input constraints. `crop_id` is the stable selection identifier. `display_name` is the localized Spanish user-facing crop name; clients must continue sending `crop_id` in evaluation requests. The successful contract is:
 
 ```json
 {
