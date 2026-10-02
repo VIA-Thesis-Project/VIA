@@ -36,6 +36,8 @@ All paths below are relative to the configured backend origin. Operation IDs are
 | Knowledge | GET | `/api/v1/decision-support/evaluations/{evaluation_id}/knowledge` | `get_evaluation_knowledge` | 200 |
 | Viability policy | GET | `/api/v1/decision-support/viability-policy` | `get_default_viability_policy` | 200 |
 | Viability policy | PUT | `/api/v1/decision-support/viability-policy` | `update_default_viability_policy` | 200 |
+| Personal viability policy | GET | `/api/v1/decision-support/my-viability-policy` | `get_user_viability_policy` | 200 |
+| Personal viability policy | PUT | `/api/v1/decision-support/my-viability-policy` | `update_user_viability_policy` | 200 |
 | Evaluation policy | GET | `/api/v1/decision-support/evaluations/{evaluation_id}/viability-policy` | `get_evaluation_viability_policy` | 200 |
 | Evaluation viability | GET | `/api/v1/decision-support/evaluations/{evaluation_id}/viability` | `get_evaluation_viability` | 200 |
 | Recommendations | POST | `/api/v1/decision-support/evaluations/{evaluation_id}/recommendations` | `create_evaluation_recommendation` | 200 |
@@ -49,6 +51,13 @@ version and returns the effective snapshot. A stale reference returns `409`,
 invalid thresholds return `422`, and a USER writing returns `403`. The
 evaluation policy lookup returns `status: policy_not_recorded` and `policy: null`
 for legacy evaluations; it never substitutes the current default.
+
+The settings screen uses the personal GET/PUT endpoints for both USER and ADMIN.
+They have the same request/response shape as the global policy and derive the owner
+from the authenticated session. Before the first personal save, GET returns the
+global default. PUT saves only that user's thresholds; stale versions return `409`.
+New evaluations capture the owner's effective policy. Changing settings never
+reclassifies existing evaluations or changes another user's settings.
 
 `PATCH` changes only parcel `name` and/or `description`; it does not increment
 `current_version`. Geometry changes use `/versions` and append an immutable

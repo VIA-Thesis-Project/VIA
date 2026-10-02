@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from typing import Protocol, TypeVar, runtime_checkable
+from uuid import UUID
 
 from ..domain.models import (
     DecisionEvidence,
@@ -51,6 +52,20 @@ class IDefaultViabilityPolicyStore(
 
     def set_default_viability_policy(
         self,
+        reference: PolicyReference,
+        *,
+        expected_current: PolicyReference | None,
+    ) -> None: ...
+
+
+class IUserViabilityPolicyStore(Protocol):
+    """Select a personal policy using an opaque authenticated user identifier."""
+
+    def get_user_viability_policy(self, user_id: UUID) -> ViabilityPolicySnapshot | None: ...
+
+    def set_user_viability_policy(
+        self,
+        user_id: UUID,
         reference: PolicyReference,
         *,
         expected_current: PolicyReference | None,

@@ -1,4 +1,4 @@
-"""Authenticated management of VIA's global viability policy."""
+"""Authenticated management of global and personal viability policies."""
 
 from __future__ import annotations
 
@@ -20,9 +20,13 @@ from via_backend.contexts.identity_access.application.public import (
 )
 
 from ..application.default_policy import BASELINE_CONFIGURATION, DefaultViabilityPolicyService
-from ..application.errors import DefaultViabilityPolicyConflictError
+from ..application.errors import (
+    DefaultViabilityPolicyConflictError,
+    UserViabilityPolicyConflictError,
+)
 from ..application.queries import EvaluateDecisionSupport
 from ..application.service import DecisionSupportService
+from ..application.user_policy import UserViabilityPolicyService
 from ..domain.errors import DomainValidationError
 from ..domain.models import PolicyReference, ViabilityPolicyConfiguration, ViabilityPolicySnapshot
 from ..domain.policy import DeterministicViabilityPolicy
@@ -86,6 +90,7 @@ def create_policy_router(
     principal_resolver: PrincipalResolver,
     owned_evaluations: OwnedEvaluationResolver,
     decision_support: DecisionSupportService,
+    user_service: UserViabilityPolicyService,
 ) -> APIRouter:
     router = APIRouter(prefix="/decision-support", tags=["decision-support"])
     principal_dependency = Depends(principal_resolver)
@@ -129,6 +134,41 @@ def create_policy_router(
         except DefaultViabilityPolicyConflictError as error:
             raise HTTPException(
                 status_code=409, detail="Default viability policy changed."
+            ) from error
+
+    @router.get(
+        "/my-viability-policy",
+        response_model=ViabilityPolicyResponse,
+        operation_id="get_user_viability_policy",
+    )
+    def get_user_policy(
+        principal: AuthenticatedPrincipal = principal_dependency,
+    ) -> ViabilityPolicyResponse:
+        return _response(user_service.current(principal.user_id))
+
+    @router.put(
+        "/my-viability-policy",
+        response_model=ViabilityPolicyResponse,
+        operation_id="update_user_viability_policy",
+        responses={409: {"description": "Personal settings changed since they were read."}},
+    )
+    def update_user_policy(
+        body: UpdateViabilityPolicyRequest,
+        principal: AuthenticatedPrincipal = principal_dependency,
+    ) -> ViabilityPolicyResponse:
+        try:
+            return _response(
+                user_service.revise(
+                    principal.user_id,
+                    PolicyReference(body.expected_identifier, body.expected_version),
+                    ViabilityPolicyConfiguration(body.conditional_from, body.viable_from),
+                )
+            )
+        except DomainValidationError as error:
+            raise HTTPException(status_code=422, detail=str(error)) from error
+        except UserViabilityPolicyConflictError as error:
+            raise HTTPException(
+                status_code=409, detail="Your viability settings changed."
             ) from error
 
     def authorize(owner_user_id: UUID, evaluation_id: UUID) -> None:

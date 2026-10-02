@@ -44,6 +44,7 @@ from via_backend.contexts.decision_support.application.policy_lifecycle import (
     ViabilityPolicyLifecycleService,
 )
 from via_backend.contexts.decision_support.application.service import DecisionSupportService
+from via_backend.contexts.decision_support.application.user_policy import UserViabilityPolicyService
 from via_backend.contexts.decision_support.domain.models import (
     PolicyReference,
     ViabilityPolicySnapshot,
@@ -61,10 +62,12 @@ from via_backend.contexts.decision_support.infrastructure import (
 from via_backend.contexts.decision_support.infrastructure.memory_policy import (
     InMemoryDefaultViabilityPolicyStore,
     InMemoryEvaluationPolicyBindingStore,
+    InMemoryUserViabilityPolicyStore,
     InMemoryViabilityPolicyRepository,
 )
 from via_backend.contexts.decision_support.infrastructure.postgresql_repositories import (
     PostgreSQLEvaluationPolicyBindingStore,
+    PostgreSQLUserViabilityPolicyStore,
 )
 from via_backend.contexts.decision_support.interfaces import (
     create_router as create_decision_support_router,
@@ -277,16 +280,19 @@ def create_app(
         policy_versions = PostgreSQLViabilityPolicyRepository(sessions)
         policy_defaults = PostgreSQLDefaultViabilityPolicyStore(sessions)
         policy_bindings = PostgreSQLEvaluationPolicyBindingStore(sessions)
+        user_policies = PostgreSQLUserViabilityPolicyStore(sessions)
     else:
         policy_versions = InMemoryViabilityPolicyRepository()
         policy_defaults = InMemoryDefaultViabilityPolicyStore(policy_versions)
         policy_bindings = InMemoryEvaluationPolicyBindingStore(policy_versions)
+        user_policies = InMemoryUserViabilityPolicyStore(policy_versions)
         initial_reference = PolicyReference(identifier="via-policy", version="1")
         policy_versions.add(ViabilityPolicySnapshot(initial_reference, BASELINE_CONFIGURATION))
         policy_defaults.set_default_viability_policy(initial_reference, expected_current=None)
     default_policy = DefaultViabilityPolicyService(
         policy_defaults, ViabilityPolicyLifecycleService(policy_versions), policy_bindings
     )
+    user_policy = UserViabilityPolicyService(default_policy, user_policies)
 
     def recover_unpersisted_policy(evaluation_id: UUID) -> None:
         if evaluations.get(evaluation_id) is None:
@@ -295,7 +301,7 @@ def create_app(
     agroclimatic_evaluation = AgroclimaticEvaluationService(
         evaluations=evaluations,
         parcel_snapshots=_FarmAuthorizedParcelSnapshotProvider(farm_management),
-        bind_viability_policy=default_policy.bind_default_policy_to_evaluation,
+        bind_viability_policy=user_policy.bind_policy_to_evaluation,
         recover_unpersisted_policy=recover_unpersisted_policy,
     )
     application.state.settings = settings
@@ -347,6 +353,7 @@ def create_app(
             principal_resolver,
             agroclimatic_evaluation,
             DecisionSupportService(agroclimatic_evaluation),
+            user_policy,
         ),
         prefix="/api/v1",
     )

@@ -168,7 +168,9 @@ def test_queued_evaluation_keeps_creation_policy_while_default_changes() -> None
     service = AgroclimaticEvaluationService(
         evaluation_repository,
         ParcelProvider(),
-        bind_viability_policy=policy_service.bind_default_policy_to_evaluation,
+        bind_viability_policy=lambda evaluation_id, _owner: (
+            policy_service.bind_default_policy_to_evaluation(evaluation_id)
+        ),
     )
     command = RequestEvaluation(
         owner_user_id=owner_id,
@@ -203,7 +205,9 @@ def test_queued_evaluation_keeps_creation_policy_while_default_changes() -> None
         failing_repository,
         ParcelProvider(),
         new_id=lambda: failed_id,
-        bind_viability_policy=policy_service.bind_default_policy_to_evaluation,
+        bind_viability_policy=lambda evaluation_id, _owner: (
+            policy_service.bind_default_policy_to_evaluation(evaluation_id)
+        ),
         recover_unpersisted_policy=recover,
     )
     with pytest.raises(RuntimeError, match="Simulated persistence failure"):

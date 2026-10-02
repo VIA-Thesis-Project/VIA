@@ -3284,6 +3284,79 @@
         ]
       }
     },
+    "/api/v1/decision-support/my-viability-policy": {
+      "get": {
+        "operationId": "get_user_viability_policy",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ViabilityPolicyResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Get User Policy",
+        "tags": [
+          "decision-support"
+        ]
+      },
+      "put": {
+        "operationId": "update_user_viability_policy",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateViabilityPolicyRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ViabilityPolicyResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "409": {
+            "description": "Personal settings changed since they were read."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Update User Policy",
+        "tags": [
+          "decision-support"
+        ]
+      }
+    },
     "/api/v1/decision-support/viability-policy": {
       "get": {
         "operationId": "get_default_viability_policy",

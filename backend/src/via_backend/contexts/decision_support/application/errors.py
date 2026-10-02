@@ -9,6 +9,10 @@ class DefaultViabilityPolicyConflictError(RuntimeError):
     """Raised when the default policy changed before an expected update."""
 
 
+class UserViabilityPolicyConflictError(RuntimeError):
+    """Raised when personal thresholds changed before an expected update."""
+
+
 class EvaluationPolicyBindingConflictError(RuntimeError):
     """Raised when an evaluation is already bound to a different policy."""
 

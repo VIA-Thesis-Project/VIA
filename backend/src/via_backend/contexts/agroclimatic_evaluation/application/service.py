@@ -75,7 +75,7 @@ class AgroclimaticEvaluationService:
         *,
         new_id: Callable[[], UUID] = uuid4,
         clock: Callable[[], datetime] | None = None,
-        bind_viability_policy: Callable[[UUID], object] | None = None,
+        bind_viability_policy: Callable[[UUID, UUID], object] | None = None,
         recover_unpersisted_policy: Callable[[UUID], None] | None = None,
     ) -> None:
         self._evaluations = evaluations
@@ -124,7 +124,7 @@ class AgroclimaticEvaluationService:
         ):
             raise ResourceConflictError("Evaluation identity already exists.")
         if self._bind_viability_policy is not None:
-            self._bind_viability_policy(evaluation.id)
+            self._bind_viability_policy(evaluation.id, command.owner_user_id)
         try:
             self._evaluations.add(evaluation)
         except EvaluationConflictError as error:

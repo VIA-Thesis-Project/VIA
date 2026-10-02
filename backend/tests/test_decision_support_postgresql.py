@@ -19,6 +19,7 @@ from via_backend.contexts.decision_support.application.errors import (
     DefaultViabilityPolicyConflictError,
     DefaultViabilityPolicyNotConfiguredError,
     EvaluationPolicyBindingConflictError,
+    UserViabilityPolicyConflictError,
     ViabilityPolicyVersionNotFoundError,
 )
 from via_backend.contexts.decision_support.application.policy_lifecycle import (
@@ -38,6 +39,7 @@ from via_backend.contexts.decision_support.infrastructure import (
 )
 from via_backend.contexts.decision_support.infrastructure.postgresql_repositories import (
     PostgreSQLEvaluationPolicyBindingStore,
+    PostgreSQLUserViabilityPolicyStore,
 )
 from via_backend.infrastructure import SessionFactory, create_database
 
@@ -85,6 +87,7 @@ def clean_policy_versions(
             text(
                 "TRUNCATE TABLE "
                 "decision_support.evaluation_viability_policy_bindings, "
+                "decision_support.user_viability_policies, "
                 "decision_support.default_viability_policy, "
                 "decision_support.viability_policy_versions"
             )
@@ -500,3 +503,60 @@ def test_evaluation_binding_is_immutable_and_has_no_cross_context_foreign_key(
     assert bindings.get(evaluation_a) == first
     assert bindings.get(evaluation_b) == second
     assert policies.get(first.reference) == first
+
+
+def test_personal_policy_persistence_isolates_users_and_rejects_stale_writes(
+    database: tuple[Engine, SessionFactory],
+) -> None:
+    engine, sessions = database
+    policies = PostgreSQLViabilityPolicyRepository(sessions)
+    store = PostgreSQLUserViabilityPolicyStore(sessions)
+    first = _snapshot()
+    second = _snapshot(version="2", conditional_from=45, viable_from=75)
+    policies.add(first)
+    policies.add(second)
+    user_a, user_b = uuid4(), uuid4()
+    assert store.get_user_viability_policy(user_a) is None
+    store.set_user_viability_policy(user_a, first.reference, expected_current=None)
+    store.set_user_viability_policy(user_b, first.reference, expected_current=None)
+    store.set_user_viability_policy(user_a, second.reference, expected_current=first.reference)
+    with pytest.raises(UserViabilityPolicyConflictError):
+        store.set_user_viability_policy(user_a, first.reference, expected_current=first.reference)
+    restored = PostgreSQLUserViabilityPolicyStore(sessions)
+    assert restored.get_user_viability_policy(user_a) == second
+    assert restored.get_user_viability_policy(user_b) == first
+    foreign_keys = inspect(engine).get_foreign_keys(
+        "user_viability_policies", schema="decision_support"
+    )
+    assert len(foreign_keys) == 1
+    assert foreign_keys[0]["referred_schema"] == "decision_support"
+
+
+def test_concurrent_first_personal_policy_writes_have_one_winner(
+    database: tuple[Engine, SessionFactory],
+) -> None:
+    _, sessions = database
+    policies = PostgreSQLViabilityPolicyRepository(sessions)
+    first, second = _snapshot(), _snapshot(version="2", conditional_from=45, viable_from=75)
+    policies.add(first)
+    policies.add(second)
+    user = uuid4()
+    barrier = Barrier(2)
+
+    def save(reference: PolicyReference) -> str:
+        store = PostgreSQLUserViabilityPolicyStore(sessions)
+        barrier.wait(timeout=10)
+        try:
+            store.set_user_viability_policy(user, reference, expected_current=None)
+        except UserViabilityPolicyConflictError:
+            return "conflict"
+        return "success"
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        results = list(executor.map(save, (first.reference, second.reference)))
+    assert results.count("success") == 1
+    assert results.count("conflict") == 1
+    assert PostgreSQLUserViabilityPolicyStore(sessions).get_user_viability_policy(user) in (
+        first,
+        second,
+    )

@@ -16,6 +16,7 @@ from ..application.errors import (
     DefaultViabilityPolicyConflictError,
     DefaultViabilityPolicyNotConfiguredError,
     EvaluationPolicyBindingConflictError,
+    UserViabilityPolicyConflictError,
     ViabilityPolicyVersionNotFoundError,
 )
 from ..application.knowledge_models import (
@@ -52,6 +53,7 @@ from .orm import (
     RecommendationRunRecord,
     RetrievalHitRecord,
     RetrievalRunRecord,
+    UserViabilityPolicyRecord,
     ViabilityPolicyVersionRecord,
 )
 
@@ -192,6 +194,65 @@ class PostgreSQLEvaluationPolicyBindingStore:
                     EvaluationViabilityPolicyBindingRecord.evaluation_id == evaluation_id
                 )
             )
+
+
+class PostgreSQLUserViabilityPolicyStore:
+    """Persist personal policy pointers with optimistic concurrency."""
+
+    def __init__(self, sessions: SessionFactory) -> None:
+        self._sessions = sessions
+
+    def get_user_viability_policy(self, user_id: UUID) -> ViabilityPolicySnapshot | None:
+        with self._sessions() as session:
+            pointer = session.get(UserViabilityPolicyRecord, user_id)
+            if pointer is None:
+                return None
+            policy = session.get(
+                ViabilityPolicyVersionRecord, (pointer.policy_identifier, pointer.policy_version)
+            )
+            if policy is None:
+                raise RuntimeError("Personal viability policy version is missing.")
+            return _snapshot_from_record(policy)
+
+    def set_user_viability_policy(
+        self, user_id: UUID, reference: PolicyReference, *, expected_current: PolicyReference | None
+    ) -> None:
+        with self._sessions.begin() as session:
+            if session.get(
+                ViabilityPolicyVersionRecord, (reference.identifier, reference.version)
+            ) is None:
+                raise ViabilityPolicyVersionNotFoundError("Policy version is missing.")
+            if expected_current is None:
+                inserted = session.execute(
+                    postgresql_insert(UserViabilityPolicyRecord)
+                    .values(
+                        user_id=user_id,
+                        policy_identifier=reference.identifier,
+                        policy_version=reference.version,
+                    )
+                    .on_conflict_do_nothing(index_elements=[UserViabilityPolicyRecord.user_id])
+                    .returning(UserViabilityPolicyRecord.user_id)
+                ).scalar_one_or_none()
+                if inserted is not None:
+                    return
+            else:
+                changed = session.execute(
+                    update(UserViabilityPolicyRecord)
+                    .where(
+                        UserViabilityPolicyRecord.user_id == user_id,
+                        UserViabilityPolicyRecord.policy_identifier == expected_current.identifier,
+                        UserViabilityPolicyRecord.policy_version == expected_current.version,
+                    )
+                    .values(
+                        policy_identifier=reference.identifier,
+                        policy_version=reference.version,
+                        selected_at=func.now(),
+                    )
+                    .returning(UserViabilityPolicyRecord.user_id)
+                ).scalar_one_or_none()
+                if changed is not None:
+                    return
+            raise UserViabilityPolicyConflictError("Your viability settings changed.")
 
 
 class PostgreSQLDefaultViabilityPolicyStore:

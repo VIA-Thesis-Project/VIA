@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
+from threading import Lock
 from uuid import UUID
 
 from ..application.errors import (
     DefaultViabilityPolicyConflictError,
     DefaultViabilityPolicyNotConfiguredError,
     EvaluationPolicyBindingConflictError,
+    UserViabilityPolicyConflictError,
 )
 from ..domain.errors import PolicyVersionConflictError
 from ..domain.models import PolicyReference, ViabilityPolicySnapshot
@@ -71,3 +73,29 @@ class InMemoryEvaluationPolicyBindingStore:
 
     def release_orphan(self, evaluation_id: UUID) -> None:
         self.bindings.pop(evaluation_id, None)
+
+
+class InMemoryUserViabilityPolicyStore:
+    def __init__(self, policies: InMemoryViabilityPolicyRepository) -> None:
+        self.policies = policies
+        self.users: dict[UUID, PolicyReference] = {}
+        self._lock = Lock()
+
+    def get_user_viability_policy(self, user_id: UUID) -> ViabilityPolicySnapshot | None:
+        reference = self.users.get(user_id)
+        if reference is None:
+            return None
+        policy = self.policies.get(reference)
+        if policy is None:
+            raise RuntimeError("Personal policy is missing.")
+        return policy
+
+    def set_user_viability_policy(
+        self, user_id: UUID, reference: PolicyReference, *, expected_current: PolicyReference | None
+    ) -> None:
+        if self.policies.get(reference) is None:
+            raise ValueError("Policy version is missing.")
+        with self._lock:
+            if self.users.get(user_id) != expected_current:
+                raise UserViabilityPolicyConflictError("Your viability settings changed.")
+            self.users[user_id] = reference

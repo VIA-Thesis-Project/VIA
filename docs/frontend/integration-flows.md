@@ -34,6 +34,11 @@ The capability contract reports `input_key_discovery = "arbitrary_unique"`. The 
 
 ## 5. Queue an evaluation
 
+The user's threshold settings are read and saved through
+`/api/v1/decision-support/my-viability-policy`. Use the returned identifier/version
+for optimistic saves. Changes apply only to new evaluations owned by that account;
+each evaluation retains its policy version when it is queued.
+
 Submit `POST /api/v1/evaluations`. Treat the returned evaluation as accepted work, not as a completed scientific result.
 
 Store the returned evaluation ID and begin polling `GET /api/v1/evaluations/{evaluation_id}`. See `async-evaluations.md`.
