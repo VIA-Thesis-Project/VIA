@@ -35,6 +35,7 @@ from via_backend.contexts.decision_support.application.knowledge_models import (
     RecommendationGeneration,
     RecommendationItem,
     RecommendationRun,
+    RecommendationSpatialResolution,
     RecommendationStatus,
     RetrievalStatus,
     RetrievedKnowledge,
@@ -1288,6 +1289,14 @@ def test_generation_context_presents_exact_scientific_values_readably() -> None:
         _context(),
         water_regime="irrigated",
         suitability_mean=59.00000000000001,
+        valid_cells=1,
+        spatial_resolutions=(
+            RecommendationSpatialResolution(
+                resolution_x=1 / 24,
+                resolution_y=1 / 24,
+                resolution_unit="degree",
+            ),
+        ),
         factors=(
             RecommendationFactor(
                 factor_code="parameter_coarse_fragments",
@@ -1304,10 +1313,25 @@ def test_generation_context_presents_exact_scientific_values_readably() -> None:
     assert "escenario con riego" in display["water_scenario"]
     assert display["limiting_factors"][0]["label"] == "Fragmentos gruesos"
     assert display["limiting_factors"][0]["affected_area_display"] == (
-        "100 % del área evaluada"
+        "100 % del área modelada evaluada"
+    )
+    assert display["spatial_resolution_display"] == (
+        "2.50 × 2.50 minutos de arco (0.041667° × 0.041667°)"
+    )
+    assert "una sola celda válida" in display["spatial_representativeness_warning"]
+    assert "no equivalen a una verificación uniforme en campo" in (
+        display["spatial_interpretation"]
     )
     scientific = cast(dict[str, Any], payload["scientific_context"])
     assert scientific["suitability_mean"] == 59.00000000000001
+    assert scientific["valid_cells"] == 1
+    assert scientific["spatial_resolutions"] == [
+        {
+            "resolution_x": 1 / 24,
+            "resolution_y": 1 / 24,
+            "resolution_unit": "degree",
+        }
+    ]
 
 
 def test_missing_evidence_does_not_generate_unsupported_action_or_dose() -> None:
@@ -1401,7 +1425,7 @@ def test_openai_responses_adapter_uses_strict_schema_and_no_tools(
     assert payload["presentation_context"]["suitability_mean_display"] == "0/100"
     assert payload["presentation_context"]["water_scenario"] == "escenario de secano"
     assert payload["presentation_context"]["limiting_factors"][0]["affected_area_display"] == (
-        "100 % del área evaluada"
+        "100 % del área modelada evaluada"
     )
     instructions = str(captured["instructions"])
     assert "Do not invent data, measurements, amendment doses, thresholds" in instructions

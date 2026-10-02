@@ -34,6 +34,7 @@ from .knowledge_models import (
     RecommendationContext,
     RecommendationFactor,
     RecommendationRun,
+    RecommendationSpatialResolution,
     RecommendationStatus,
     RetrievalStatus,
     RetrievedKnowledge,
@@ -650,6 +651,19 @@ class RecommendationContextBuilder:
                 else None
             ),
             factors=factors,
+            valid_cells=(
+                outcome.suitability.valid_cells
+                if outcome.suitability is not None
+                else None
+            ),
+            spatial_resolutions=tuple(
+                RecommendationSpatialResolution(
+                    resolution_x=item.resolution_x,
+                    resolution_y=item.resolution_y,
+                    resolution_unit=item.resolution_unit,
+                )
+                for item in finalized.environmental_input_resolutions
+            ),
         )
 
 

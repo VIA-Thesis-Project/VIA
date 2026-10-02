@@ -1404,9 +1404,9 @@
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/agroclimatic_evaluation/application/service.py": {
-    "mtime": 1790898612.95287,
-    "seen": 1790899014.1218252,
-    "ast_hash": "ae7debb214270b5e3dd4707a253b810c",
+    "mtime": 1790908405.6475961,
+    "seen": 1790908532.2171257,
+    "ast_hash": "cd7869530148c4379f69ad1a57830205",
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/agroclimatic_evaluation/domain/errors.py": {
@@ -1608,9 +1608,9 @@
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/agroclimatic_evaluation/application/public.py": {
-    "mtime": 1790025394.6678476,
-    "seen": 1790044734.8397312,
-    "ast_hash": "be9b143ca07047e6427c0aa1a8e17c56",
+    "mtime": 1790908405.6455033,
+    "seen": 1790908532.2171211,
+    "ast_hash": "0b7b5e5e8d582f8caa572d8941682dfa",
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/agroclimatic_evaluation/application/read_models.py": {
@@ -2040,9 +2040,9 @@
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/decision_support/application/knowledge_models.py": {
-    "mtime": 1790467711.3447676,
-    "seen": 1790467907.9677777,
-    "ast_hash": "af7bfb996a14ba75b2b8bc3b937750a4",
+    "mtime": 1790908405.6486075,
+    "seen": 1790908532.2171516,
+    "ast_hash": "dd0b55acdc6c11e64d7ea937e66ff396",
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/decision_support/application/knowledge_ports.py": {
@@ -2052,9 +2052,9 @@
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/decision_support/application/knowledge_services.py": {
-    "mtime": 1790467711.3457668,
-    "seen": 1790467907.9677799,
-    "ast_hash": "b8c975ce5d5f9333bac71cf7d30e4d74",
+    "mtime": 1790908405.6517284,
+    "seen": 1790908532.2171533,
+    "ast_hash": "e1ba9c18adbe81d429df1a1f3913b7c4",
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/decision_support/infrastructure/knowledge_manifest.py": {
@@ -2064,9 +2064,9 @@
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/decision_support/infrastructure/openai_knowledge.py": {
-    "mtime": 1790467608.9816487,
-    "seen": 1790467907.9677904,
-    "ast_hash": "63500e3645ec037a2f33ea5bc6a43a24",
+    "mtime": 1790908405.6537344,
+    "seen": 1790908532.2171657,
+    "ast_hash": "68e708254410b7a154fc7b49dda83603",
     "semantic_hash": ""
   },
   "backend/src/via_backend/contexts/decision_support/infrastructure/pdf_extractor.py": {
@@ -2088,9 +2088,9 @@
     "semantic_hash": ""
   },
   "backend/tests/test_agronomic_knowledge.py": {
-    "mtime": 1790881331.962439,
-    "seen": 1790881443.70786,
-    "ast_hash": "d31523001925a39282c9a61be21ef2ce",
+    "mtime": 1790908426.4075441,
+    "seen": 1790908532.2172406,
+    "ast_hash": "26265f45e96f73f262a6d1c0b6d429bc",
     "semantic_hash": ""
   },
   "backend/tests/test_agronomic_knowledge_http.py": {

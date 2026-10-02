@@ -154,12 +154,21 @@ class RecommendationFactor:
 
 
 @dataclass(frozen=True, slots=True)
+class RecommendationSpatialResolution:
+    resolution_x: float
+    resolution_y: float
+    resolution_unit: str
+
+
+@dataclass(frozen=True, slots=True)
 class RecommendationContext:
     evaluation_id: UUID
     crop_id: str
     water_regime: str
     suitability_mean: float | None
     factors: tuple[RecommendationFactor, ...]
+    valid_cells: int | None = None
+    spatial_resolutions: tuple[RecommendationSpatialResolution, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)

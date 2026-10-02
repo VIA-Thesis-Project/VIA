@@ -84,7 +84,9 @@ Generate every natural-language field directly in Spanish for a farmer. Use the 
 presentation_context for display; scientific_context contains exact values for verification.
 Never expose field names, factor codes, water-regime codes, raw 0..1 fractions, or binary float
 artifacts in prose. Present the suitability mean on its 0..100 scale and affected fractions as
-percentages of the evaluated area. Use display_label for factors. Preserve the meaning of
+percentages of the modeled evaluated area. These percentages describe raster/model support inside
+the parcel and are not direct field measurements proving a uniform condition at every point. Use
+display_label for factors. Preserve the meaning of
 scientific values and units; do not change the underlying assessment.
 Keep sections distinct: summary states the result, observations state assessed facts,
 scenario_interpretation explains their agronomic meaning, recommendations give ordered next
@@ -204,6 +206,8 @@ def _generation_payload(
     evidence: RetrievedKnowledge,
 ) -> dict[str, object]:
     mean = context.suitability_mean
+    spatial_resolution_display = _spatial_resolution_display(context)
+    spatial_warning = _spatial_representativeness_warning(context)
     return {
         "presentation_context": {
             "water_scenario": (
@@ -218,18 +222,33 @@ def _generation_payload(
                 {
                     "label": item.display_label or item.label,
                     "affected_area_display": (
-                        f"{item.affected_fraction * 100:.0f} % del área evaluada"
+                        f"{item.affected_fraction * 100:.0f} % del área modelada evaluada"
                     ),
                     "dominant": item.dominant,
                 }
                 for item in context.factors
             ],
+            "spatial_resolution_display": spatial_resolution_display,
+            "spatial_interpretation": (
+                "Los porcentajes representan área modelada sobre la grilla disponible; "
+                "no equivalen a una verificación uniforme en campo."
+            ),
+            "spatial_representativeness_warning": spatial_warning,
         },
         "scientific_context": {
             "evaluation_id": str(context.evaluation_id),
             "crop_id": context.crop_id,
             "water_regime": context.water_regime,
             "suitability_mean": context.suitability_mean,
+            "valid_cells": context.valid_cells,
+            "spatial_resolutions": [
+                {
+                    "resolution_x": item.resolution_x,
+                    "resolution_y": item.resolution_y,
+                    "resolution_unit": item.resolution_unit,
+                }
+                for item in context.spatial_resolutions
+            ],
             "limiting_factors": [
                 {
                     "factor_code": item.factor_code,
@@ -254,6 +273,45 @@ def _generation_payload(
             for item in evidence.evidence
         ],
     }
+
+
+def _spatial_resolution_display(context: RecommendationContext) -> str:
+    unique = tuple(
+        dict.fromkeys(
+            (
+                item.resolution_x,
+                item.resolution_y,
+                item.resolution_unit,
+            )
+            for item in context.spatial_resolutions
+        )
+    )
+    if not unique:
+        return "no disponible"
+
+    displays: list[str] = []
+    for resolution_x, resolution_y, unit in unique:
+        normalized_unit = unit.strip().lower()
+        if normalized_unit in {"degree", "degrees", "deg"}:
+            arcmin_x = resolution_x * 60
+            arcmin_y = resolution_y * 60
+            displays.append(
+                f"{arcmin_x:.2f} × {arcmin_y:.2f} minutos de arco "
+                f"({resolution_x:.6f}° × {resolution_y:.6f}°)"
+            )
+        else:
+            displays.append(f"{resolution_x:g} × {resolution_y:g} {unit}")
+    return "; ".join(displays)
+
+
+def _spatial_representativeness_warning(context: RecommendationContext) -> str | None:
+    if context.valid_cells == 1:
+        return (
+            "La parcela está representada por una sola celda válida del modelo; la resolución "
+            "espacial limita la interpretación de variaciones dentro de la parcela y se recomienda "
+            "verificación en campo."
+        )
+    return None
 
 
 def _parse_recommendation(data: object) -> StructuredRecommendation:

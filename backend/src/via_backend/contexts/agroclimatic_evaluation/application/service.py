@@ -24,6 +24,7 @@ from .public import (
     FinalizedCropLimitationEvidence,
     FinalizedCropOutcome,
     FinalizedCropOutcomeStatus,
+    FinalizedEnvironmentalInputResolution,
     FinalizedEvaluationNotFoundError,
     FinalizedEvaluationNotReadyError,
     FinalizedEvaluationResult,
@@ -219,6 +220,19 @@ class AgroclimaticEvaluationService:
                     rank=crop.rank,
                 )
                 for crop in (scenario.comparable_crops if scenario is not None else ())
+            ),
+            environmental_input_resolutions=tuple(
+                FinalizedEnvironmentalInputResolution(
+                    input_key=item.input_key,
+                    resolution_x=item.resolution_x,
+                    resolution_y=item.resolution_y,
+                    resolution_unit=item.resolution_unit,
+                )
+                for item in (
+                    evaluation.environmental_input_manifest.inputs
+                    if evaluation.environmental_input_manifest is not None
+                    else ()
+                )
             ),
         )
 

@@ -78,6 +78,14 @@ class FinalizedScientificTrace:
 
 
 @dataclass(frozen=True, slots=True)
+class FinalizedEnvironmentalInputResolution:
+    input_key: str
+    resolution_x: float
+    resolution_y: float
+    resolution_unit: str
+
+
+@dataclass(frozen=True, slots=True)
 class FinalizedLimitingFactorEvidence:
     factor_code: str
     label: str
@@ -133,6 +141,7 @@ class FinalizedEvaluationResult:
     outcomes: tuple[FinalizedCropOutcome, ...]
     common_support: FinalizedCommonSupport | None
     comparable_crops: tuple[FinalizedComparableCrop, ...]
+    environmental_input_resolutions: tuple[FinalizedEnvironmentalInputResolution, ...] = ()
 
 
 @runtime_checkable
